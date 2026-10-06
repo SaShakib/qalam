@@ -1,0 +1,185 @@
+# input | expected | flags (quran, astyped, none, smallsukun, digits, nospelling)
+# --- letters + harakat
+kataba	كَتَبَ
+kaAtaba	كَاتَبَ
+kaataba	كَاتَبَ
+kAtaba	كَاتَبَ
+kaAatab	كَأَتَبْ
+yaktubu	يَكْتُبُ
+kitaAbuN	كِتَابٌ
+kitaAbiN	كِتَابٍ
+kitaAbaN	كِتَابًا
+qul	قُلْ
+rabbi	رَبِّ
+sayyiduN	سَيِّدٌ
+HubbuN	حُبٌّ
+baththa	بَثَّ
+fiy	فِي
+fii	فِي
+yaquwlu	يَقُولُ
+yaquulu	يَقُولُ
+baytuN	بَيْتٌ
+yawmuN	يَوْمٌ
+huwa	هُوَ
+hiya	هِيَ
+thawbuN	ثَوْبٌ
+khubzuN	خُبْزٌ
+dhahabuN	ذَهَبٌ
+yadhhabu	يَذْهَبُ
+zaytuN	زَيْتٌ
+zhaytuN	زَيْتٌ
+ZulmuN	ظُلْمٌ
+SabruN	صَبْرٌ
+DaAlluN	ضَالٌّ
+TaAlibuN	طَالِبٌ
+eilmuN	عِلْمٌ
+gafara	غَفَرَ
+ghafara	غَفَرَ
+qalamuN	قَلَمٌ
+nuwruN	نُورٌ
+ealaY	عَلَى
+hudaNY	هُدًى
+katabuwA	كَتَبُوا
+katabuuA	كَتَبُوا
+sayyaArat'uN	سَيَّارَةٌ
+shaAyuN	شَايٌ
+Aas`halu	أَسْهَلُ
+# --- ta marbuta
+madrasat'	مَدْرَسَة
+madrasat'uN	مَدْرَسَةٌ
+madrasat'aN	مَدْرَسَةً
+SalaAt'	صَلَاة
+# --- ayn vs hamza
+lae	لَعْ
+la'	لَأْ
+laAe	لَاعْ
+laA'	لَاءْ
+laa'	لَاءْ
+saAala	سَأَلَ
+sa'ala	سَأَلَ
+saeala	سَعَلَ
+eiyduN	عِيدٌ
+taeallama	تَعَلَّمَ
+dueaAAuN	دُعَاءٌ
+# --- hamza seats
+qaraAa	قَرَأَ
+qara'a	قَرَأَ
+yaqraAu	يَقْرَأُ
+jaAAa	جَاءَ
+jaaAa	جَاءَ
+jaa'a	جَاءَ
+AAmana	آمَنَ
+'aamana	آمَنَ
+Aaamana	آمَنَ
+qurAAnuN	قُرْآنٌ
+qur'aanuN	قُرْآنٌ
+AaHmadu	أَحْمَدُ
+'aHmadu	أَحْمَدُ
+Aislaamu	إِسْلَامُ
+AummuN	أُمٌّ
+Ainna	إِنَّ
+suAaAluN	سُؤَالٌ
+su'aaluN	سُؤَالٌ
+raAiysuN	رَئِيسٌ
+yasAalu	يَسْأَلُ
+mu'minuN	مُؤْمِنٌ
+bi'ruN	بِئْرٌ
+ra'suN	رَأْسٌ
+shay'uN	شَيْءٌ
+shay'aN	شَيْئًا
+juz'aN	جُزْءًا
+samaaAuN	سَمَاءٌ
+samaa'aN	سَمَاءً
+maAAuN	مَاءٌ
+tasaaAala	تَسَاءَلَ
+lu'luAuN	لُؤْلُؤٌ
+lu'lu'uN	لُؤْلُؤٌ
+shaaTi'u	شَاطِئُ
+mas'uwluN	مَسْؤُولٌ
+masAalat'uN	مَسْأَلَةٌ
+AiymaAnuN	إِيمَانٌ
+raAaY	رَأَى
+# --- wasl and article
+ismu	اِسْمُ
+uktub	اُكْتُبْ
+imraAat'uN	اِمْرَأَةٌ
+alkitaAbu	الْكِتَابُ
+alshamsu	الشَّمْسُ
+ash-shamsu	الشَّمْسُ
+al-shamsu	الشَّمْسُ
+alladhiy	الَّذِي
+allatiy	الَّتِي
+alladhiyna	الَّذِينَ
+alladhiyna	ٱلَّذِينَ	quran
+allaAtiy	اللَّاتِي
+allaylu	اللَّيْلُ
+alAarDu	الْأَرْضُ
+alAinsaAnu	الْإِنْسَانُ
+aljawwu	الْجَوُّ
+wal-qamari	وَالْقَمَرِ
+wal-shamsi	وَالشَّمْسِ
+bil-qalami	بِالْقَلَمِ
+lil-naAsi	لِلنَّاسِ
+wa-qaAla	وَقَالَ
+wa-Aiyyaaka	وَإِيَّاكَ
+walad	وَلَدْ
+# --- spelling words
+allaAhu	اللَّهُ
+allaahu	اللَّهُ
+allahu	اللَّهُ
+lillaAhi	لِلَّهِ
+haAdhaA	هَٰذَا
+haAdhihi	هَٰذِهِ
+dhaAlika	ذَٰلِكَ
+laAkin	لَٰكِنْ
+laAkinna	لَٰكِنَّ
+AilaAhuN	إِلَٰهٌ
+haaAulaaAi	هَٰؤُلَاءِ
+AulaA'ika	أُولَٰئِكَ
+alraHmaAnu	الرَّحْمَٰنُ
+allaAhu	اللَّاهُ	nospelling
+ha^dhaa	هَٰذَا
+alea^lamiyna	الْعَٰلَمِينَ
+# --- sentences + punctuation
+dhahaba alwaladu AilaY almadrasat'i.	ذَهَبَ الْوَلَدُ إِلَى الْمَدْرَسَةِ.
+AanaA AuHibbu allugat'a alearabiyyat'a	أَنَا أُحِبُّ اللُّغَةَ الْعَرَبِيَّةَ
+hal fahimta?	هَلْ فَهِمْتَ؟
+maA ismuka?	مَا اِسْمُكَ؟
+kitaAbuN, qalamuN	كِتَابٌ، قَلَمٌ
+kaAna aljawwu jamiylaN	كَانَ الْجَوُّ جَمِيلًا
+# --- Qur'an style
+allaAhu	ٱللَّهُ	quran
+alkitaAbu	ٱلْكِتَابُ	quran
+wal-qamari	وَٱلْقَمَرِ	quran
+ismu	ٱسْمُ	quran
+qul huwa allaAhu AaHaduN	قُلْ هُوَ ٱللَّهُ أَحَدٌ	quran
+alHamdu lillaAhi rabbi alea^lamiyna	ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ	quran
+alraHmaAni alraHiymi	ٱلرَّحْمَٰنِ ٱلرَّحِيمِ	quran
+ma^liki yawmi aldiyni	مَٰلِكِ يَوْمِ ٱلدِّينِ	quran
+Aiyyaaka naebudu wa-Aiyyaaka nastaeiynu	إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ	quran
+ihdinaa alSira^Ta almustaqiyma	ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ	quran
+gayri almagDuwbi ealayhim wa-laA alDaA=lliyna	غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ	quran
+jaA='a	جَآءَ	quran
+'uu\0la^='ika	أُو۟لَٰٓئِكَ	quran
+AulaA'ika	أُو۟لَٰٓئِكَ	quran
+lahu\w	لَهُۥ	quran
+bihi\y	بِهِۦ	quran
+min\mi	مِنۢ	quran
+wa-lam yakun lahu\w kufuwaN AaHaduN	وَلَمْ يَكُنْ لَهُۥ كُفُوًا أَحَدٌ	quran
+\bism	بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ	quran
+\bism	بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+\7	﴿٧﴾
+\286	﴿٢٨٦﴾
+\saw	ﷺ
+\hz	۞
+qul	قُلۡ	quran,smallsukun
+alHamdu	ٱلۡحَمۡدُ	quran,smallsukun
+# --- harakat modes, digits
+kataba	كتب	none
+kitaAbaN	كتابا	none
+haAdhaA	هذا	none
+maktab	مَكتَب	astyped
+rajul	رَجُل	astyped
+maktabo	مَكتَبْ	astyped
+12	12
+12	١٢	digits
