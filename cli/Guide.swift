@@ -197,7 +197,7 @@ function practice(){
   }
   const it = items[idx % items.length];
   const head = mandatory
-    ? `<div class="banner"><b>First, a short practice.</b> Type these 20 words once: each one teaches a key you will need. The letter table and word list open after.<br><span class="small">Turn Qalam on first: ${toggleKeys}.</span></div>
+    ? `<div class="banner"><b>A short practice to get familiar.</b> 20 words, each teaching a key you will need. It's optional. <button class="act" id="skipall">Skip practice</button><br><span class="small">Turn Qalam on first: ${toggleKeys}.</span></div>
        <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><b style="white-space:nowrap">Word ${idx+1} of ${items.length}</b><progress value="${idx}" max="${items.length}"></progress></div>`
     : `<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><select id="setsel">${setsList().map(([id,t]) => `<option value="${id}" ${id===set?'selected':''}>${esc(t)}</option>`).join('')}</select><span class="small">${(idx % items.length)+1} of ${items.length}</span></div>`;
   return head + `<div class="card">
@@ -208,11 +208,13 @@ function practice(){
       ${it.label ? `<div class="tip">💡 ${esc(it.label)}</div>` : ''}</div>
     <div><input class="answer ar" id="answer" autocomplete="off" spellcheck="false" placeholder="Type here with Qalam on"></div>
     <div id="fb" style="min-height:40px;margin-top:10px"></div>
-    ${mandatory ? '' : `<div class="row"><button class="act" id="prev">Previous</button><button class="act" id="skip">Skip →</button></div>`}
+    <div class="row">${mandatory ? '' : '<button class="act" id="prev">Previous</button>'}<button class="act" id="skip">${mandatory ? 'Skip this word →' : 'Skip →'}</button></div>
   </div>`;
 }
 function wirePractice(){
-  if ($('#finish')) { $('#finish').onclick = () => { starterDone = true; store.set('qalamStarterDone','1'); page = 'letters'; render(); }; return; }
+  const done = () => { starterDone = true; store.set('qalamStarterDone','1'); page = 'letters'; render(); };
+  if ($('#finish')) { $('#finish').onclick = done; return; }
+  if ($('#skipall')) $('#skipall').onclick = done;
   if ($('#setsel')) $('#setsel').onchange = e => chooseSet(e.target.value);
   if ($('#prev')) $('#prev').onclick = () => { idx = Math.max(0, idx-1); render(); };
   if ($('#skip')) $('#skip').onclick = () => { idx++; render(); };

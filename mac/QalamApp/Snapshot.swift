@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 
 /// `Qalam --snapshot <dir>` draws every page to a PNG off-screen and quits (used to check the layout).
+@MainActor
 enum Snapshot {
     static func runIfRequested() {
         let args = CommandLine.arguments
@@ -14,7 +15,7 @@ enum Snapshot {
             let state = AppState()
             state.firstPracticeDone = page != nil
             state.page = page ?? .letters
-            let root = ContentView().environmentObject(state)
+            let root = ContentView().environmentObject(state).environmentObject(Updater())
                 .frame(width: size.width, height: size.height)
                 .background(Color(nsColor: .windowBackgroundColor))
             let host = NSHostingView(rootView: root)

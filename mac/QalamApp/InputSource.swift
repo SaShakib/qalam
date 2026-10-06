@@ -1,5 +1,6 @@
 import AppKit
 import Carbon
+import QalamEngine
 
 /// Finds the Qalam keyboard among the Mac's input sources.
 enum InputSource {
@@ -20,7 +21,20 @@ enum InputSource {
         return list as! [TISInputSource]
     }
 
-    static var isEnabled: Bool { !sources(includeDisabled: false).isEmpty }
+    static var isEnabled: Bool {
+        let on = !sources(includeDisabled: false).isEmpty
+        if on && !SharedSettings.keyboardWasEnabled { SharedSettings.keyboardWasEnabled = true }
+        return on
+    }
+
+    static var rememberedEnabled: Bool { SharedSettings.keyboardWasEnabled }
+
+    /// macOS drops an input source from the menu when its files are replaced (reinstall, update,
+    /// brew upgrade). If the user had turned Qalam on before, turn it back on.
+    static func restoreIfNeeded() {
+        guard rememberedEnabled, isInstalled, !isEnabled else { return }
+        enable()
+    }
 
     /// Adds Qalam to the input menu (same as System Settings → Input Sources → +).
     @discardableResult

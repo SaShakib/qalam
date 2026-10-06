@@ -9,6 +9,11 @@ final class QalamInputController: IMKInputController {
     private var composer = Composer()
     private let notFound = NSRange(location: NSNotFound, length: NSNotFound)
 
+    override func activateServer(_ sender: Any!) {
+        super.activateServer(sender)
+        if !SharedSettings.keyboardWasEnabled { SharedSettings.keyboardWasEnabled = true }
+    }
+
     override func recognizedEvents(_ sender: Any!) -> Int {
         Int(NSEvent.EventTypeMask.keyDown.rawValue)
     }

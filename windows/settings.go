@@ -14,6 +14,7 @@ type Settings struct {
 	Enabled      bool `json:"enabled"`
 	FirstRunDone bool `json:"firstRunDone"`
 	AskedInstall bool `json:"askedInstall"`
+	NoAutoUpdate bool `json:"noAutoUpdate"`
 }
 
 func settingsPath() string {

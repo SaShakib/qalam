@@ -1,6 +1,6 @@
 cask "qalam" do
-  version "1.0.0"
-  sha256 "7709d8c7097a01170c6c9db0538fc0328829ae403b227a9d1d037b3c3ed3b817"
+  version "1.1.0"
+  sha256 "6a3985ab7b363bc120ac5f5de19a92a5419202a0ef411c87e88b2ea2011dfd66"
 
   url "https://github.com/SaShakib/qalam/releases/download/v#{version}/Qalam-mac.zip"
   name "Qalam"

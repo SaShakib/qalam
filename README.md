@@ -36,9 +36,9 @@ Homebrew 7 asks you to trust a tap before installing from it (the second command
 curl -fsSL https://raw.githubusercontent.com/SaShakib/qalam/main/install.sh | bash
 ```
 
-**Installer package:** download `Qalam-1.0.0.pkg` from [Releases](https://github.com/SaShakib/qalam/releases/latest) and double-click it. The package isn't notarized yet. If macOS blocks it, go to System Settings → Privacy & Security and click **Open Anyway**.
+**Installer package:** download `Qalam-<version>.pkg` from [Releases](https://github.com/SaShakib/qalam/releases/latest) and double-click it. The package isn't notarized yet. If macOS blocks it, go to System Settings → Privacy & Security and click **Open Anyway**.
 
-The Qalam app then opens. It adds the keyboard to your input menu and walks you through a **20-word practice** that covers every special key. Switch keyboards with **🌐 Globe** or **Control-Space**.
+The Qalam app then opens. It adds the keyboard to your input menu and offers an optional **20-word practice** that covers every special key (skip it any time). Switch keyboards with **🌐 Globe** or **Control-Space**.
 
 ## Install on Windows
 
@@ -48,6 +48,13 @@ Download **`Qalam-Windows-x64.exe`** (or `-arm64` for ARM laptops) from [Release
 - **Ctrl + Alt + A** (or a click on the ق tray icon) switches Arabic on and off.
 - Right-click the tray icon for style, harakat, Arabic digits, and the guide and practice page.
 - The exe isn't code-signed yet. If SmartScreen warns, click **More info → Run anyway**.
+
+## Updates
+
+Qalam checks GitHub for a new version when it starts and once a day.
+
+- **macOS:** Settings → Updates has **Check for updates now**, **Install update**, and switches for automatic checking and installing. How it installs depends on how you installed Qalam: an install.sh copy updates itself in place, Homebrew runs `brew upgrade --cask qalam`, and the .pkg downloads the new installer for you. If you had the keyboard turned on, it stays on after an update.
+- **Windows:** the tray menu has **Check for updates…** and **Install updates automatically**. Qalam swaps in the new .exe and restarts by itself.
 
 ## Typing in short
 

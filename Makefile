@@ -4,7 +4,7 @@
 #   make release     build everything for a GitHub release into dist/
 #   make uninstall   remove the development install
 
-VERSION  := 1.0.0
+VERSION  := 1.1.0
 # Builds run at low priority on 2 cores so the Mac stays responsive.
 SWIFT    := nice -n 15 swift build -c release -j 2
 GO       := nice -n 15 go
@@ -46,6 +46,10 @@ bundle: build icons
 	cp mac/bundle/Qalam-Info.plist "$(APP)/Contents/Info.plist"
 	cp $(BUILD)/icons/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
 	cp fonts/*.ttf fonts/OFL-*.txt "$(APP)/Contents/Resources/Fonts/"
+	for p in "$(IME_APP)" "$(APP)"; do \
+	  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" "$$p/Contents/Info.plist"; \
+	  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" "$$p/Contents/Info.plist"; \
+	done
 	codesign --force --sign - "$(IME_APP)"
 	codesign --force --sign - "$(APP)"
 
@@ -76,8 +80,8 @@ windows: guide
 	cd windows && for arch in amd64 arm64; do \
 	  $(GO) run github.com/akavel/rsrc@v0.10.2 -arch $$arch -ico assets/qalam-on.ico -manifest assets/qalam.manifest -o rsrc_windows_$$arch.syso; \
 	done
-	cd windows && GOOS=windows GOARCH=amd64 $(GO) build -p 2 -trimpath -ldflags "-H windowsgui -s -w" -o ../$(DIST)/Qalam-Windows-x64.exe .
-	cd windows && GOOS=windows GOARCH=arm64 $(GO) build -p 2 -trimpath -ldflags "-H windowsgui -s -w" -o ../$(DIST)/Qalam-Windows-arm64.exe .
+	cd windows && GOOS=windows GOARCH=amd64 $(GO) build -p 2 -trimpath -ldflags "-H windowsgui -s -w -X main.version=$(VERSION)" -o ../$(DIST)/Qalam-Windows-x64.exe .
+	cd windows && GOOS=windows GOARCH=arm64 $(GO) build -p 2 -trimpath -ldflags "-H windowsgui -s -w -X main.version=$(VERSION)" -o ../$(DIST)/Qalam-Windows-arm64.exe .
 
 # ---------- Mac release: zip (Homebrew + install.sh) and .pkg (double-click) ----------
 

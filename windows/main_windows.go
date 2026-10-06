@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"qalam/engine"
@@ -28,7 +29,7 @@ var guideHTML []byte
 //go:embed assets/NotoNaskhArabic.ttf
 var previewFont []byte
 
-const version = "1.0.0"
+var version = "dev" // set at build time: -X main.version=…
 
 var (
 	settings  Settings
@@ -41,10 +42,14 @@ var (
 func main() {
 	runtime.LockOSThread()
 
+	updated := false
 	for _, a := range os.Args[1:] {
-		if a == "--uninstall" {
+		switch a {
+		case "--uninstall":
 			uninstall()
 			return
+		case "--updated":
+			updated = true
 		}
 	}
 
@@ -52,7 +57,7 @@ func main() {
 	settings = loadSettings()
 
 	// First run from a download: offer to install for this user.
-	if !runningFromInstallDir() && !settings.AskedInstall {
+	if !updated && !runningFromInstallDir() && !settings.AskedInstall {
 		settings.AskedInstall = true
 		saveSettings(settings)
 		if messageBox("Install Qalam for this user?\n\n"+
@@ -66,11 +71,20 @@ func main() {
 		}
 	}
 
-	// One copy at a time.
-	mutex, _, err := pCreateMutexW.Call(0, 0, uintptr(unsafe.Pointer(utf16Ptr("Qalam.SingleInstance"))))
-	if errno, ok := err.(syscall.Errno); ok && errno == errAlreadyExists {
-		messageBox("Qalam is already running. Look for the ق icon in the system tray (bottom right).", "Qalam", mbIconInfo)
-		return
+	// One copy at a time. After an update, wait for the old copy to finish quitting.
+	var mutex uintptr
+	for attempt := 0; ; attempt++ {
+		h, _, err := pCreateMutexW.Call(0, 0, uintptr(unsafe.Pointer(utf16Ptr("Qalam.SingleInstance"))))
+		if errno, ok := err.(syscall.Errno); !ok || errno != errAlreadyExists {
+			mutex = h
+			break
+		}
+		pCloseHandle.Call(h)
+		if !updated || attempt >= 20 {
+			messageBox("Qalam is already running. Look for the ق icon in the system tray (bottom right).", "Qalam", mbIconInfo)
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 	defer pCloseHandle.Call(mutex)
 
@@ -84,6 +98,12 @@ func main() {
 		messageBox("Qalam could not start its keyboard hook.", "Qalam", mbIconInfo)
 		return
 	}
+
+	if updated {
+		go cleanupAfterUpdate()
+		balloon("Qalam updated", "You now have version "+version+".")
+	}
+	startUpdateLoop()
 
 	if !settings.FirstRunDone {
 		settings.FirstRunDone = true

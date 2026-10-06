@@ -3,6 +3,7 @@ import QalamEngine
 
 struct SettingsView: View {
     @EnvironmentObject var app: AppState
+    @EnvironmentObject var updater: Updater
     @State private var enabled = InputSource.isEnabled
 
     var body: some View {
@@ -44,6 +45,26 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
+            Section("Updates") {
+                LabeledContent("Version", value: updater.current)
+                Toggle("Check for updates automatically", isOn: $updater.autoCheck)
+                Toggle("Install updates automatically", isOn: $updater.autoInstall)
+                    .disabled(updater.method != .perUser)
+                HStack {
+                    Button("Check for updates now") { Task { await updater.check(userInitiated: true) } }
+                    if case .available = updater.status {
+                        Button("Install update") { Task { await updater.install() } }.buttonStyle(.borderedProminent)
+                    }
+                    Spacer()
+                    Text(updateText).foregroundStyle(.secondary)
+                }
+                if updater.method == .homebrew {
+                    Text("Installed with Homebrew: updates run `brew upgrade --cask qalam`.").font(.caption).foregroundStyle(.secondary)
+                } else if updater.method == .pkg {
+                    Text("Installed with the .pkg: updates download the new installer for you to open.").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+
             Section("Keyboard status") {
                 LabeledContent("Installed", value: InputSource.isInstalled ? "Yes" : "No: run make install")
                 LabeledContent("In the input menu", value: enabled ? "Yes" : "No")
@@ -59,6 +80,24 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .onAppear { enabled = InputSource.isEnabled; app.scanFonts() }
+    }
+}
+
+extension SettingsView {
+    var updateText: String {
+        switch updater.status {
+        case .checking: return "Checking…"
+        case .upToDate: return "You have the latest version."
+        case .available(let v, _): return "Version \(v) is available."
+        case .working(let t): return t
+        case .installed(let v): return "Updated to \(v)."
+        case .failed(let m): return m
+        case .idle:
+            if let d = updater.lastChecked {
+                return "Last checked " + d.formatted(.relative(presentation: .named))
+            }
+            return ""
+        }
     }
 }
 

@@ -167,14 +167,12 @@ struct PracticeView: View {
                 EmptyView()
             }
 
-            if !onboarding {
-                HStack {
-                    Button("Previous") { move(-1) }.disabled(index == 0)
-                    Button("Check") { check(final: true) }
-                    Button("Skip →") { move(1) }
-                }
-                .controlSize(.large)
+            HStack {
+                if !onboarding { Button("Previous") { move(-1) }.disabled(index == 0) }
+                Button("Check") { check(final: true) }
+                Button(onboarding ? "Skip this word →" : "Skip →") { move(1) }
             }
+            .controlSize(.large)
         }
         .frame(maxWidth: .infinity)
     }
@@ -271,11 +269,13 @@ struct FirstRunView: View {
             HStack(alignment: .center, spacing: 18) {
                 Text("قَلَم").font(app.arabic(44)).foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Welcome! First, a short practice").font(.title2.bold())
-                    Text("Type these 20 words once. Each one teaches a key you will need. It takes about 5 minutes.")
+                    Text("Welcome! A short practice to get familiar").font(.title2.bold())
+                    Text("20 words, each teaching a key you will need (about 5 minutes). It's optional: skip any time.")
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+                Button("Skip practice") { app.finishFirstPractice() }
+                    .controlSize(.large)
             }
             .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 10)
 

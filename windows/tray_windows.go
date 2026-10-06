@@ -32,6 +32,8 @@ const (
 	cmdGuide
 	cmdStartup
 	cmdUninstall
+	cmdCheckUpdate
+	cmdAutoUpdate
 	cmdQuit
 )
 
@@ -142,6 +144,8 @@ func showMenu() {
 	sep()
 	item(cmdGuide, "Letters, words && practice…", false)
 	item(cmdStartup, "Start with Windows", startupEnabled())
+	item(cmdCheckUpdate, "Check for updates… (version "+version+")", false)
+	item(cmdAutoUpdate, "Install updates automatically", !settings.NoAutoUpdate)
 	if runningFromInstallDir() {
 		item(cmdUninstall, "Uninstall Qalam…", false)
 	}
@@ -177,6 +181,11 @@ func showMenu() {
 	case cmdStartup:
 		setStartup(!startupEnabled())
 		return
+	case cmdCheckUpdate:
+		go checkForUpdate(true)
+		return
+	case cmdAutoUpdate:
+		settings.NoAutoUpdate = !settings.NoAutoUpdate
 	case cmdUninstall:
 		startUninstall()
 		return

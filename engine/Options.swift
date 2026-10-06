@@ -53,6 +53,12 @@ public enum SharedSettings {
         return o
     }
 
+    /// Set once the user has turned the Qalam keyboard on, so reinstalls and updates can turn it back on.
+    public static var keyboardWasEnabled: Bool {
+        get { defaults.bool(forKey: "keyboardWasEnabled") }
+        set { defaults.set(newValue, forKey: "keyboardWasEnabled") }
+    }
+
     public static func save(_ o: Options) {
         let d = defaults
         d.set(o.style.rawValue, forKey: "style")
