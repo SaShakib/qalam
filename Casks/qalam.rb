@@ -12,14 +12,14 @@ cask "qalam" do
   app "Qalam.app"
   input_method "QalamInput.app"
 
-  postflight do
-    # The release is not notarized: clear the download quarantine so macOS will load it.
-    system_command "/usr/bin/xattr",
-                   args:         ["-dr", "com.apple.quarantine",
-                                  "#{appdir}/Qalam.app",
-                                  "#{Dir.home}/Library/Input Methods/QalamInput.app"],
-                   must_succeed: false
-    system_command "/usr/bin/killall", args: ["QalamInput"], must_succeed: false
+  # The release is not notarized: clear the download quarantine so macOS will load it,
+  # then restart the keyboard so a new version is used.
+  postflight_steps do
+    run "/bin/sh",
+        args:         ["-c", 'xattr -dr com.apple.quarantine "{{appdir}}/Qalam.app" ' \
+                             '"$HOME/Library/Input Methods/QalamInput.app" 2>/dev/null; true'],
+        must_succeed: false
+    terminate_process "QalamInput"
   end
 
   uninstall quit: "com.qalam.app"
