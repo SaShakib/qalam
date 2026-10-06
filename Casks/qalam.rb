@@ -7,7 +7,7 @@ cask "qalam" do
   desc "Phonetic Arabic keyboard with full harakat and Qur'anic marks"
   homepage "https://github.com/SaShakib/qalam"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   app "Qalam.app"
   input_method "QalamInput.app"

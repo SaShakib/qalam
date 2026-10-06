@@ -17,8 +17,18 @@ macOS 13 (Ventura) or later.
 **Homebrew**
 
 ```bash
-brew tap sashakib/qalam https://github.com/SaShakib/qalam && brew install --cask qalam
+brew tap sashakib/qalam https://github.com/SaShakib/qalam
 ```
+
+```bash
+brew trust sashakib/qalam
+```
+
+```bash
+brew install --cask qalam
+```
+
+Homebrew 7 asks you to trust a tap before installing from it (the second command). Update later with `brew upgrade --cask qalam`.
 
 **One command (no Homebrew)**
 
