@@ -34,6 +34,16 @@ enum InputSource {
     static func restoreIfNeeded() {
         guard rememberedEnabled, isInstalled, !isEnabled else { return }
         enable()
+        refreshInputMenu()
+    }
+
+    /// The menu-bar input menu and Control-Space switcher (TextInputMenuAgent) can keep stale
+    /// data after the keyboard's files are replaced. Restarting it is harmless: macOS relaunches it at once.
+    static func refreshInputMenu() {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        p.arguments = ["TextInputMenuAgent"]
+        try? p.run()
     }
 
     /// Adds Qalam to the input menu (same as System Settings → Input Sources → +).

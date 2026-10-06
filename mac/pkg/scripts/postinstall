@@ -8,8 +8,9 @@ if [ -n "$home" ]; then
   rm -rf "$home/Library/Input Methods/QalamInput.app" "$home/Applications/Qalam.app"
 fi
 
-# Restart the keyboard so the new version is used.
+# Restart the keyboard so the new version is used, and refresh the input menu.
 killall QalamInput 2>/dev/null || true
+[ -n "$user" ] && pkill -u "$user" TextInputMenuAgent 2>/dev/null || true
 
 # Open the app for the person at the screen: it walks them through setup and practice.
 if [ -n "$user" ] && [ "$user" != "root" ]; then

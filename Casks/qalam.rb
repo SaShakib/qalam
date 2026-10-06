@@ -1,6 +1,6 @@
 cask "qalam" do
-  version "1.1.0"
-  sha256 "6a3985ab7b363bc120ac5f5de19a92a5419202a0ef411c87e88b2ea2011dfd66"
+  version "1.1.1"
+  sha256 "a4fdb03153fbf4c57fba575885c810b82af6be397628c989e5f302ae99f644e0"
 
   url "https://github.com/SaShakib/qalam/releases/download/v#{version}/Qalam-mac.zip"
   name "Qalam"
@@ -20,6 +20,7 @@ cask "qalam" do
                              '"$HOME/Library/Input Methods/QalamInput.app" 2>/dev/null; true'],
         must_succeed: false
     terminate_process "QalamInput"
+    terminate_process "TextInputMenuAgent"
   end
 
   uninstall quit: "com.qalam.app"

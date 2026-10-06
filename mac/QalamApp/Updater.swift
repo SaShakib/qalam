@@ -156,6 +156,7 @@ final class Updater: ObservableObject {
         try replace(appDest, with: newApp)
         _ = try? run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", appDest.path, imeDest.path])
         if wasEnabled { InputSource.enable() }
+        InputSource.refreshInputMenu()
 
         status = .installed(release.version)
         relaunch()
@@ -183,6 +184,7 @@ final class Updater: ObservableObject {
         let wasEnabled = InputSource.isEnabled || InputSource.rememberedEnabled
         try await Task.detached { try Self.runStatic(brew, ["upgrade", "--cask", "qalam"]) }.value
         if wasEnabled { InputSource.enable() }
+        InputSource.refreshInputMenu()
         status = .installed(latest?.version ?? "")
         relaunch()
     }

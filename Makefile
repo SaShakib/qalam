@@ -4,7 +4,7 @@
 #   make release     build everything for a GitHub release into dist/
 #   make uninstall   remove the development install
 
-VERSION  := 1.1.0
+VERSION  := 1.1.1
 # Builds run at low priority on 2 cores so the Mac stays responsive.
 SWIFT    := nice -n 15 swift build -c release -j 2
 GO       := nice -n 15 go

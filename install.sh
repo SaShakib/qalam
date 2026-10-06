@@ -58,6 +58,9 @@ if [ -d "/Applications/Qalam.app" ] || [ -d "/Library/Input Methods/QalamInput.a
   echo "      Remove it to avoid two copies: sudo rm -rf /Applications/Qalam.app '/Library/Input Methods/QalamInput.app'"
 fi
 
+# Refresh the menu-bar input menu so it sees the new keyboard (macOS relaunches it at once).
+killall TextInputMenuAgent 2>/dev/null || true
+
 echo "Qalam is installed. Opening it now: it will help you add the keyboard and practise."
 sleep 1
 open "$APP" 2>/dev/null || { sleep 2; open "$APP"; }
