@@ -7,6 +7,8 @@ struct WriteView: View {
     @EnvironmentObject var app: AppState
     @AppStorage("writeDraft") private var latin = "dhahaba alwaladu AilaY almadrasat'i."
     @State private var copied = false
+    /// Chrome/Electron apps draw الله / لله with doubled marks unless the ligature is blocked.
+    @AppStorage("copyForBrowsers") private var copyForBrowsers = true
 
     private var output: String { Qalam.text(latin, app.options) }
 
@@ -23,12 +25,16 @@ struct WriteView: View {
                 Spacer()
                 Button(copied ? "Copied ✓" : "Copy Arabic") {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(output, forType: .string)
+                    var o = app.options
+                    o.blockAllahLigature = copyForBrowsers
+                    NSPasteboard.general.setString(Qalam.text(latin, o), forType: .string)
                     copied = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
                 }
                 .buttonStyle(.borderedProminent)
                 Button("Clear") { latin = "" }
+                Toggle("Copy for browsers & chat apps", isOn: $copyForBrowsers)
+                    .help("Chrome, the Claude app, VS Code, Slack… draw الله with doubled marks unless this is on. Native Mac apps are fine either way.")
             }
             TextEditor(text: $latin)
                 .font(.system(size: 17, design: .monospaced))

@@ -387,6 +387,30 @@ public enum Qalam {
 
     // MARK: Output
 
+    /// Inserts U+034F (combining grapheme joiner) between the two lāms of ل‌ل‌ه (ignoring marks),
+    /// so fonts don't replace the word with their built-in "Allah" ligature.
+    public static func blockAllahLigature(_ s: String) -> String {
+        let scalars = Array(s.unicodeScalars)
+        func isMark(_ u: Unicode.Scalar) -> Bool {
+            let v = u.value
+            return (0x064B...0x065F).contains(v) || v == 0x0670 || (0x06D6...0x06ED).contains(v) || v == 0x034F
+        }
+        // positions of base letters
+        let bases = scalars.indices.filter { !isMark(scalars[$0]) }
+        var insertBefore = Set<Int>()
+        for k in 0..<max(0, bases.count - 2) {
+            let a = scalars[bases[k]].value, b = scalars[bases[k + 1]].value, c = scalars[bases[k + 2]].value
+            if a == 0x0644 && b == 0x0644 && c == 0x0647 { insertBefore.insert(bases[k + 1]) }
+        }
+        if insertBefore.isEmpty { return s }
+        var out = String.UnicodeScalarView()
+        for (i, u) in scalars.enumerated() {
+            if insertBefore.contains(i) { out.append(Unicode.Scalar(0x034F)!) }
+            out.append(u)
+        }
+        return String(out)
+    }
+
     static func render(_ units: [Unit], _ o: Options) -> String {
         var s = ""
         for u in units {
@@ -415,6 +439,7 @@ public enum Qalam {
     }
 
     static func finish(_ s: String, _ o: Options) -> String {
+        let s = o.blockAllahLigature ? blockAllahLigature(s) : s
         if o.harakat == .none { return AR.stripHarakat(s) }
         if o.style == .quran && o.quranSmallSukun {
             let from = AR.sukun.unicodeScalars.first!, to = AR.quranSukun.unicodeScalars.first!

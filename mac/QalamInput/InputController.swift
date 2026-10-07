@@ -20,7 +20,7 @@ final class QalamInputController: IMKInputController {
 
     override func handle(_ event: NSEvent!, client sender: Any!) -> Bool {
         guard let event = event, event.type == .keyDown, let client = sender as? IMKTextInput else { return false }
-        let options = SharedSettings.load()
+        let options = self.options(for: client)
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
         // Shortcuts (⌘C, ⌃A, ⌥…) finish the word and go to the app.
@@ -55,6 +55,37 @@ final class QalamInputController: IMKInputController {
         return consumed
     }
 
+    /// Settings for this keystroke. Chrome-based apps get the Allah-ligature guard (see Options).
+    private func options(for client: IMKTextInput) -> Options {
+        var o = SharedSettings.load()
+        o.blockAllahLigature = Self.isChromiumBased(client.bundleIdentifier())
+        return o
+    }
+
+    private static var chromiumCache: [String: Bool] = [:]
+
+    /// Chrome, Edge, Brave, Arc and Electron apps (Claude, VS Code, Slack…) all ship Chromium's
+    /// .pak resource files; native apps (Safari, Notes, Pages…) don't.
+    static func isChromiumBased(_ bundleID: String?) -> Bool {
+        guard let id = bundleID, !id.isEmpty else { return false }
+        if let known = chromiumCache[id] { return known }
+        var found = false
+        if let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
+            let fm = FileManager.default
+            let frameworks = app.appendingPathComponent("Contents/Frameworks")
+            let names = (try? fm.contentsOfDirectory(atPath: frameworks.path)) ?? []
+            for fw in names where fw.hasSuffix(".framework") {
+                let res = frameworks.appendingPathComponent(fw).appendingPathComponent("Resources").path
+                if let files = try? fm.contentsOfDirectory(atPath: res), files.contains(where: { $0.hasSuffix(".pak") }) {
+                    found = true
+                    break
+                }
+            }
+        }
+        chromiumCache[id] = found
+        return found
+    }
+
     private func perform(_ actions: [Composer.Action], _ client: IMKTextInput) {
         for action in actions {
             switch action {
@@ -72,7 +103,7 @@ final class QalamInputController: IMKInputController {
 
     override func commitComposition(_ sender: Any!) {
         guard let client = sender as? IMKTextInput else { return }
-        perform(composer.flushActions(SharedSettings.load()), client)
+        perform(composer.flushActions(options(for: client)), client)
     }
 
     override func deactivateServer(_ sender: Any!) {

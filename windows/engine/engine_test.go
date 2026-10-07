@@ -36,6 +36,8 @@ func TestGoldenCases(t *testing.T) {
 					o.SpellingWords = false
 				case "digits":
 					o.ArabicDigits = true
+				case "chromium":
+					o.BlockAllahLigature = true
 				}
 			}
 		}

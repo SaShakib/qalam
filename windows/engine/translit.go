@@ -540,6 +540,9 @@ func render(units []unit, o Options) string {
 }
 
 func finish(s string, o Options) string {
+	if o.BlockAllahLigature {
+		s = BlockAllahLigature(s)
+	}
 	if o.Harakat == NoHarakat {
 		return stripHarakat(s)
 	}
@@ -547,4 +550,35 @@ func finish(s string, o Options) string {
 		return strings.ReplaceAll(s, sukun, quranSukun)
 	}
 	return s
+}
+
+// BlockAllahLigature inserts U+034F between the two lāms of ل‌ل‌ه (marks ignored).
+func BlockAllahLigature(s string) string {
+	rs := []rune(s)
+	isMark := func(r rune) bool {
+		return (r >= 0x064B && r <= 0x065F) || r == 0x0670 || (r >= 0x06D6 && r <= 0x06ED) || r == 0x034F
+	}
+	bases := []int{}
+	for i, r := range rs {
+		if !isMark(r) {
+			bases = append(bases, i)
+		}
+	}
+	insert := map[int]bool{}
+	for k := 0; k+2 < len(bases); k++ {
+		if rs[bases[k]] == 0x0644 && rs[bases[k+1]] == 0x0644 && rs[bases[k+2]] == 0x0647 {
+			insert[bases[k+1]] = true
+		}
+	}
+	if len(insert) == 0 {
+		return s
+	}
+	out := make([]rune, 0, len(rs)+len(insert))
+	for i, r := range rs {
+		if insert[i] {
+			out = append(out, 0x034F)
+		}
+		out = append(out, r)
+	}
+	return string(out)
 }

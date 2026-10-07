@@ -18,6 +18,7 @@ func flags(_ list: [String], into o: inout Options) {
         case "smallsukun": o.quranSmallSukun = true
         case "nospelling": o.spellingWords = false
         case "digits": o.arabicDigits = true
+        case "chromium": o.blockAllahLigature = true
         default: break
         }
     }
