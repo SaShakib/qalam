@@ -552,11 +552,12 @@ func finish(s string, o Options) string {
 	return s
 }
 
-// BlockAllahLigature inserts U+034F between the two lāms of ل‌ل‌ه (marks ignored).
+// BlockAllahLigature inserts U+200D (ZWJ) between the two lāms of ل‌ل‌ه (marks ignored),
+// so fonts don't draw their built-in Allah ligature; ZWJ keeps the letters joined.
 func BlockAllahLigature(s string) string {
 	rs := []rune(s)
 	isMark := func(r rune) bool {
-		return (r >= 0x064B && r <= 0x065F) || r == 0x0670 || (r >= 0x06D6 && r <= 0x06ED) || r == 0x034F
+		return (r >= 0x064B && r <= 0x065F) || r == 0x0670 || (r >= 0x06D6 && r <= 0x06ED) || r == 0x034F || r == 0x200D
 	}
 	bases := []int{}
 	for i, r := range rs {
@@ -566,7 +567,8 @@ func BlockAllahLigature(s string) string {
 	}
 	insert := map[int]bool{}
 	for k := 0; k+2 < len(bases); k++ {
-		if rs[bases[k]] == 0x0644 && rs[bases[k+1]] == 0x0644 && rs[bases[k+2]] == 0x0647 {
+		already := bases[k+1] > 0 && rs[bases[k+1]-1] == 0x200D
+		if rs[bases[k]] == 0x0644 && rs[bases[k+1]] == 0x0644 && rs[bases[k+2]] == 0x0647 && !already {
 			insert[bases[k+1]] = true
 		}
 	}
@@ -576,7 +578,7 @@ func BlockAllahLigature(s string) string {
 	out := make([]rune, 0, len(rs)+len(insert))
 	for i, r := range rs {
 		if insert[i] {
-			out = append(out, 0x034F)
+			out = append(out, 0x200D)
 		}
 		out = append(out, r)
 	}

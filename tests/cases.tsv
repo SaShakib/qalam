@@ -183,8 +183,11 @@ rajul	رَجُل	astyped
 maktabo	مَكتَبْ	astyped
 12	12
 12	١٢	digits
-# --- Chrome-based apps: CGJ between the lāms of لله stops the font's Allah ligature
-lillaAhi	لِ͏لَّهِ	chromium
-allaAhu	ال͏لَّهُ	chromium
+# --- Chrome-based apps: ZWJ between the lāms of لله stops the font's Allah ligature (and keeps the join)
+lillaAhi	لِ‍لَّهِ	chromium
+allaAhu	ال‍لَّهُ	chromium
 wal-qamari	وَالْقَمَرِ	chromium
 alladhiy	الَّذِي	chromium
+lill^hi	لِ‍لّٰهِ	chromium
+lillaAhi lillaAhi	لِ‍لَّهِ لِ‍لَّهِ	chromium
+lillaAhi	لِلَّهِ

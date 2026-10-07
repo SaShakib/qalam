@@ -27,8 +27,8 @@ public struct Options: Equatable, Sendable {
     public var spellingWords: Bool
     public var arabicDigits: Bool
     /// Chrome-based apps (HarfBuzz) reorder harakat and then draw the font's built-in "Allah"
-    /// ligature on top of our marks (doubled shadda/alif). When true, an invisible CGJ (U+034F)
-    /// between the two lāms of لله stops that ligature. Set automatically by the keyboard.
+    /// ligature on top of our marks (doubled shadda/alif). When true, an invisible zero-width joiner
+    /// (U+200D) between the two lāms of لله stops that ligature. Set automatically by the keyboard.
     public var blockAllahLigature: Bool
 
     public init(style: Style = .everyday, harakat: HarakatMode = .full, quranSmallSukun: Bool = false,
