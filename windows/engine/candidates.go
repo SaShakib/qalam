@@ -163,4 +163,3 @@ func daggerVariant(s string) (string, bool) {
 	}
 	return b.String(), changed
 }
-

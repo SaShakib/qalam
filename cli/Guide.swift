@@ -165,7 +165,7 @@ const D = /*DATA*/;
 const $ = (s, el=document) => el.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-const toggleKeys = D.platform === 'windows' ? '<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>A</kbd> (or click the ق tray icon)' : '🌐 or <kbd>Control</kbd> + <kbd>Space</kbd>';
+const toggleKeys = D.platform === 'windows' ? '<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>A</kbd> (or click the ق tray icon; change it in the tray menu → Shortcuts)' : '🌐 or <kbd>Control</kbd> + <kbd>Space</kbd>';
 $('#howto').innerHTML = 'Switch Arabic on/off with ' + toggleKeys + '. Type a word, then press <kbd>Space</kbd>.';
 
 let page = 'practice';
@@ -259,6 +259,7 @@ function help(){
   <li>Right-click the ق tray icon for Everyday / Qur'an style, harakat, Arabic digits, start with Windows, and uninstall.</li>
   <li>While you type, a panel shows up to 4 versions of the word (as typed, another alif/hamza, no harakat, small alif). <kbd>↑</kbd>/<kbd>↓</kbd> choose, <kbd>Space</kbd> inserts, or click one. Qalam remembers your pick.</li>
   <li>Sukūn is <b>Smart</b>: only at a stop inside a word (مَكْتَب، قُل). Type <code>o</code> to add one yourself. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> (or the panel button) switches sukūn off completely.</li>
+  <li>Shortcuts can be changed: right-click the ق tray icon → <b>Shortcuts</b>, click one, then press the new keys (Ctrl or Alt + a key). Backspace removes a shortcut. You can also give Harakat on/off a shortcut there. The panel buttons show the current shortcuts.</li>
   <li>Type a word with no vowels to get bare letters: <code>ktb</code> → كتب.</li>
   <li>Long vowels can be typed two ways: <code>aA</code>=<code>aa</code>, <code>iy</code>=<code>ii</code>, <code>uw</code>=<code>uu</code>. A voweled hamza too: <code>saAala</code>=<code>sa'ala</code>.</li></ul>`;
 }

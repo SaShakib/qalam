@@ -21,6 +21,7 @@ var (
 	panelRows      []rect
 	sukunBtn       rect
 	harakatBtn     rect
+	hintRow        rect
 	arabicFont     uintptr
 	latinFont      uintptr
 	smallFont      uintptr
@@ -30,6 +31,7 @@ var (
 	pAddFontMem    = gdi32.NewProc("AddFontMemResourceEx")
 	pFrameRect     = user32.NewProc("FrameRect")
 	previewFamily  = "Segoe UI"
+	panelMessage   string // shown instead of the options while a shortcut is being recorded
 )
 
 const (
@@ -106,6 +108,10 @@ func previewProc(hwnd, message, wParam, lParam uintptr) uintptr {
 func inRect(x, y int32, r rect) bool { return x >= r.Left && x < r.Right && y >= r.Top && y < r.Bottom }
 
 func onPanelClick(x, y int32) {
+	if panelMessage != "" {
+		stopRecording()
+		return
+	}
 	for i, r := range panelRows {
 		if inRect(x, y, r) {
 			pickCandidate(i)
@@ -126,6 +132,15 @@ func paintPanel(hwnd uintptr) {
 	pGetClientRect.Call(hwnd, uintptr(unsafe.Pointer(&rc)))
 	pFillRect.Call(hdc, uintptr(unsafe.Pointer(&rc)), previewBrush)
 	pSetBkMode.Call(hdc, transparent)
+
+	if panelMessage != "" {
+		pSelectObject.Call(hdc, latinFont)
+		pSetTextColor.Call(hdc, rgb(30, 30, 30))
+		r := rect{rc.Left + scale(16), rc.Top + scale(12), rc.Right - scale(16), rc.Bottom - scale(12)}
+		drawText(hdc, panelMessage, &r, dtLeft|dtNoPrefix)
+		pEndPaint.Call(hwnd, uintptr(unsafe.Pointer(&ps)))
+		return
+	}
 
 	for i, c := range panelCands {
 		r := panelRows[i]
@@ -162,24 +177,32 @@ func paintPanel(hwnd uintptr) {
 		drawText(hdc, b.text, &r, dtCenter|dtVCenter|dtSingleLine|dtNoPrefix)
 	}
 	pSetTextColor.Call(hdc, rgb(150, 150, 150))
-	tr := rect{harakatBtn.Right + scale(10), sukunBtn.Top, rc.Right - scale(8), sukunBtn.Bottom}
-	drawText(hdc, panelLatin+"   ↑↓ choose · Space inserts", &tr, dtLeft|dtVCenter|dtSingleLine|dtNoPrefix)
+	tr := hintRow
+	drawText(hdc, panelLatin+"   ↑↓ choose · Space inserts · shortcuts: tray menu", &tr, dtLeft|dtVCenter|dtSingleLine|dtNoPrefix)
 
 	pEndPaint.Call(hwnd, uintptr(unsafe.Pointer(&ps)))
 }
 
+// Button titles end with their shortcut, e.g. "Sukūn: Smart   Ctrl+Alt+O".
+func withKey(title, name string) string {
+	if h := settings.hotkey(name); h != nil {
+		return title + "   " + h.String()
+	}
+	return title
+}
+
 func sukunLabel() string {
 	if settings.Sukun == engine.SukunOff {
-		return "Sukūn: Off"
+		return withKey("Sukūn: Off", "sukun")
 	}
-	return "Sukūn: Smart"
+	return withKey("Sukūn: Smart", "sukun")
 }
 
 func harakatLabel() string {
 	if settings.Harakat == engine.NoHarakat {
-		return "Harakat: Off"
+		return withKey("Harakat: Off", "harakat")
 	}
-	return "Harakat: On"
+	return withKey("Harakat: On", "harakat")
 }
 
 func drawText(hdc uintptr, s string, rc *rect, flags uintptr) {
@@ -205,6 +228,7 @@ func showPanel(cands []engine.Candidate, sel int, latin string) {
 		cands, sel = cands[sel:sel+1], 0
 	}
 	panelCands, panelSel, panelLatin = cands, sel, latin
+	panelMessage = ""
 
 	pad := scale(8)
 	rowH := scale(44)
@@ -224,11 +248,17 @@ func showPanel(cands []engine.Candidate, sel int, latin string) {
 	}
 	btnH := scale(24)
 	y += pad / 2
-	sw, _ := measure(smallFont, "Sukūn: Smart", 0)
-	hw, _ := measure(smallFont, "Harakat: Off", 0)
+	sw, _ := measure(smallFont, sukunLabel(), 0)
+	hw, _ := measure(smallFont, harakatLabel(), 0)
 	sukunBtn = rect{pad, y, pad + sw + scale(16), y + btnH}
 	harakatBtn = rect{sukunBtn.Right + scale(6), y, sukunBtn.Right + scale(6) + hw + scale(16), y + btnH}
-	height := y + btnH + pad
+	if w := harakatBtn.Right + pad; w > width {
+		width = w
+	}
+	// the typed letters and the key hint go on their own line under the buttons
+	y += btnH + scale(4)
+	hintRow = rect{pad, y, width - pad, y + scale(18)}
+	height := hintRow.Bottom + pad
 
 	x, cy := caretPosition()
 	pSetWindowPos.Call(previewHwnd, hwndTopmost, uintptr(x), uintptr(cy), uintptr(width), uintptr(height), swpNoActivate)
@@ -237,9 +267,36 @@ func showPanel(cands []engine.Candidate, sel int, latin string) {
 }
 
 func hidePreview() {
-	if previewHwnd != 0 {
+	if previewHwnd != 0 && panelMessage == "" {
 		pShowWindow.Call(previewHwnd, swHide)
 	}
+}
+
+// showMessage puts a short message in the middle of the screen (used while recording a shortcut).
+func showMessage(text string) {
+	if previewHwnd == 0 {
+		return
+	}
+	panelMessage = text
+	pad := scale(16)
+	rc := rect{0, 0, 2000, 400}
+	hdc, _, _ := pGetDC.Call(previewHwnd)
+	pSelectObject.Call(hdc, latinFont)
+	drawText(hdc, text, &rc, dtCalcRect|dtNoPrefix)
+	pReleaseDC.Call(previewHwnd, hdc)
+	w, h := rc.Right-rc.Left, rc.Bottom-rc.Top
+	width, height := w+2*pad, h+scale(24)
+	sw, _, _ := pGetSystemMetrics.Call(smCxScreen)
+	sh, _, _ := pGetSystemMetrics.Call(smCyScreen)
+	x, y := (int32(sw)-width)/2, (int32(sh)-height)/3
+	pSetWindowPos.Call(previewHwnd, hwndTopmost, uintptr(x), uintptr(y), uintptr(width), uintptr(height), swpNoActivate)
+	pInvalidateRect.Call(previewHwnd, 0, 1)
+	pShowWindow.Call(previewHwnd, swShowNA)
+}
+
+func hideMessage() {
+	panelMessage = ""
+	hidePreview()
 }
 
 // caretPosition is just below the text caret, or near the mouse if the app hides its caret.

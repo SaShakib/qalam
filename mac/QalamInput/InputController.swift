@@ -24,10 +24,21 @@ final class QalamInputController: IMKInputController {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let busy = !composer.buffer.isEmpty
 
-        // Control-Shift-O: sukūn Off ↔ Smart.
-        if flags.contains(.control) && flags.contains(.shift) && !flags.contains(.command) && event.keyCode == 31 {
-            toggleSukun(client)
-            return true
+        // The user's shortcuts (Settings → Shortcuts): sukūn Off ↔ Smart (default ⌃⇧O), harakat Off ↔ On.
+        let code = Int(event.keyCode)
+        let hit: (Shortcut?) -> Bool = {
+            $0?.matches(keyCode: code, control: flags.contains(.control), option: flags.contains(.option),
+                        shift: flags.contains(.shift), command: flags.contains(.command)) ?? false
+        }
+        if flags.contains(.control) || flags.contains(.option) {
+            if hit(SharedSettings.shortcut(for: .sukun)) {
+                toggleSukun(client)
+                return true
+            }
+            if hit(SharedSettings.shortcut(for: .harakat)) {
+                toggleHarakat(client)
+                return true
+            }
         }
 
         // Shortcuts (⌘C, ⌃A, ⌥…) finish the word and go to the app.
@@ -172,15 +183,22 @@ final class QalamInputController: IMKInputController {
         }
         panel.onToggleHarakat = { [weak self] in
             guard let self, let c = self.client() else { return }
-            self.change { $0.harakat = $0.harakat == .none ? .full : .none }
-            self.refresh(c, self.options(for: c))
+            self.toggleHarakat(c)
         }
-        panel.show(candidates, selected: selected, sukunOff: o.sukun == .off, plain: o.harakat == .none, near: caret)
+        panel.show(candidates, selected: selected, sukunOff: o.sukun == .off, plain: o.harakat == .none, near: caret,
+                   sukunKey: SharedSettings.shortcut(for: .sukun)?.display,
+                   harakatKey: SharedSettings.shortcut(for: .harakat)?.display)
     }
 
-    /// Sukūn Off ↔ Smart (button in the panel, or Control-Shift-O).
+    /// Sukūn Off ↔ Smart (button in the panel, or the sukūn shortcut).
     private func toggleSukun(_ client: IMKTextInput) {
         change { $0.sukun = $0.sukun == .off ? .smart : .off }
+        if !composer.buffer.isEmpty { refresh(client, options(for: client)) }
+    }
+
+    /// Harakat Off ↔ Full (button in the panel, or the harakat shortcut).
+    private func toggleHarakat(_ client: IMKTextInput) {
+        change { $0.harakat = $0.harakat == .none ? .full : .none }
         if !composer.buffer.isEmpty { refresh(client, options(for: client)) }
     }
 
@@ -237,16 +255,21 @@ final class QalamInputController: IMKInputController {
         m.addItem(.separator())
         m.addItem(item("Full harakat", #selector(harakatFull(_:)), on: o.harakat == .full))
         m.addItem(item("Only the harakat I type", #selector(harakatTyped(_:)), on: o.harakat == .asTyped))
-        m.addItem(item("No harakat", #selector(harakatNone(_:)), on: o.harakat == .none))
+        m.addItem(item("No harakat" + Self.keyHint(.harakat), #selector(harakatNone(_:)), on: o.harakat == .none))
         m.addItem(.separator())
         m.addItem(item("Sukūn: Smart (only where needed)", #selector(sukunSmart(_:)), on: o.sukun == .smart))
         m.addItem(item("Sukūn: Full (every stop)", #selector(sukunFull(_:)), on: o.sukun == .full))
-        m.addItem(item("Sukūn: Off  (⌃⇧O)", #selector(sukunOff(_:)), on: o.sukun == .off))
+        m.addItem(item("Sukūn: Off" + Self.keyHint(.sukun), #selector(sukunOff(_:)), on: o.sukun == .off))
+        m.addItem(item("Change shortcuts…", #selector(openShortcuts(_:))))
         m.addItem(.separator())
         m.addItem(item("Show options while typing", #selector(toggleOptions(_:)), on: SharedSettings.showOptions))
         m.addItem(item("Arabic digits ١٢٣", #selector(toggleDigits(_:)), on: o.arabicDigits))
         m.addItem(item("Smart spelling (اللَّه، هَٰذَا)", #selector(toggleSpelling(_:)), on: o.spellingWords))
         return m
+    }
+
+    private static func keyHint(_ a: Shortcut.Action) -> String {
+        SharedSettings.shortcut(for: a).map { "   " + $0.display } ?? ""
     }
 
     private func item(_ title: String, _ action: Selector, on: Bool = false) -> NSMenuItem {
@@ -273,6 +296,11 @@ final class QalamInputController: IMKInputController {
     @objc func sukunOff(_ sender: Any?) { change { $0.sukun = .off } }
     @objc func toggleOptions(_ sender: Any?) { SharedSettings.showOptions.toggle() }
     @objc func toggleSpelling(_ sender: Any?) { change { $0.spellingWords.toggle() } }
+
+    @objc func openShortcuts(_ sender: Any?) {
+        SharedSettings.requestPage("settings")
+        openApp(sender)
+    }
 
     @objc func openApp(_ sender: Any?) {
         let ws = NSWorkspace.shared

@@ -210,6 +210,6 @@ Qalam remembers what you pick for each word, and your harakat habit: pick a vers
 | **Full** | On every letter without a vowel (Qur'an style always works this way) | `maktab` → مَكْتَبْ |
 | **Off** | No sukūn at all, not even from `o` | `maktabo` → مَكتَب |
 
-Switch Off ↔ Smart with **Control-Shift-O** (Mac) or **Ctrl+Alt+O** (Windows), or with the button in the options panel.
+Switch Off ↔ Smart with **Control-Shift-O** (Mac) or **Ctrl+Alt+O** (Windows), or with the button in the options panel. These are defaults: change or remove them in Settings → Shortcuts (Mac) or the tray menu → Shortcuts (Windows), where Harakat on/off can get a shortcut too.
 
 **No vowels typed → bare letters.** A word with no a, i or u (and no aa, ii or uu) comes out with no marks at all, which is handy for dictionary search: `ktb` → كتب, `qr'` → قرء (the options offer قرأ / قرئ / قرؤ), `rbb` → ربب.

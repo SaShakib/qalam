@@ -60,6 +60,7 @@ Qalam checks GitHub for a new version when it starts and once a day.
 
 - **Options while you type, like Avro.** ↑/↓ choose between up to 4 versions: as typed, another alif/hamza (قَرَا / قَرَأ / قَرَأَ), no harakat, small alif (لِلّٰهِ). Qalam remembers what you pick.
 - **Smart sukūn** (default): only at a stop inside a word (مَكْتَب، قُل، بَيت). `o` adds one by hand. **Off** (Control-Shift-O / Ctrl+Alt+O, or the panel button) means no sukūn at all.
+- **Shortcuts can be changed** (in case they clash with yours): Mac: Qalam → Settings → Shortcuts. Windows: tray menu → Shortcuts. Harakat on/off can get a shortcut too. The panel buttons show the current ones.
 - **No vowels typed → bare letters:** `ktb` → كتب.
 
 ## Typing in short

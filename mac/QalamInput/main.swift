@@ -9,7 +9,9 @@ if let i = CommandLine.arguments.firstIndex(of: "--panel-snapshot"), i + 2 < Com
     let word = CommandLine.arguments[i + 2]
     let panel = OptionsPanel.shared
     panel.show(Qalam.candidates(word, Options()), selected: 1, sukunOff: false, plain: false,
-               near: NSRect(x: 300, y: 600, width: 1, height: 20))
+               near: NSRect(x: 300, y: 600, width: 1, height: 20),
+               sukunKey: SharedSettings.shortcut(for: .sukun)?.display,
+               harakatKey: SharedSettings.shortcut(for: .harakat)?.display)
     RunLoop.current.run(until: Date().addingTimeInterval(0.5))
     if let view = panel.snapshotView, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
         view.cacheDisplay(in: view.bounds, to: rep)

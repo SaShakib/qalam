@@ -70,16 +70,29 @@ func onKeyDown(kb *kbdllHook) bool {
 	shift := keyDown(vkShift)
 	busy := composer.Buffer != ""
 
-	// Ctrl + Left Alt + A: Arabic on/off.  Ctrl + Left Alt + O: sukūn Off ↔ Smart.
-	// (Left Alt only, so AltGr combinations on other layouts still work.)
-	if ctrl && leftAlt && !win && (vk == 'A' || vk == 'O') {
-		if vk == 'A' {
+	if recording != "" {
+		return recordKey(vk, ctrl, alt, leftAlt, shift, win)
+	}
+
+	// The user's shortcuts (tray menu → Shortcuts). Defaults: Ctrl+Alt+A Arabic on/off,
+	// Ctrl+Alt+O sukūn Off ↔ Smart. Alt means Left Alt only, so AltGr letters on other layouts still work.
+	if (ctrl || leftAlt) && !win && !isModifier(vk) {
+		hit := func(name string) bool {
+			h := settings.hotkey(name)
+			return h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == leftAlt && h.Alt == alt && h.Shift == shift
+		}
+		switch {
+		case hit("toggle"):
 			commitSelected()
 			toggle()
-		} else {
+			return true
+		case hit("sukun"):
 			toggleSukun()
+			return true
+		case hit("harakat"):
+			toggleHarakat()
+			return true
 		}
-		return true
 	}
 	if !settings.Enabled || isModifier(vk) {
 		return false
@@ -276,6 +289,59 @@ func toggleHarakat() {
 	if composer.Buffer != "" {
 		refreshOptions()
 	}
+}
+
+// recording is the shortcut being changed (tray menu → Shortcuts), or "".
+var recording string
+
+func startRecording(name, title string) {
+	commitSelected()
+	recording = name
+	showMessage("Press the new shortcut for " + title + ".\nHold Ctrl or Alt with a key.   Backspace: no shortcut.   Esc: cancel.")
+}
+
+func stopRecording() {
+	recording = ""
+	hideMessage()
+	updateTray()
+}
+
+// recordKey takes the next key press as the new shortcut. Every key is swallowed while recording.
+func recordKey(vk uint32, ctrl, anyAlt, alt, shift, win bool) bool {
+	if isModifier(vk) {
+		return false
+	}
+	plain := !ctrl && !anyAlt && !win
+	switch {
+	case anyAlt && !alt:
+		showMessage("Use the left Alt key (right Alt / AltGr types letters on many layouts).\nEsc: cancel.")
+	case plain && vk == vkEscape:
+		stopRecording()
+	case plain && vk == vkBack:
+		setHotkey(recording, nil)
+		stopRecording()
+	case win || (!ctrl && !alt):
+		showMessage("Hold Ctrl or Alt (not the Windows key) with a key.\nBackspace: no shortcut.   Esc: cancel.")
+	default:
+		h := &Hotkey{VK: vk, Ctrl: ctrl, Alt: alt, Shift: shift}
+		for _, n := range hotkeyNames {
+			if n.Name != recording && settings.hotkey(n.Name) != nil && *settings.hotkey(n.Name) == *h {
+				showMessage(h.String() + " is already used for " + n.Title + ".\nPress another shortcut, or Esc to cancel.")
+				return true
+			}
+		}
+		setHotkey(recording, h)
+		stopRecording()
+	}
+	return true
+}
+
+func setHotkey(name string, h *Hotkey) {
+	if settings.Keys == nil {
+		settings.Keys = map[string]*Hotkey{}
+	}
+	settings.Keys[name] = h
+	saveSettings(settings)
 }
 
 func flushAll() []engine.Action {

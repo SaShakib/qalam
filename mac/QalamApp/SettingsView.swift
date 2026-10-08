@@ -20,7 +20,7 @@ struct SettingsView: View {
                 Picker("Sukūn", selection: $app.options.sukun) {
                     ForEach(SukunMode.allCases) { Text($0.title).tag($0) }
                 }
-                Text("Smart: only at a stop inside a word (مَكْتَب، قُل، بَيت); typing o always adds one. Off: none at all (Control-Shift-O or the button in the options panel). Words typed with no vowels come out as bare letters (ktb → كتب).")
+                Text("Smart: only at a stop inside a word (مَكْتَب، قُل، بَيت); typing o always adds one. Off: none at all (the sukūn shortcut below, or the button in the options panel). Words typed with no vowels come out as bare letters (ktb → كتب).")
                     .font(.caption).foregroundStyle(.secondary)
                 Toggle("Show options while typing (↑↓ to choose, like Avro)", isOn: $showOptions)
                     .onChange(of: showOptions) { SharedSettings.showOptions = $0 }
@@ -38,6 +38,14 @@ struct SettingsView: View {
                 Text(app.show("alHamdu lillaAhi rabbi alea^lamiyna"))
                     .font(app.arabic(26))
                     .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            Section("Shortcuts: work while typing with Qalam") {
+                ForEach(Shortcut.Action.allCases) { action in
+                    LabeledContent(action.title) { ShortcutRecorder(action: action) }
+                }
+                Text("Click a shortcut, then press the new keys. It must use Control or Option (⌘ shortcuts belong to apps). If a shortcut clashes with one you use in another app, change it here or remove it; the buttons in the options panel always work.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
 
             Section("Fonts in this app") {
@@ -139,5 +147,86 @@ struct FontPicker: View {
                 ForEach(installed.filter { $0 != kfgqpc }, id: \.self) { Text($0).tag($0) }
             }
         }
+    }
+}
+
+/// Click, then press keys: records a shortcut for the Qalam keyboard.
+struct ShortcutRecorder: View {
+    let action: Shortcut.Action
+    @State private var current: Shortcut?
+    @State private var recording = false
+    @State private var message = ""
+    @State private var monitor: Any?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if !message.isEmpty {
+                Text(message).font(.caption).foregroundStyle(.orange)
+            }
+            Button(recording ? "Press keys… (Esc cancels)" : (current?.display ?? "None")) {
+                recording ? stop() : start()
+            }
+            .font(.system(.body, design: .rounded).weight(.medium))
+            .frame(minWidth: 150)
+            Menu {
+                Button("Remove shortcut") { save(nil) }
+                Button("Reset to default (\(action.defaultShortcut?.display ?? "none"))") {
+                    SharedSettings.resetShortcut(for: action)
+                    current = SharedSettings.shortcut(for: action)
+                    message = ""
+                }
+            } label: { Image(systemName: "ellipsis.circle") }
+            .menuStyle(.borderlessButton).fixedSize()
+        }
+        .onAppear { current = SharedSettings.shortcut(for: action) }
+        .onDisappear { stop() }
+    }
+
+    private func start() {
+        message = ""
+        recording = true
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
+            record(e)
+            return nil   // the keys go to the recorder, not to the window
+        }
+    }
+
+    private func stop() {
+        if let m = monitor { NSEvent.removeMonitor(m) }
+        monitor = nil
+        recording = false
+    }
+
+    private func record(_ e: NSEvent) {
+        let f = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if e.keyCode == 53 && f.isEmpty { stop(); return }                          // Esc
+        let s = Shortcut(keyCode: Int(e.keyCode), key: Self.keyName(e),
+                         control: f.contains(.control), option: f.contains(.option),
+                         shift: f.contains(.shift), command: f.contains(.command))
+        guard s.isUsable else {
+            message = f.contains(.command) ? "⌘ can't be used" : "Hold Control or Option"
+            return
+        }
+        if let other = SharedSettings.action(using: s, except: action) {
+            message = "Already used for \(other.title)"
+            return
+        }
+        save(s)
+        stop()
+    }
+
+    private func save(_ s: Shortcut?) {
+        SharedSettings.setShortcut(s, for: action)
+        current = s
+        message = ""
+    }
+
+    static func keyName(_ e: NSEvent) -> String {
+        let names: [UInt16: String] = [49: "Space", 36: "↩", 48: "⇥", 51: "⌫", 117: "⌦", 123: "←", 124: "→",
+                                       125: "↓", 126: "↑", 115: "↖", 119: "↘", 116: "⇞", 121: "⇟",
+                                       122: "F1", 120: "F2", 99: "F3", 118: "F4", 96: "F5", 97: "F6",
+                                       98: "F7", 100: "F8", 101: "F9", 109: "F10", 103: "F11", 111: "F12"]
+        if let n = names[e.keyCode] { return n }
+        return (e.charactersIgnoringModifiers ?? "?").uppercased()
     }
 }

@@ -1,7 +1,7 @@
 //go:build windows
 
 // Qalam for Windows: a phonetic Arabic keyboard that lives in the system tray.
-// Ctrl + Left Alt + A (or clicking the tray icon) switches Arabic typing on and off.
+// Ctrl + Left Alt + A (or clicking the tray icon) switches Arabic typing on and off; the shortcuts can be changed from the tray menu.
 package main
 
 import (
@@ -111,7 +111,7 @@ func main() {
 		saveSettings(settings)
 		updateTray()
 		openGuide()
-		balloon("Qalam is on", "Type Arabic anywhere. Ctrl + Alt + A switches between Arabic and English.")
+		balloon("Qalam is on", "Type Arabic anywhere. "+settings.hotkeyText("toggle")+" switches between Arabic and English (change it: right-click the tray icon → Shortcuts).")
 	}
 
 	var m msg

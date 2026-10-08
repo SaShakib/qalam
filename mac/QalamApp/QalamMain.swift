@@ -1,4 +1,5 @@
 import SwiftUI
+import QalamEngine
 
 @main
 struct QalamMain: App {
@@ -32,6 +33,10 @@ struct ContentView: View {
         VStack(spacing: 0) {
             UpdateBanner()
             if app.firstPracticeDone { mainView } else { FirstRunView() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // "Change shortcuts…" in the keyboard's menu opens Settings.
+            if let p = SharedSettings.takeRequestedPage().flatMap(Page.init(rawValue:)) { app.page = p }
         }
     }
 

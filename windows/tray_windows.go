@@ -39,6 +39,8 @@ const (
 	cmdSukunOff
 	cmdOptions
 	cmdQuit
+	cmdKeysReset
+	cmdKeysFirst // + index into hotkeyNames
 )
 
 func loadIcon(data []byte, name string) uintptr {
@@ -72,12 +74,27 @@ func trayData() notifyIconData {
 	d.UCallbackMessage = wmTray
 	if settings.Enabled {
 		d.HIcon = hIconOn
-		copyUTF16(d.SzTip[:], "Qalam: Arabic ON (Ctrl+Alt+A to switch)")
+		copyUTF16(d.SzTip[:], "Qalam: Arabic ON"+switchHint())
 	} else {
 		d.HIcon = hIconOff
-		copyUTF16(d.SzTip[:], "Qalam: Arabic OFF (Ctrl+Alt+A to switch)")
+		copyUTF16(d.SzTip[:], "Qalam: Arabic OFF"+switchHint())
 	}
 	return d
+}
+
+func switchHint() string {
+	if h := settings.hotkey("toggle"); h != nil {
+		return " (" + h.String() + " to switch)"
+	}
+	return " (click to switch)"
+}
+
+// keyTab puts the shortcut at the right edge of a menu item.
+func keyTab(name string) string {
+	if h := settings.hotkey(name); h != nil {
+		return "\t" + h.String()
+	}
+	return ""
 }
 
 func trayCall(op uintptr) {
@@ -134,19 +151,29 @@ func showMenu() {
 	sep := func() { pAppendMenuW.Call(menu, mfSeparator, 0, 0) }
 
 	o := settings.Options
-	item(cmdToggle, "Arabic typing\tCtrl+Alt+A", settings.Enabled)
+	item(cmdToggle, "Arabic typing"+keyTab("toggle"), settings.Enabled)
 	sep()
 	item(cmdEveryday, "Everyday style", o.Style == engine.Everyday)
 	item(cmdQuran, "Qur'an style (ٱ ـٰ ـٓ)", o.Style == engine.Quran)
 	sep()
 	item(cmdFull, "Full harakat", o.Harakat == engine.Full)
 	item(cmdAsTyped, "Only the harakat I type", o.Harakat == engine.AsTyped)
-	item(cmdNone, "No harakat", o.Harakat == engine.NoHarakat)
+	item(cmdNone, "No harakat"+keyTab("harakat"), o.Harakat == engine.NoHarakat)
 	sep()
 	item(cmdSukunSmart, "Sukūn: Smart (only where needed)", o.Sukun == engine.SukunSmart)
 	item(cmdSukunFull, "Sukūn: Full (every stop)", o.Sukun == engine.SukunFull)
-	item(cmdSukunOff, "Sukūn: Off\tCtrl+Alt+O", o.Sukun == engine.SukunOff)
+	item(cmdSukunOff, "Sukūn: Off"+keyTab("sukun"), o.Sukun == engine.SukunOff)
 	item(cmdOptions, "Show options while typing", !settings.NoOptions)
+
+	// Shortcuts submenu: click one, then press the new keys.
+	keys, _, _ := pCreatePopupMenu.Call()
+	for i, n := range hotkeyNames {
+		pAppendMenuW.Call(keys, mfString, uintptr(cmdKeysFirst+i),
+			uintptr(unsafe.Pointer(utf16Ptr(n.Title+": "+settings.hotkeyText(n.Name)+"   (change…)"))))
+	}
+	pAppendMenuW.Call(keys, mfSeparator, 0, 0)
+	pAppendMenuW.Call(keys, mfString, cmdKeysReset, uintptr(unsafe.Pointer(utf16Ptr("Reset to Ctrl+Alt+A / Ctrl+Alt+O"))))
+	pAppendMenuW.Call(menu, mfPopup, keys, uintptr(unsafe.Pointer(utf16Ptr("Shortcuts"))))
 	sep()
 	item(cmdDigits, "Arabic digits ١٢٣", o.ArabicDigits)
 	item(cmdSpelling, "Smart spelling (اللَّه، هَٰذَا)", o.SpellingWords)
@@ -209,7 +236,13 @@ func showMenu() {
 	case cmdQuit:
 		pDestroyWindow.Call(trayHwnd)
 		return
+	case cmdKeysReset:
+		settings.Keys = nil
+		updateTray()
 	default:
+		if i := int(cmd) - cmdKeysFirst; i >= 0 && i < len(hotkeyNames) {
+			startRecording(hotkeyNames[i].Name, hotkeyNames[i].Title)
+		}
 		return
 	}
 	saveSettings(settings)

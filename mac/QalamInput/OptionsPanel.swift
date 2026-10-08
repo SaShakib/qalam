@@ -23,7 +23,8 @@ final class OptionsPanel {
     /// For layout checks only.
     var snapshotView: NSView? { panel?.contentView }
 
-    func show(_ candidates: [Candidate], selected: Int, sukunOff: Bool, plain: Bool, near caret: NSRect) {
+    func show(_ candidates: [Candidate], selected: Int, sukunOff: Bool, plain: Bool, near caret: NSRect,
+              sukunKey: String?, harakatKey: String?) {
         let panel = self.panel ?? makePanel()
         self.panel = panel
 
@@ -36,8 +37,8 @@ final class OptionsPanel {
         }
 
         let buttons = NSStackView(views: [
-            button(sukunOff ? "Sukūn: Off" : "Sukūn: Smart", tip: "Control-Shift-O") { [weak self] in self?.onToggleSukun?() },
-            button(plain ? "Harakat: Off" : "Harakat: On", tip: nil) { [weak self] in self?.onToggleHarakat?() },
+            button(sukunOff ? "Sukūn: Off" : "Sukūn: Smart", key: sukunKey) { [weak self] in self?.onToggleSukun?() },
+            button(plain ? "Harakat: Off" : "Harakat: On", key: harakatKey) { [weak self] in self?.onToggleHarakat?() },
         ])
         buttons.orientation = .horizontal
         buttons.spacing = 6
@@ -137,15 +138,22 @@ final class OptionsPanel {
         return v
     }
 
-    private func button(_ title: String, tip: String?, action: @escaping () -> Void) -> NSView {
-        let label = NSTextField(labelWithString: title)
-        label.font = .systemFont(ofSize: 11, weight: .medium)
+    /// A button with its shortcut shown after the title (e.g. "Sukūn: Smart  ⌃⇧O").
+    private func button(_ title: String, key: String?, action: @escaping () -> Void) -> NSView {
+        let text = NSMutableAttributedString(string: title, attributes: [
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium), .foregroundColor: NSColor.labelColor])
+        if let key {
+            text.append(NSAttributedString(string: "  " + key, attributes: [
+                .font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor]))
+        }
+        let label = NSTextField(labelWithAttributedString: text)
         let v = ClickView(action: action)
+        v.toolTip = key.map { "Shortcut: \($0). Change it in Qalam → Settings → Shortcuts." }
+            ?? "Set a shortcut in Qalam → Settings → Shortcuts."
         v.wantsLayer = true
         v.layer?.cornerRadius = 5
         v.layer?.borderWidth = 1
         v.layer?.borderColor = NSColor.separatorColor.cgColor
-        v.toolTip = tip
         v.addSubview(label)
         label.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
