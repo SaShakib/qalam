@@ -1,6 +1,6 @@
 # Plan: Avro-style options and a smarter sukūn
 
-**Status:** plan for review (2026-10-08). Nothing is built yet.
+**Status:** built and released in 1.2.0 (2026-10-08). Decisions: no sukūn on the last letter; vowel-less words drop all marks; the panel shows on every word; it remembers per-word choices and the harakat habit; Sukūn Off means none at all, even from `o`.
 
 ## Why
 
