@@ -15,6 +15,9 @@ type Settings struct {
 	FirstRunDone bool `json:"firstRunDone"`
 	AskedInstall bool `json:"askedInstall"`
 	NoAutoUpdate bool `json:"noAutoUpdate"`
+	NoOptions    bool              `json:"noOptions"`    // hide the options panel (show only the word)
+	PrefersPlain bool              `json:"prefersPlain"` // last pick was a version without harakat
+	Learned      map[string]string `json:"learned"`      // typed word → the option picked for it
 }
 
 func settingsPath() string {

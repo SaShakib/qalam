@@ -191,3 +191,36 @@ alladhiy	الَّذِي	chromium
 lill^hi	لِ‍لّٰهِ	chromium
 lillaAhi lillaAhi	لِ‍لَّهِ لِ‍لَّهِ	chromium
 lillaAhi	لِلَّهِ
+# --- Smart sukūn (default in Everyday style): only at a stop inside the word
+maktab	مَكْتَب	smart
+maktabuN	مَكْتَبٌ	smart
+yaktubu	يَكْتُبُ	smart
+qul	قُل	smart
+bayt	بَيت	smart
+yawmuN	يَومٌ	smart
+Aaw	أَو	smart
+mu'minuN	مُؤْمِنٌ	smart
+bi'ruN	بِئْرٌ	smart
+ra's	رَأْس	smart
+alqamaru	الْقَمَرُ	smart
+alshamsu	الشَّمْسُ	smart
+Ainsaan	إِنْسَان	smart
+ismu	اِسْمُ	smart
+laAkin	لَٰكِن	smart
+maktabo	مَكْتَبْ	smart
+dhahaba alwaladu AilaY almadrasat'i.	ذَهَبَ الْوَلَدُ إِلَى الْمَدْرَسَةِ.	smart
+# --- no vowel typed → bare consonants (no marks at all)
+ktb	كتب	smart
+b	ب	smart
+qr'	قرء	smart
+qrA	قرا	smart
+rbb	ربب	smart
+mktbt'	مكتبة	smart
+# --- Qur'an style keeps sukūn on every stop
+qul	قُلْ	quran,smart
+alHamdu	ٱلْحَمْدُ	quran,smart
+# --- Sukūn off: none at all, even from o
+maktab	مَكتَب	sukunoff
+maktabo	مَكتَب	sukunoff
+qul	قُل	quran,sukunoff
+alqamaru	القَمَرُ	sukunoff

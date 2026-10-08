@@ -63,7 +63,7 @@ enum SpellingWords {
         if let v {
             s += tanween ? v.tanweenMark : v.mark
             if tanween && v == .a { s += AR.alif }
-        } else if e.open && o.harakat == .full {
+        } else if e.open && o.harakat == .full && Qalam.effectiveSukun(o) == .full {
             s += AR.sukun
         }
         return s

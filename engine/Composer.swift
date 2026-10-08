@@ -49,6 +49,9 @@ public struct Composer {
         }
     }
 
+    /// Drop the word being typed (the caller has inserted something else for it).
+    public mutating func reset() { buffer = "" }
+
     public mutating func flushActions(_ o: Options) -> [Action] {
         if buffer.isEmpty { return [] }
         let out = Qalam.word(buffer, o)

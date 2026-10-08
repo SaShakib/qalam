@@ -50,6 +50,16 @@ func isModifier(vk uint32) bool {
 	return false
 }
 
+var (
+	cands []engine.Candidate
+	sel   int
+)
+
+const (
+	vkUp   = 0x26
+	vkDown = 0x28
+)
+
 // onKeyDown returns true when Qalam handled the key.
 func onKeyDown(kb *kbdllHook) bool {
 	vk := kb.VkCode
@@ -58,13 +68,17 @@ func onKeyDown(kb *kbdllHook) bool {
 	alt := keyDown(vkMenu)
 	win := keyDown(vkLWin) || keyDown(vkRWin)
 	shift := keyDown(vkShift)
+	busy := composer.Buffer != ""
 
-	// Ctrl + Left Alt + A: switch Arabic on/off (Left Alt only, so AltGr+A still works).
-	if vk == 'A' && ctrl && leftAlt && !win {
-		if composer.Buffer != "" {
-			sendActions(flushAll())
+	// Ctrl + Left Alt + A: Arabic on/off.  Ctrl + Left Alt + O: sukūn Off ↔ Smart.
+	// (Left Alt only, so AltGr combinations on other layouts still work.)
+	if ctrl && leftAlt && !win && (vk == 'A' || vk == 'O') {
+		if vk == 'A' {
+			commitSelected()
+			toggle()
+		} else {
+			toggleSukun()
 		}
-		toggle()
 		return true
 	}
 	if !settings.Enabled || isModifier(vk) {
@@ -73,12 +87,24 @@ func onKeyDown(kb *kbdllHook) bool {
 
 	// Shortcuts (Ctrl+C, Alt+Tab…): finish the word, then let the shortcut through.
 	if ctrl || alt || win {
-		if composer.Buffer == "" {
+		if !busy {
 			return false
 		}
-		sendActions(flushAll())
-		hidePreview()
+		commitSelected()
 		reinject(vk, kb.Flags)
+		return true
+	}
+
+	// ↑ ↓ move through the options.
+	if busy && (vk == vkUp || vk == vkDown) {
+		if len(cands) > 0 {
+			step := 1
+			if vk == vkUp {
+				step = len(cands) - 1
+			}
+			sel = (sel + step) % len(cands)
+			showPanel(cands, sel, composer.Buffer)
+		}
 		return true
 	}
 
@@ -100,29 +126,156 @@ func onKeyDown(kb *kbdllHook) bool {
 		}
 	}
 
+	out := []string{}
+	// A key that ends the word puts in the highlighted option first.
+	if busy && finishesWord(key) {
+		out = append(out, takeSelected())
+		if key.Kind == engine.KeyEnter {
+			sendText(out)
+			return true
+		}
+	}
+
 	consumed, actions := composer.Handle(key, settings.Options)
-	commits := []string{}
 	for _, a := range actions {
 		if a.Commit {
-			commits = append(commits, a.Text)
+			out = append(out, a.Text)
 		} else {
-			showPreview(a.Text, composer.Buffer)
+			refreshOptions()
 		}
 	}
 	if composer.Buffer == "" {
+		cands = nil
 		hidePreview()
 	}
 	if consumed {
-		sendText(commits)
+		sendText(out)
 		return true
 	}
-	if len(commits) > 0 {
+	if len(out) > 0 {
 		// The word must arrive before the key that finished it, so swallow the key and send both.
-		sendText(commits)
+		sendText(out)
 		reinject(vk, kb.Flags)
 		return true
 	}
 	return false
+}
+
+func finishesWord(k engine.Key) bool {
+	switch k.Kind {
+	case engine.KeySpace, engine.KeyEnter, engine.KeyOther:
+		return true
+	case engine.KeyChar:
+		return !engine.Accepts(k.Char, composer.Buffer)
+	}
+	return false
+}
+
+// refreshOptions recomputes the options for the word being typed.
+func refreshOptions() {
+	if composer.Buffer == "" {
+		cands = nil
+		hidePreview()
+		return
+	}
+	cands = engine.Candidates(composer.Buffer, settings.Options)
+	sel = 0
+	if learned, ok := settings.Learned[composer.Buffer]; ok {
+		for i, c := range cands {
+			if stripZWJ(c.Text) == learned {
+				sel = i
+			}
+		}
+	} else if settings.PrefersPlain {
+		for i, c := range cands {
+			if c.Kind == "plain" {
+				sel = i
+			}
+		}
+	}
+	showPanel(cands, sel, composer.Buffer)
+}
+
+func stripZWJ(s string) string {
+	out := []rune{}
+	for _, r := range s {
+		if r != 0x200D {
+			out = append(out, r)
+		}
+	}
+	return string(out)
+}
+
+// takeSelected returns the highlighted option, remembers the choice and clears the word.
+func takeSelected() string {
+	if composer.Buffer == "" {
+		return ""
+	}
+	if len(cands) == 0 {
+		cands = engine.Candidates(composer.Buffer, settings.Options)
+		sel = 0
+	}
+	if sel >= len(cands) {
+		sel = 0
+	}
+	chosen := cands[sel]
+	if settings.Learned == nil || len(settings.Learned) > 5000 {
+		settings.Learned = map[string]string{}
+	}
+	settings.Learned[composer.Buffer] = stripZWJ(chosen.Text)
+	if chosen.Kind == "plain" {
+		settings.PrefersPlain = true
+	} else {
+		for _, c := range cands {
+			if c.Kind == "plain" && c.Text != chosen.Text {
+				settings.PrefersPlain = false
+			}
+		}
+	}
+	saveSettings(settings)
+	composer = engine.Composer{}
+	cands = nil
+	hidePreview()
+	return chosen.Text
+}
+
+// commitSelected types the highlighted option now (used before shortcuts).
+func commitSelected() {
+	if t := takeSelected(); t != "" {
+		sendText([]string{t})
+	}
+}
+
+// pickCandidate: a row in the panel was clicked.
+func pickCandidate(i int) {
+	if i < len(cands) {
+		sel = i
+		commitSelected()
+	}
+}
+
+func toggleSukun() {
+	if settings.Sukun == engine.SukunOff {
+		settings.Sukun = engine.SukunSmart
+	} else {
+		settings.Sukun = engine.SukunOff
+	}
+	saveSettings(settings)
+	if composer.Buffer != "" {
+		refreshOptions()
+	}
+}
+
+func toggleHarakat() {
+	if settings.Harakat == engine.NoHarakat {
+		settings.Harakat = engine.Full
+	} else {
+		settings.Harakat = engine.NoHarakat
+	}
+	saveSettings(settings)
+	if composer.Buffer != "" {
+		refreshOptions()
+	}
 }
 
 func flushAll() []engine.Action {

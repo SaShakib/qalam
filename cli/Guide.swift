@@ -257,6 +257,9 @@ function help(){
   <li>While you type a word, it shows in a small preview box. <kbd>Space</kbd>, <kbd>Enter</kbd> or punctuation puts it into your document.</li>
   <li><kbd>Backspace</kbd> removes the last English key; <kbd>Esc</kbd> gives back the English letters.</li>
   <li>Right-click the ق tray icon for Everyday / Qur'an style, harakat, Arabic digits, start with Windows, and uninstall.</li>
+  <li>While you type, a panel shows up to 4 versions of the word (as typed, another alif/hamza, no harakat, small alif). <kbd>↑</kbd>/<kbd>↓</kbd> choose, <kbd>Space</kbd> inserts, or click one. Qalam remembers your pick.</li>
+  <li>Sukūn is <b>Smart</b>: only at a stop inside a word (مَكْتَب، قُل). Type <code>o</code> to add one yourself. <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>O</kbd> (or the panel button) switches sukūn off completely.</li>
+  <li>Type a word with no vowels to get bare letters: <code>ktb</code> → كتب.</li>
   <li>Long vowels can be typed two ways: <code>aA</code>=<code>aa</code>, <code>iy</code>=<code>ii</code>, <code>uw</code>=<code>uu</code>. A voweled hamza too: <code>saAala</code>=<code>sa'ala</code>.</li></ul>`;
 }
 

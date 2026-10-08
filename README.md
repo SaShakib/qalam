@@ -56,6 +56,12 @@ Qalam checks GitHub for a new version when it starts and once a day.
 - **macOS:** Settings → Updates has **Check for updates now**, **Install update**, and switches for automatic checking and installing. How it installs depends on how you installed Qalam: an install.sh copy updates itself in place, Homebrew runs `brew upgrade --cask qalam`, and the .pkg downloads the new installer for you. If you had the keyboard turned on, it stays on after an update.
 - **Windows:** the tray menu has **Check for updates…** and **Install updates automatically**. Qalam swaps in the new .exe and restarts by itself.
 
+## Options and sukūn (1.2)
+
+- **Options while you type, like Avro.** ↑/↓ choose between up to 4 versions: as typed, another alif/hamza (قَرَا / قَرَأ / قَرَأَ), no harakat, small alif (لِلّٰهِ). Qalam remembers what you pick.
+- **Smart sukūn** (default): only at a stop inside a word (مَكْتَب، قُل، بَيت). `o` adds one by hand. **Off** (Control-Shift-O / Ctrl+Alt+O, or the panel button) means no sukūn at all.
+- **No vowels typed → bare letters:** `ktb` → كتب.
+
 ## Typing in short
 
 | Type | Gets | Type | Gets |

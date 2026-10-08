@@ -34,6 +34,10 @@ const (
 	cmdUninstall
 	cmdCheckUpdate
 	cmdAutoUpdate
+	cmdSukunSmart
+	cmdSukunFull
+	cmdSukunOff
+	cmdOptions
 	cmdQuit
 )
 
@@ -135,9 +139,14 @@ func showMenu() {
 	item(cmdEveryday, "Everyday style", o.Style == engine.Everyday)
 	item(cmdQuran, "Qur'an style (ٱ ـٰ ـٓ)", o.Style == engine.Quran)
 	sep()
-	item(cmdFull, "Full harakat (automatic sukūn)", o.Harakat == engine.Full)
+	item(cmdFull, "Full harakat", o.Harakat == engine.Full)
 	item(cmdAsTyped, "Only the harakat I type", o.Harakat == engine.AsTyped)
 	item(cmdNone, "No harakat", o.Harakat == engine.NoHarakat)
+	sep()
+	item(cmdSukunSmart, "Sukūn: Smart (only where needed)", o.Sukun == engine.SukunSmart)
+	item(cmdSukunFull, "Sukūn: Full (every stop)", o.Sukun == engine.SukunFull)
+	item(cmdSukunOff, "Sukūn: Off\tCtrl+Alt+O", o.Sukun == engine.SukunOff)
+	item(cmdOptions, "Show options while typing", !settings.NoOptions)
 	sep()
 	item(cmdDigits, "Arabic digits ١٢٣", o.ArabicDigits)
 	item(cmdSpelling, "Smart spelling (اللَّه، هَٰذَا)", o.SpellingWords)
@@ -181,6 +190,14 @@ func showMenu() {
 	case cmdStartup:
 		setStartup(!startupEnabled())
 		return
+	case cmdSukunSmart:
+		settings.Sukun = engine.SukunSmart
+	case cmdSukunFull:
+		settings.Sukun = engine.SukunFull
+	case cmdSukunOff:
+		settings.Sukun = engine.SukunOff
+	case cmdOptions:
+		settings.NoOptions = !settings.NoOptions
 	case cmdCheckUpdate:
 		go checkForUpdate(true)
 		return

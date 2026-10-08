@@ -5,6 +5,8 @@ struct SettingsView: View {
     @EnvironmentObject var app: AppState
     @EnvironmentObject var updater: Updater
     @State private var enabled = InputSource.isEnabled
+    @State private var showOptions = SharedSettings.showOptions
+    @State private var forgotten = false
 
     var body: some View {
         Form {
@@ -14,6 +16,21 @@ struct SettingsView: View {
                 }
                 Picker("Harakat", selection: $app.options.harakat) {
                     ForEach(HarakatMode.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Sukūn", selection: $app.options.sukun) {
+                    ForEach(SukunMode.allCases) { Text($0.title).tag($0) }
+                }
+                Text("Smart: only at a stop inside a word (مَكْتَب، قُل، بَيت); typing o always adds one. Off: none at all (Control-Shift-O or the button in the options panel). Words typed with no vowels come out as bare letters (ktb → كتب).")
+                    .font(.caption).foregroundStyle(.secondary)
+                Toggle("Show options while typing (↑↓ to choose, like Avro)", isOn: $showOptions)
+                    .onChange(of: showOptions) { SharedSettings.showOptions = $0 }
+                HStack {
+                    Button(forgotten ? "Forgotten ✓" : "Forget what I picked") {
+                        SharedSettings.forgetChoices()
+                        forgotten = true
+                    }
+                    Text("Qalam remembers the option you pick for each word, only on this Mac.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 Toggle("Smart spelling words (اللَّه، هَٰذَا، ذَٰلِكَ، الَّذِي …)", isOn: $app.options.spellingWords)
                 Toggle("Arabic digits (١٢٣)", isOn: $app.options.arabicDigits)

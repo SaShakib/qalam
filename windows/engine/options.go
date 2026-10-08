@@ -15,9 +15,20 @@ const (
 	NoHarakat
 )
 
+// SukunMode: Smart = only at a stop inside a word (`o` always adds one);
+// Full = on every vowel-less letter; Off = none at all.
+type SukunMode int
+
+const (
+	SukunSmart SukunMode = iota
+	SukunFull
+	SukunOff
+)
+
 type Options struct {
 	Style           Style   `json:"style"`
 	Harakat         Harakat `json:"harakat"`
+	Sukun           SukunMode `json:"sukun"`
 	QuranSmallSukun bool    `json:"quranSmallSukun"`
 	SpellingWords   bool    `json:"spellingWords"`
 	ArabicDigits    bool    `json:"arabicDigits"`

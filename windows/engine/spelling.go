@@ -83,7 +83,7 @@ func buildSpelling(e spellEntry, v V, tanween bool, o Options) string {
 		} else {
 			s += v.mark()
 		}
-	} else if e.open && o.Harakat == Full {
+	} else if e.open && o.Harakat == Full && EffectiveSukun(o) == SukunFull {
 		s += sukun
 	}
 	return s

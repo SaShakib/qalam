@@ -16,6 +16,7 @@ struct Unit {
     var wordStart = false       // first letter of the whole word
     var isMadd = false          // و / ي that only lengthen the vowel before them
     var assimilated = false     // article lām before a sun letter
+    var doubled = false         // shadda came from typing the letter twice
 
     init(_ kind: Kind, _ base: String) {
         self.kind = kind
@@ -46,8 +47,40 @@ public enum Qalam {
         markMadd(&units)
         seatHamzas(&units)
         insertTanweenAlif(&units)
-        if o.harakat == .full { autoSukun(&units) }
-        return finish(render(units, o), o)
+        let mode = effectiveSukun(o)
+        if o.harakat == .full {
+            switch mode {
+            case .full: autoSukun(&units)
+            case .smart: smartSukun(&units)
+            case .off: break
+            }
+        }
+        var out = render(units, o)
+        // No vowel typed anywhere in the word → bare consonants (dictionary / skeleton writing).
+        // A doubled letter stays two letters there (rbb → ربب).
+        if mode != .full && o.harakat != .none && !hasTypedMarks(toks) {
+            var flat: [Unit] = []
+            for u in units {
+                if u.doubled { var a = u; a.shadda = false; flat.append(a); flat.append(a) } else { flat.append(u) }
+            }
+            out = AR.stripHarakat(render(flat, o))
+        }
+        return finish(out, o)
+    }
+
+    /// Qur'an style keeps sukūn on every stop unless sukūn is switched off.
+    public static func effectiveSukun(_ o: Options) -> SukunMode {
+        o.style == .quran && o.sukun == .smart ? .full : o.sukun
+    }
+
+    /// Did the user type any vowel or mark (a i u, tanwīn, o ~ ^ =, Qur'an codes)?
+    static func hasTypedMarks(_ toks: [Tok]) -> Bool {
+        toks.contains { t in
+            switch t {
+            case .vowel, .tanween, .sukun, .shadda, .dagger, .maddah, .mark, .literal: return true
+            default: return false
+            }
+        }
     }
 
     /// Transliterate running text: words, spaces, punctuation, numbers.
@@ -176,6 +209,7 @@ public enum Qalam {
             case .letter(let L):
                 if !lastWasSep, inChunk, let li, units[li].kind == .consonant, units[li].base == L, units[li].isBare {
                     units[li].shadda = true          // doubled letter → shadda
+                    units[li].doubled = true
                 } else {
                     add(Unit(.consonant, L), &units, start)
                 }
@@ -385,6 +419,26 @@ public enum Qalam {
         }
     }
 
+    /// Smart sukūn: only on a letter that has a vowel before it and another letter right after it
+    /// (a real stop inside the word). Never on the last letter, and never on ي / و after fatḥa (ay, aw).
+    static func smartSukun(_ units: inout [Unit]) {
+        for i in units.indices {
+            let u = units[i]
+            guard u.kind == .consonant || u.kind == .hamza || u.kind == .articleLam else { continue }
+            if u.vowel != nil || u.tanween != nil || u.shadda || u.sukun || u.isMadd || u.assimilated || u.blocksSukun { continue }
+            guard i + 1 < units.count else { continue }
+            let next = units[i + 1]
+            let nextIsLetter = [.consonant, .hamza, .taMarbuta, .madda, .articleLam].contains(next.kind)
+            guard nextIsLetter else { continue }
+            if u.kind == .articleLam { units[i].sukun = true; continue }   // الْقَمَر
+            guard i > 0 else { continue }
+            let p = units[i - 1]
+            if (u.base == AR.ya || u.base == AR.waw) && p.vowel == .a { continue }   // بَيت، يَوم
+            let prevVoweled = p.vowel != nil || p.tanween != nil || p.kind == .alif || p.kind == .madda || p.isMadd || p.hasDagger
+            if prevVoweled { units[i].sukun = true }
+        }
+    }
+
     // MARK: Output
 
     /// Inserts U+200D (zero-width joiner) between the two lāms of ل‌ل‌ه (ignoring marks), so fonts
@@ -442,8 +496,11 @@ public enum Qalam {
     }
 
     static func finish(_ s: String, _ o: Options) -> String {
-        let s = o.blockAllahLigature ? blockAllahLigature(s) : s
+        var s = o.blockAllahLigature ? blockAllahLigature(s) : s
         if o.harakat == .none { return AR.stripHarakat(s) }
+        if o.sukun == .off {
+            s = String(String.UnicodeScalarView(s.unicodeScalars.filter { $0.value != 0x0652 && $0.value != 0x06E1 }))
+        }
         if o.style == .quran && o.quranSmallSukun {
             let from = AR.sukun.unicodeScalars.first!, to = AR.quranSukun.unicodeScalars.first!
             var out = String.UnicodeScalarView()

@@ -19,6 +19,9 @@ func flags(_ list: [String], into o: inout Options) {
         case "nospelling": o.spellingWords = false
         case "digits": o.arabicDigits = true
         case "chromium": o.blockAllahLigature = true
+        case "smart": o.sukun = .smart
+        case "sukunoff": o.sukun = .off
+        case "fullsukun": o.sukun = .full
         default: break
         }
     }
@@ -38,6 +41,7 @@ func runTests(_ path: String) -> Int32 {
         let cols = line.components(separatedBy: "\t")
         guard cols.count >= 2 else { print("line \(n + 1): needs input<TAB>expected"); fail += 1; continue }
         var opt = Options()
+        opt.sukun = .full   // the older cases were written for full sukūn; new ones say "smart" / "sukunoff"
         if cols.count >= 3 { flags(cols[2].components(separatedBy: ","), into: &opt) }
         let got = Qalam.text(cols[0], opt)
         if got == cols[1] {
@@ -78,6 +82,24 @@ if args.first == "--guide", args.count >= 2 {
     let html = Guide.build(platform: platform, fontsDir: "fonts")
     try! html.write(toFile: args[1], atomically: true, encoding: .utf8)
     print("wrote \(args[1]) (\(html.utf8.count / 1024) KB)")
+    exit(0)
+}
+
+if args.first == "--cands-tsv", args.count >= 2 {
+    // qalam --cands-tsv words.txt  → typed<TAB>c1|c2|c3|c4 (default options)
+    let words = (try? String(contentsOfFile: args[1], encoding: .utf8))?.split(separator: "\n").map(String.init) ?? []
+    for w in words where !w.isEmpty { print(w + "\t" + Qalam.candidates(w, Options()).map(\.text).joined(separator: "|")) }
+    exit(0)
+}
+
+if args.first == "--cands" {
+    var co = Options()
+    var words: [String] = []
+    for a in args.dropFirst() { if a.hasPrefix("--") { flags([String(a.dropFirst(2))], into: &co) } else { words.append(a) } }
+    for w in words {
+        print(w)
+        for (i, c) in Qalam.candidates(w, co).enumerated() { print("  \(i + 1). \(c.text)   [\(c.kind.rawValue)] \(c.label)") }
+    }
     exit(0)
 }
 

@@ -223,12 +223,17 @@ struct PracticeView: View {
         var out: [String] = []
         for style in [item.style, item.style == .quran ? Style.everyday : Style.quran] {
             for harakat in [HarakatMode.full, app.options.harakat] {
-                for small in [false, true] {
-                    var o = app.options
-                    o.style = style
-                    o.harakat = harakat
-                    o.quranSmallSukun = small
-                    out.append(Qalam.text(item.latin, o))
+                for sukun in SukunMode.allCases {
+                    for small in [false, true] {
+                        var o = app.options
+                        o.style = style
+                        o.harakat = harakat
+                        o.sukun = sukun
+                        o.quranSmallSukun = small
+                        out.append(Qalam.text(item.latin, o))
+                        // any option offered in the panel counts too (single words)
+                        if !item.latin.contains(" ") { out += Qalam.candidates(item.latin, o).map(\.text) }
+                    }
                 }
             }
         }

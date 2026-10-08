@@ -1,5 +1,7 @@
 # Qalam: Key Layout, v2 ("spell it")
 
+> **New in 1.2:** options while you type, and smart sukūn. See [Options and sukūn](#options-and-sukūn) at the end.
+
 **The idea:** type a word the way you spell it in Arabic, **letter, then its haraka, letter, then its haraka**.
 
 ```
@@ -183,3 +185,31 @@ Think of it as "t with a mark". It only ever comes at the end of a word. A hamza
 | `hal fahimta?` | هَلْ فَهِمْتَ؟ |
 | *(Qur'an)* `qul huwa allaAhu AaHaduN` | قُلْ هُوَ ٱللَّهُ أَحَدٌ |
 | *(Qur'an)* `alHamdu lillaAhi rabbi alea^lamiyna` | ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ |
+
+
+---
+
+## Options and sukūn
+
+**Options while you type (like Avro).** A small panel under the word shows up to 4 versions. The first is always what you typed; the others can be a different alif or hamza (`qaraA` → قَرَا / قَرَأ / قَرَأَ), no harakat (كتاب), small alif (لِلّٰهِ) or with sukūn.
+
+| Key | Does |
+|---|---|
+| ↑ / ↓ | choose a version |
+| Space, Enter, punctuation | insert the highlighted version |
+| click a row | insert that version |
+| Esc | give back the English letters |
+
+Qalam remembers what you pick for each word, and your harakat habit: pick a version without harakat, and the next words start without harakat too. Settings → **Forget what I picked** clears it.
+
+**Sukūn**
+
+| Setting | What happens | Example |
+|---|---|---|
+| **Smart** (default) | Only at a stop inside a word: a letter with a vowel before it and another letter after it. Never on the last letter, never on ي/و after fatḥa. `o` always adds one. | `maktab` → مَكْتَب, `qul` → قُل, `bayt` → بَيت, `maktabo` → مَكْتَبْ |
+| **Full** | On every letter without a vowel (Qur'an style always works this way) | `maktab` → مَكْتَبْ |
+| **Off** | No sukūn at all, not even from `o` | `maktabo` → مَكتَب |
+
+Switch Off ↔ Smart with **Control-Shift-O** (Mac) or **Ctrl+Alt+O** (Windows), or with the button in the options panel.
+
+**No vowels typed → bare letters.** A word with no a, i or u (and no aa, ii or uu) comes out with no marks at all, which is handy for dictionary search: `ktb` → كتب, `qr'` → قرء (the options offer قرأ / قرئ / قرؤ), `rbb` → ربب.

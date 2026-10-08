@@ -21,6 +21,7 @@ func TestGoldenCases(t *testing.T) {
 		}
 		cols := strings.Split(line, "\t")
 		o := DefaultOptions()
+		o.Sukun = SukunFull // older cases were written for full sukūn
 		if len(cols) >= 3 {
 			for _, f := range strings.Split(cols[2], ",") {
 				switch f {
@@ -38,6 +39,12 @@ func TestGoldenCases(t *testing.T) {
 					o.ArabicDigits = true
 				case "chromium":
 					o.BlockAllahLigature = true
+				case "smart":
+					o.Sukun = SukunSmart
+				case "sukunoff":
+					o.Sukun = SukunOff
+				case "fullsukun":
+					o.Sukun = SukunFull
 				}
 			}
 		}
@@ -49,6 +56,31 @@ func TestGoldenCases(t *testing.T) {
 		}
 	}
 	t.Logf("%d passed", pass)
+}
+
+// The Go options must match the Swift ones (tests/candidates.tsv is written by `qalam --cands-tsv`).
+func TestCandidatesMatchSwift(t *testing.T) {
+	data, err := os.ReadFile("../../tests/candidates.tsv")
+	if err != nil {
+		t.Skip("no candidates.tsv")
+	}
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		cols := strings.SplitN(line, "\t", 2)
+		if len(cols) != 2 {
+			continue
+		}
+		got := []string{}
+		for _, c := range Candidates(cols[0], DefaultOptions()) {
+			got = append(got, canonical(c.Text))
+		}
+		want := []string{}
+		for _, w := range strings.Split(cols[1], "|") {
+			want = append(want, canonical(w))
+		}
+		if strings.Join(got, "|") != strings.Join(want, "|") {
+			t.Errorf("%s:\n  swift %s\n  go    %s", cols[0], strings.Join(want, " | "), strings.Join(got, " | "))
+		}
+	}
 }
 
 // canonical decomposes the precomposed hamza/madda letters and orders marks by

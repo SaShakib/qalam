@@ -126,7 +126,7 @@ public enum Content {
     /// Twenty real words, each teaching one thing that is not obvious.
     public static let starter: [PracticeItem] = [
         ("kitaAbuN", "a book", "letter, then its haraka · A = alif (long ā) · uN = tanwīn"),
-        ("qul", "say!", "no haraka after a letter → sukūn appears by itself"),
+        ("maktabuN", "a desk", "a letter with no haraka between two others gets sukūn by itself (كْ)"),
         ("mudarrisuN", "a teacher", "type a letter twice → shadda (rr = رّ)"),
         ("yaquwlu", "he says", "uw = long ū (uu works too)"),
         ("dhahaba", "he went", "dh = ذ"),
@@ -155,7 +155,7 @@ public enum Content {
         KeyRow(shows: "ـُ", name: "ḍamma", keys: "u", example: "kutubuN"),
         KeyRow(shows: "ـٌ  ـٍ  ـً", name: "tanwīn", keys: "uN   iN   aN", example: "kitaAbaN"),
         KeyRow(shows: "ـّ", name: "shadda", keys: "type the letter twice", example: "rabbi"),
-        KeyRow(shows: "ـْ", name: "sukūn", keys: "nothing (automatic)", example: "qul"),
+        KeyRow(shows: "ـْ", name: "sukūn", keys: "automatic at a stop · o by hand", example: "maktab"),
         KeyRow(shows: "ـَا", name: "long ā", keys: "aA  or  aa", example: "qaAla"),
         KeyRow(shows: "ـِي", name: "long ī", keys: "iy  or  ii", example: "kabiyruN"),
         KeyRow(shows: "ـُو", name: "long ū", keys: "uw  or  uu", example: "yaquwlu"),

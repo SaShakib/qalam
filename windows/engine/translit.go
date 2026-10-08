@@ -31,6 +31,7 @@ type unit struct {
 	wordStart   bool
 	isMadd      bool
 	assimilated bool
+	doubled     bool
 }
 
 func (u *unit) hasDagger() bool {
@@ -75,10 +76,85 @@ func Word(input string, o Options) string {
 	markMadd(units)
 	units = seatHamzas(units)
 	units = insertTanweenAlif(units)
+	mode := EffectiveSukun(o)
 	if o.Harakat == Full {
-		autoSukun(units)
+		switch mode {
+		case SukunFull:
+			autoSukun(units)
+		case SukunSmart:
+			smartSukun(units)
+		}
 	}
-	return finish(render(units, o), o)
+	toks := tokenize(input, o)
+	out := render(units, o)
+	// No vowel typed anywhere → bare consonants; a doubled letter stays two letters.
+	if mode != SukunFull && o.Harakat != NoHarakat && !hasTypedMarks(toks) {
+		flat := []unit{}
+		for _, u := range units {
+			if u.doubled {
+				a := u
+				a.shadda = false
+				flat = append(flat, a, a)
+			} else {
+				flat = append(flat, u)
+			}
+		}
+		out = stripHarakat(render(flat, o))
+	}
+	return finish(out, o)
+}
+
+// EffectiveSukun: Qur'an style keeps sukūn on every stop unless sukūn is off.
+func EffectiveSukun(o Options) SukunMode {
+	if o.Style == Quran && o.Sukun == SukunSmart {
+		return SukunFull
+	}
+	return o.Sukun
+}
+
+func hasTypedMarks(toks []tok) bool {
+	for _, t := range toks {
+		switch t.k {
+		case tVowel, tTanween, tSukun, tShadda, tDagger, tMaddah, tMark, tLiteral:
+			return true
+		}
+	}
+	return false
+}
+
+// smartSukun: only on a letter with a vowel before it and another letter right after it.
+func smartSukun(units []unit) {
+	for i := range units {
+		u := &units[i]
+		if u.kind != kConsonant && u.kind != kHamza && u.kind != kArticleLam {
+			continue
+		}
+		if u.vowel != vNone || u.tanween != vNone || u.shadda || u.sukun || u.isMadd || u.assimilated || u.blocksSukun() {
+			continue
+		}
+		if i+1 >= len(units) {
+			continue
+		}
+		switch units[i+1].kind {
+		case kConsonant, kHamza, kTaMarbuta, kMadda, kArticleLam:
+		default:
+			continue
+		}
+		if u.kind == kArticleLam {
+			u.sukun = true
+			continue
+		}
+		if i == 0 {
+			continue
+		}
+		p := units[i-1]
+		if (u.base == ya || u.base == waw) && p.vowel == vA {
+			continue
+		}
+		if p.vowel != vNone || p.tanween != vNone || p.kind == kAlif || p.kind == kMadda || p.isMadd || p.hasDagger() {
+			u.sukun = true
+		}
+	}
 }
 
 // Text transliterates running text: words, spaces, punctuation, numbers.
@@ -244,6 +320,7 @@ func process(toks []tok, units []unit, start int) []unit {
 		case tLetter:
 			if !lastWasSep && inChunk && units[li].kind == kConsonant && units[li].base == t.s && units[li].isBare() {
 				units[li].shadda = true
+				units[li].doubled = true
 			} else {
 				units = add(units, unit{kind: kConsonant, base: t.s}, start)
 			}
@@ -545,6 +622,9 @@ func finish(s string, o Options) string {
 	}
 	if o.Harakat == NoHarakat {
 		return stripHarakat(s)
+	}
+	if o.Sukun == SukunOff {
+		s = strings.NewReplacer(sukun, "", quranSukun, "").Replace(s)
 	}
 	if o.Style == Quran && o.QuranSmallSukun {
 		return strings.ReplaceAll(s, sukun, quranSukun)
