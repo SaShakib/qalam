@@ -5,3 +5,6 @@ dist/
 # Built by `make wasm` / `make site` (CI builds them for the website)
 website/demo/qalam.wasm
 website/demo/wasm_exec.js
+
+# Rendered video (node video/render.js)
+video/out/

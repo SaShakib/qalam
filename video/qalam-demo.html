@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Qalam Demo Video</title>
+<!--
+  The 30-second demo video, as an animation. Every frame is drawn from a time t (seconds) by
+  renderAt(t), so `node video/render.js` can capture it frame by frame into an MP4.
+  Open this file in a browser (from the repository, after `make wasm`) and it plays live.
+  The Arabic is produced by the real Qalam engine (website/demo/qalam.wasm).
+-->
+<style>
+  @font-face { font-family: "Naskh"; src: url("../fonts/NotoNaskhArabic.ttf"); }
+  @font-face { font-family: "AmiriQ"; src: url("../fonts/AmiriQuran.ttf"); }
+  :root {
+    --bg: #f4f1e8; --card: #ffffff; --ink: #18201c; --muted: #66716b; --line: #e2ddd0;
+    --accent: #0f7b5f; --accent-soft: #e2f1ea; --gold: #b07d2b; --dark: #0d1f19;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--dark); }
+  body { font-family: Inter, "DejaVu Sans", sans-serif; color: var(--ink); }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    background: radial-gradient(1200px 700px at 15% 10%, #fbf8f0, transparent 70%),
+                radial-gradient(900px 600px at 90% 95%, #e8efe6, transparent 70%), var(--bg); }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .ar { font-family: "Naskh", serif; direction: rtl; }
+  .q { font-family: "AmiriQ", "Naskh", serif; }
+  .mono { font-family: "DejaVu Sans Mono", monospace; }
+
+  /* Title and end cards */
+  .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .logo { font-family: "Naskh", serif; font-size: 260px; color: var(--accent); line-height: 1.1; }
+  .name { font-size: 76px; font-weight: 800; letter-spacing: -1px; margin-top: 10px; }
+  .tag { font-size: 44px; color: var(--muted); margin-top: 12px; }
+  .example { margin-top: 46px; display: flex; gap: 28px; align-items: center; font-size: 46px; }
+  .key { display: inline-block; font: 600 40px "DejaVu Sans Mono", monospace; background: var(--accent-soft); border: 2px solid #c9dfd5; border-bottom-width: 5px; border-radius: 14px; padding: 8px 20px; }
+  .arrow { color: var(--muted); font-size: 46px; }
+  .pill { display: inline-block; background: var(--accent); color: #fff; font-size: 46px; font-weight: 700; padding: 18px 40px; border-radius: 999px; margin-top: 40px; }
+  .platforms { font-size: 52px; font-weight: 700; margin-top: 18px; }
+
+  /* The app window */
+  .window { position: absolute; left: 160px; top: 80px; width: 1600px; height: 700px; background: var(--card); border-radius: 26px;
+    box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 30px 80px rgba(20,40,30,.18); overflow: hidden; border: 1px solid var(--line); }
+  .bar { height: 64px; background: #f7f5ef; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 24px; gap: 12px; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; }
+  .bar .title { margin-left: 18px; font-size: 24px; color: var(--muted); font-weight: 600; }
+  .bar .chips { margin-left: auto; display: flex; gap: 12px; }
+  .chip { font-size: 22px; font-weight: 600; padding: 7px 16px; border-radius: 999px; background: #eeebe2; color: var(--muted); transition: none; }
+  .chip.on { background: var(--accent); color: #fff; }
+  .chip.flash { background: var(--gold); color: #fff; }
+  .doc { position: absolute; top: 64px; left: 0; right: 0; bottom: 0; padding: 70px 90px; }
+  .text { font-family: "Naskh", serif; font-size: 96px; line-height: 1.9; direction: rtl; text-align: right; white-space: pre-wrap; min-height: 200px; }
+  .text.q { font-family: "AmiriQ", "Naskh", serif; font-size: 92px; }
+  .text .word { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 5px; text-underline-offset: 26px; }
+  .text .caret { display: inline-block; width: 5px; height: 100px; background: var(--accent); vertical-align: middle; margin: 0 4px; }
+  .latin { position: absolute; left: 90px; bottom: 60px; font-size: 36px; color: var(--muted); }
+  .latin b { color: var(--ink); font-family: "DejaVu Sans Mono", monospace; font-weight: 600; }
+
+  /* Options panel */
+  .panel { position: absolute; width: 640px; background: #fff; border: 2px solid var(--line); border-radius: 22px; box-shadow: 0 18px 50px rgba(20,40,30,.18); overflow: hidden; }
+  .opt { display: flex; align-items: center; gap: 22px; padding: 10px 26px; border-top: 1px solid var(--line); }
+  .opt:first-child { border-top: 0; }
+  .opt.sel { background: var(--accent-soft); }
+  .opt .n { font: 600 24px "DejaVu Sans Mono", monospace; color: var(--muted); width: 26px; }
+  .opt .t { font-family: "Naskh", serif; font-size: 56px; direction: rtl; flex: 1; text-align: right; line-height: 1.5; }
+  .opt .l { font-size: 22px; color: var(--muted); width: 210px; }
+  .panel .btns { display: flex; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--line); background: #faf9f5; }
+  .panel .btn { font-size: 20px; font-weight: 600; padding: 6px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+
+  /* Setup wizard */
+  .wizard { position: absolute; left: 260px; top: 110px; width: 1400px; height: 720px; background: var(--card); border-radius: 26px; border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(20,40,30,.18); padding: 50px 64px; overflow: hidden; }
+  .wizard h2 { font-size: 50px; font-weight: 800; display: flex; align-items: center; gap: 22px; }
+  .wizard h2 .ar { color: var(--accent); font-size: 64px; }
+  .steps { display: flex; gap: 8px; margin: 26px 0 36px; flex-wrap: nowrap; }
+  .step { font-size: 18px; white-space: nowrap; padding: 7px 12px; border-radius: 999px; background: #eeebe2; color: var(--muted); }
+  .step.done { background: var(--accent-soft); color: var(--accent); }
+  .step.on { background: var(--accent); color: #fff; }
+  .pane { position: absolute; left: 64px; right: 64px; top: 240px; opacity: 0; }
+  .pane h3 { font-size: 40px; margin-bottom: 26px; }
+  .cards { display: flex; gap: 26px; }
+  .card { flex: 1; border: 3px solid var(--line); border-radius: 20px; padding: 24px 28px; }
+  .card.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .card .t { font-size: 32px; font-weight: 700; }
+  .card .d { font-size: 22px; color: var(--muted); margin-top: 4px; }
+  .card .ar { font-size: 50px; text-align: right; margin-top: 10px; line-height: 1.7; }
+  .ok { font-size: 38px; color: var(--accent); font-weight: 700; display: flex; align-items: center; gap: 18px; }
+  .ok .big { font-size: 60px; }
+
+  /* Keys pressed */
+  .keys { position: absolute; left: 160px; top: 812px; display: flex; gap: 14px; align-items: center; opacity: 0; }
+  .keys .key { font-size: 34px; background: #fff; border-color: var(--line); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+  .keys .key.down { background: var(--accent); color: #fff; border-color: var(--accent); transform: translateY(3px); }
+  .keys .hint { font-size: 26px; color: var(--muted); }
+
+  /* Subtitles */
+  .sub { position: absolute; left: 0; right: 0; bottom: 52px; text-align: center; pointer-events: none; }
+  .sub span { display: inline-block; max-width: 1760px; font-size: 40px; font-weight: 600; line-height: 1.35; color: #fff;
+    background: rgba(13, 31, 25, .86); padding: 12px 30px; border-radius: 14px; }
+  .progress { position: absolute; left: 0; bottom: 0; height: 8px; background: var(--accent); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- 1. Title -->
+  <div class="scene" id="s-title"><div class="center">
+    <div class="logo">قَلَم</div>
+    <div class="name">Qalam</div>
+    <div class="tag">Type Arabic the way you spell it</div>
+    <div class="example"><span class="key">kitaAbuN</span><span class="arrow">→</span><span class="ar" style="font-size:84px" id="title-ex"></span></div>
+  </div></div>
+
+  <!-- 2. Setup -->
+  <div class="scene" id="s-setup">
+    <div class="wizard">
+      <h2><span class="ar">قَلَم</span> Set up Qalam</h2>
+      <div class="steps" id="steps"></div>
+      <div class="pane" id="p-keyboard">
+        <h3>Turn on the Qalam keyboard</h3>
+        <div class="ok"><span class="big">✓</span> Qalam is in your keyboards. Switch with 🌐 or Ctrl+Alt+A.</div>
+      </div>
+      <div class="pane" id="p-style">
+        <h3>Writing style</h3>
+        <div class="cards">
+          <div class="card" id="c-every"><div class="t">Everyday</div><div class="d">Books, messages, notes</div><div class="ar" id="prev-every"></div></div>
+          <div class="card" id="c-quran"><div class="t">Qur'an (Uthmani)</div><div class="d">As in the mushaf</div><div class="ar q" id="prev-quran"></div></div>
+        </div>
+      </div>
+      <div class="pane" id="p-marks">
+        <h3>Harakat and sukūn</h3>
+        <div class="cards">
+          <div class="card sel"><div class="t">Smart sukūn</div><div class="d">Only where needed</div><div class="ar" id="prev-smart"></div></div>
+          <div class="card"><div class="t">Full sukūn</div><div class="d">Every stop</div><div class="ar" id="prev-full"></div></div>
+          <div class="card"><div class="t">No harakat</div><div class="d">Plain letters</div><div class="ar" id="prev-none"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3–6. Typing in an app -->
+  <div class="scene" id="s-app">
+    <div class="window">
+      <div class="bar">
+        <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+        <span class="title" id="app-title">Notes</span>
+        <div class="chips"><span class="chip" id="chip-style"></span><span class="chip" id="chip-sukun"></span><span class="chip" id="chip-harakat"></span></div>
+      </div>
+      <div class="doc">
+        <div class="text" id="text"></div>
+        <div class="latin" id="latin"></div>
+      </div>
+    </div>
+    <div class="panel" id="panel" style="display:none"></div>
+  </div>
+
+  <!-- 7. End -->
+  <div class="scene" id="s-end"><div class="center">
+    <div class="logo" style="font-size:200px">قَلَم</div>
+    <div class="platforms">Free for Mac &amp; Windows</div>
+    <div class="tag">Every app · Everyday and Qur'an style · Offline</div>
+    <div class="pill">sashakib.github.io/qalam</div>
+  </div></div>
+
+  <div class="keys" id="keys"></div>
+  <div class="sub" id="sub"></div>
+  <div class="progress" id="progress"></div>
+</div>
+
+<script src="../website/demo/wasm_exec.js"></script>
+<script>
+const DURATION = 30;
+
+// Subtitles, which are also the voice-over script (render.js writes them to an .srt file).
+const SUBTITLES = [
+  [0.3, 3.0, "Meet Qalam. Type Arabic the way you spell it."],
+  [3.1, 7.4, "Install it, and a short setup turns on the keyboard and picks your style."],
+  [7.5, 13.4, "Type each letter, then its haraka. Sukūn and shadda appear by themselves."],
+  [13.5, 18.4, "Long phrases too: hamza, the article and Qur'anic marks are done for you."],
+  [18.5, 22.9, "Suggestions appear as you type. Arrows choose, Space puts it in."],
+  [23.0, 26.9, "Turn sukūn or harakat off with one shortcut."],
+  [27.0, 30.0, "Free for Mac and Windows. Get it at sashakib.github.io/qalam"],
+];
+
+// Scenes: [id, start, end]. Each fades in and out over 0.35 s.
+const SCENES = [["s-title", 0, 3], ["s-setup", 3, 7.5], ["s-app", 7.5, 27], ["s-end", 27, 30.5]];
+
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const opts = (o = {}) => Object.assign({ style: "everyday", harakat: "full", sukun: "smart", spelling: true, digits: false }, o);
+
+function fade(t, a, b, d = 0.35) {
+  return Math.min(ease((t - a) / d), ease((b - t) / d));
+}
+
+// Typing: `script` typed from t0 at cps keys a second; returns what's on screen at time t.
+function typing(script, t0, cps, t, o) {
+  const n = clamp(Math.floor((t - t0) * cps), 0, script.length);
+  const typed = script.slice(0, n);
+  const cut = typed.lastIndexOf(" ") + 1;
+  const done = typed.slice(0, cut), buffer = typed.slice(cut);
+  const committed = done ? qalam.text(done, o) : "";
+  const cands = buffer ? qalam.candidates(buffer, o) : [];
+  const last = n > 0 ? script[n - 1] : "";
+  const sinceKey = n > 0 ? t - (t0 + (n - 1) / cps) : 99;
+  return { n, typed, committed, buffer, cands, last, sinceKey, finished: n === script.length };
+}
+
+function showText(committed, preview, caret = true) {
+  const el = $("text");
+  el.textContent = committed;
+  if (preview) {
+    const w = document.createElement("span");
+    w.className = "word";
+    w.textContent = preview;
+    el.append(w);
+  }
+  if (caret) {
+    const c = document.createElement("span");
+    c.className = "caret";
+    el.append(c);
+  }
+}
+
+function showKeys(list, hint = "") {
+  $("keys").innerHTML = list.map(([k, down]) => `<span class="key ${down ? "down" : ""}">${k}</span>`).join("") +
+    (hint ? `<span class="hint">${hint}</span>` : "");
+}
+
+function keyLabel(ch) { return ch === " " ? "Space" : ch; }
+
+function chips(style, sukun, harakat, flash = "") {
+  $("chip-style").textContent = style === "quran" ? "Qur'an style" : "Everyday";
+  $("chip-style").className = "chip" + (style === "quran" ? " on" : "") + (flash === "style" ? " flash" : "");
+  $("chip-sukun").textContent = "Sukūn: " + { smart: "Smart", full: "Full", off: "Off" }[sukun];
+  $("chip-sukun").className = "chip" + (flash === "sukun" ? " flash" : "");
+  $("chip-harakat").textContent = "Harakat: " + (harakat === "none" ? "Off" : "On");
+  $("chip-harakat").className = "chip" + (flash === "harakat" ? " flash" : "");
+}
+
+function setup(t) {
+  const names = ["Welcome", "Keyboard", "Style", "Harakat & sukūn", "While typing", "Shortcuts", "Fonts", "Updates", "Practice"];
+  const step = t < 4.6 ? 1 : t < 6.0 ? 2 : 3;
+  $("steps").innerHTML = names.map((n, i) => `<span class="step ${i < step ? "done" : i === step ? "on" : ""}">${i + 1}. ${n}</span>`).join("");
+  $("p-keyboard").style.opacity = fade(t, 3.2, 4.6, 0.25);
+  $("p-style").style.opacity = fade(t, 4.6, 6.0, 0.25);
+  $("p-marks").style.opacity = fade(t, 6.0, 8, 0.25);
+  const picked = t > 5.3;
+  $("c-every").className = "card" + (picked ? " sel" : "");
+  $("c-quran").className = "card";
+}
+
+function app(t) {
+  $("panel").style.display = "none";
+  let keys = [], hint = "";
+
+  if (t < 13.5) {
+    // 3. Everyday typing
+    const o = opts();
+    $("text").classList.remove("q");
+    chips("everyday", "smart", "full");
+    const st = typing("kataba kitaAbuN madrasat'uN ", 8.0, 6.5, t, o);
+    showText(st.committed, st.cands[0] ? st.cands[0].text : st.buffer);
+    $("latin").innerHTML = st.buffer ? `typed: <b>${st.buffer}</b>` : "";
+    if (st.last) keys = [[keyLabel(st.last), st.sinceKey < 0.12]];
+  } else if (t < 18.5) {
+    // 4. Qur'an style, a long phrase
+    const o = opts({ style: "quran" });
+    $("text").classList.add("q");
+    chips("quran", "smart", "full", t < 14.2 ? "style" : "");
+    const st = typing("alHamdu lillaAhi rabbi alea^lamiyna ", 14.0, 9, t, o);
+    showText(st.committed, st.cands[0] ? st.cands[0].text : st.buffer);
+    $("latin").innerHTML = st.buffer ? `typed: <b>${st.buffer}</b>` : "";
+    if (st.last) keys = [[keyLabel(st.last), st.sinceKey < 0.1]];
+  } else if (t < 23) {
+    // 5. Suggestions
+    $("text").classList.remove("q");
+    const o = opts();
+    chips("everyday", "smart", "full");
+    const st = typing("qaraA", 18.8, 6, t, o);
+    let sel = t < 20.3 ? 0 : t < 21.0 ? 1 : 2;
+    const committedAt = 21.9;
+    if (t < committedAt) {
+      showText("", st.cands[sel] ? st.cands[sel].text : st.buffer);
+      $("latin").innerHTML = st.buffer ? `typed: <b>${st.buffer}</b>` : "";
+      if (st.cands.length && st.n >= 2) {
+        const panel = $("panel");
+        panel.style.display = "block";
+        panel.style.left = "1080px";
+        panel.style.top = "360px";
+        panel.innerHTML = st.cands.map((c, i) =>
+          `<div class="opt ${i === sel ? "sel" : ""}"><span class="n">${i + 1}</span><span class="t"></span><span class="l"></span></div>`).join("") +
+          `<div class="btns"><span class="btn">Sukūn: Smart</span><span class="btn">Harakat: On</span><span class="btn" style="margin-left:auto">↑ ↓ choose</span></div>`;
+        panel.querySelectorAll(".opt").forEach((row, i) => {
+          row.querySelector(".t").textContent = st.cands[i].text;
+          row.querySelector(".l").textContent = st.cands[i].label;
+        });
+      }
+      if (t >= 20.3) keys = [["↓", (t >= 20.3 && t < 20.45) || (t >= 21.0 && t < 21.15)]];
+      else if (st.last) keys = [[keyLabel(st.last), st.sinceKey < 0.12]];
+      if (t >= 20.3) hint = "next option";
+    } else {
+      const c = qalam.candidates("qaraA", o)[2];
+      showText(c.text + " ", "");
+      $("latin").innerHTML = "";
+      keys = [["Space", t < 22.05]];
+      hint = "puts it in";
+    }
+  } else {
+    // 6. Sukūn and harakat off
+    const phrase = "maktabuN qul";
+    const sukunOff = t >= 24.2, harakatOff = t >= 25.6;
+    const o = opts({ sukun: sukunOff ? "off" : "smart", harakat: harakatOff ? "none" : "full" });
+    chips("everyday", sukunOff ? "off" : "smart", harakatOff ? "none" : "full",
+      t >= 24.2 && t < 24.9 ? "sukun" : t >= 25.6 && t < 26.3 ? "harakat" : "");
+    showText(qalam.text(phrase, o), "");
+    $("latin").innerHTML = `typed: <b>${phrase}</b>`;
+    if (t >= 23.6 && t < 25.3) { keys = [["Ctrl", t >= 24.0 && t < 24.4], ["Alt", t >= 24.0 && t < 24.4], ["O", t >= 24.1 && t < 24.4]]; hint = "sukūn off"; }
+    else if (t >= 25.3) { keys = [["Harakat button", t >= 25.5 && t < 25.8]]; hint = "harakat off"; }
+  }
+  showKeys(keys, hint);
+}
+
+function renderAt(t) {
+  for (const [id, a, b] of SCENES) $(id).style.opacity = fade(t, a, b);
+  const sub = SUBTITLES.find(([a, b]) => t >= a && t < b);
+  $("sub").innerHTML = sub ? `<span>${sub[2]}</span>` : "";
+  $("sub").style.opacity = sub ? fade(t, sub[0], sub[1], 0.2) : 0;
+  $("progress").style.width = (t / DURATION * 100) + "%";
+  $("keys").style.opacity = t >= 8 && t < 26.8 ? 1 : 0;
+
+  // Title
+  const s = 0.85 + 0.15 * ease(t / 0.9);
+  document.querySelector("#s-title .logo").style.transform = `scale(${s})`;
+  if (t < 3.5) setup(3.2);
+  if (t >= 2.9 && t < 7.7) setup(t);
+  if (t >= 7.3 && t < 27.2) app(t);
+}
+
+// Fixed text drawn by the engine once it's ready.
+function prepare() {
+  $("title-ex").textContent = qalam.text("kitaAbuN", opts());
+  const phrase = "alHamdu lillaAhi";
+  $("prev-every").textContent = qalam.text(phrase, opts());
+  $("prev-quran").textContent = qalam.text(phrase, opts({ style: "quran" }));
+  $("prev-smart").textContent = qalam.text("maktab qul", opts());
+  $("prev-full").textContent = qalam.text("maktab qul", opts({ sukun: "full" }));
+  $("prev-none").textContent = qalam.text("maktab qul", opts({ harakat: "none" }));
+}
+
+window.renderAt = renderAt;
+window.SUBTITLES = SUBTITLES;
+window.DURATION = DURATION;
+window.videoReady = new Promise((resolve) => {
+  window.addEventListener("qalam-ready", async () => {
+    prepare();
+    await document.fonts.ready;
+    renderAt(0);
+    resolve(true);
+    // Opened in a browser (not by render.js): play it.
+    if (!location.search.includes("capture")) {
+      const start = performance.now();
+      const loop = () => { const t = ((performance.now() - start) / 1000) % (DURATION + 1); renderAt(Math.min(t, DURATION - 0.01)); requestAnimationFrame(loop); };
+      requestAnimationFrame(loop);
+    }
+  }, { once: true });
+});
+const go = new Go();
+fetch("../website/demo/qalam.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b, go.importObject)).then((r) => go.run(r.instance));
+</script>
+</body>
+</html>

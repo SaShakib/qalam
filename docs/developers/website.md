@@ -18,7 +18,8 @@ In the repository on GitHub: **Settings → Pages → Build and deployment → S
 
 Settings that change without code are in `website/config.js`:
 
-- **`videoEmbed`**: paste the demo video's embed link (for example `https://www.youtube-nocookie.com/embed/VIDEO_ID`). Empty shows the "coming soon" holder.
+- **`video`**, **`videoPoster`**, **`videoCaptions`**: the demo video on the site (`website/media/`), made by `node video/render.js --site`. See [video/README.md](../../video/README.md) to change it or add a voice-over.
+- **`videoEmbed`**: a YouTube (or other) embed link, for example `https://www.youtube-nocookie.com/embed/VIDEO_ID`. When set, it's shown instead of the video file.
 - **`questionLabel`**: the issue label the board shows.
 
 ## The download button

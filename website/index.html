@@ -45,7 +45,7 @@
   <section class="block" id="video">
     <div class="wrap">
       <h2 class="title">See it in action</h2>
-      <p class="intro">A two-minute walkthrough: installing, switching the keyboard on, and typing your first words.</p>
+      <p class="intro">Thirty seconds: the setup, typing words and long phrases, choosing a suggestion, and switching sukūn and harakat off.</p>
       <div class="video" id="video-box">
         <div class="soon">
           <div>
@@ -162,18 +162,40 @@
 <script src="assets/site.js"></script>
 <script src="assets/download.js"></script>
 <script>
-  // The demo video, once there is one (config.js → videoEmbed).
+  // The demo video (config.js): an embed link, or the video file on this site.
   (() => {
-    const url = (window.QALAM_SITE || {}).videoEmbed;
-    if (!url) return;
+    const c = window.QALAM_SITE || {};
     const box = document.getElementById("video-box");
-    box.innerHTML = "";
-    const f = document.createElement("iframe");
-    f.src = url;
-    f.title = "Qalam demo video";
-    f.allow = "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen";
-    f.loading = "lazy";
-    box.append(f);
+    if (c.videoEmbed) {
+      box.innerHTML = "";
+      const f = document.createElement("iframe");
+      f.src = c.videoEmbed;
+      f.title = "Qalam demo video";
+      f.allow = "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen";
+      f.loading = "lazy";
+      box.append(f);
+    } else if (c.video) {
+      box.innerHTML = "";
+      const v = document.createElement("video");
+      // WebM first for browsers without H.264; the rest use the MP4.
+      for (const [src, type] of [[c.video.replace(/\.mp4$/, ".webm"), "video/webm"], [c.video, "video/mp4"]]) {
+        const s = document.createElement("source");
+        s.src = src;
+        s.type = type;
+        v.append(s);
+      }
+      if (c.videoPoster) v.poster = c.videoPoster;
+      v.controls = true;
+      v.playsInline = true;
+      v.preload = "metadata";
+      v.setAttribute("aria-label", "Qalam demo video");
+      if (c.videoCaptions) {
+        const t = document.createElement("track");
+        Object.assign(t, { kind: "captions", srclang: "en", label: "English", src: c.videoCaptions, default: true });
+        v.append(t);
+      }
+      box.append(v);
+    }
   })();
 </script>
 <script src="demo/wasm_exec.js"></script>
