@@ -7,13 +7,13 @@ Qalam types standard Unicode Arabic, so **the app you type in decides the font**
 | Text | Font | Notes |
 |---|---|---|
 | Everyday Arabic | **Scheherazade New** (SIL) | large, very readable harakat; included with Qalam |
-| Qur'an text | **KFGQPC Hafs** (King Fahd Complex) | the standard Madinah mushaf font. Until it's on your computer, Qur'an text uses Scheherazade New. |
+| Qur'an text | **KFGQPC HAFS Uthmanic Script** (King Fahd Complex) | the standard Madinah mushaf font; included with Qalam |
 
 On the Mac you can pick other fonts in **Qalam → Settings → Fonts in this app** (also Noto Naskh Arabic, Amiri Quran and Noto Sans Arabic, which are included), and change the Arabic text size. On Windows, Qalam's typing box uses Scheherazade New.
 
 ## Fonts in all your apps
 
-Qalam types standard Unicode Arabic, so **the app you type in decides the font**. Qalam installs its fonts for every app (Word, Pages, Notes, your browser…), just for your user, with no password:
+Qalam types standard Unicode Arabic, so **the app you type in decides the font**. Qalam installs Scheherazade New and KFGQPC Hafs for every app (Word, Pages, Notes, your browser…), just for your user, with no password:
 
 | Installed with | The fonts |
 |---|---|
@@ -26,7 +26,7 @@ Then choose the font in your app.
 
 > **In Microsoft Word,** Arabic uses the **Complex scripts** font: Home → Font dialog (Ctrl + D) → **Complex scripts**.
 
-If you'd rather install fonts yourself, they're in the [`fonts/` folder](https://github.com/SaShakib/qalam/tree/main/fonts) of the repository with their licences, and KFGQPC Hafs is at the [King Fahd Complex](https://fonts.qurancomplex.gov.sa/). On a Mac, double-click a `.ttf` file → **Install**; on Windows, right-click → **Install**.
+If you'd rather install fonts yourself, they're in the [`fonts/` folder](https://github.com/SaShakib/qalam/tree/main/fonts) of the repository with their licences. KFGQPC Hafs comes from the [King Fahd Complex](https://fonts.qurancomplex.gov.sa/); its licence lets Qalam include it unmodified and free of charge. On a Mac, double-click a `.ttf` file → **Install**; on Windows, right-click → **Install**.
 
 ## Harakat look wrong?
 
