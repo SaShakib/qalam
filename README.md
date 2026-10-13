@@ -114,3 +114,10 @@ make release
 | `tests/cases.tsv` | Input ⇥ expected Arabic ⇥ options; both engines must pass |
 | `Casks/qalam.rb` | Homebrew cask |
 | `website/`, `docs/` | The website (GitHub Pages) and the docs it shows as the wiki |
+
+## Licence and code signing
+
+Qalam is free software under the **GNU General Public License v3.0** ([LICENSE](LICENSE)). The fonts in `fonts/` keep their own licences (SIL Open Font License, and the King Fahd Complex licence for KFGQPC Hafs).
+
+Windows code signing: free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/) (being set up; releases are signed once it's approved). See the [code signing policy](docs/code-signing-policy.md), which also covers privacy (Qalam collects no data).
+

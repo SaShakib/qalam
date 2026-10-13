@@ -54,14 +54,52 @@ Once releases are notarized, remove the "Open Anyway" steps from the install doc
 
 ## Removing the warning completely: Windows
 
-Sign the exes and installers with an Authenticode certificate. Options, cheapest first:
+Qalam uses **[SignPath Foundation](https://signpath.org/)**: free code signing for open-source projects. GitHub Actions builds the files, SignPath signs them with a certificate issued to SignPath Foundation, and the project owner approves each release. The policy is in [Code signing and privacy](../code-signing-policy.md).
 
-| Option | Cost | Notes |
-|---|---|---|
-| [SignPath Foundation](https://signpath.org/) | free for open-source projects | they sign builds made by your GitHub Actions; apply with the repository |
-| [Azure Trusted Signing](https://learn.microsoft.com/azure/trusted-signing/) | about 10 USD a month | Microsoft's own; reputation is immediate for verified identities |
-| OV or EV code-signing certificate | 200–500 USD a year | needs a hardware token or cloud HSM for new certificates |
+### 1. Apply (once)
 
-**In CI:** with a `.pfx` certificate, add `WINDOWS_CERT_PFX` (`base64` of the `.pfx`) and `WINDOWS_CERT_PASSWORD` secrets. The release workflow signs `Qalam-Windows-*.exe` before building the installers, and then the installers, with `signtool` and a timestamp. For SignPath or Trusted Signing, replace that step with their GitHub Action.
+1. Go to https://signpath.org/apply and apply with the repository https://github.com/SaShakib/qalam. Qalam meets the conditions: an OSI licence (GPL-3.0, in `LICENSE`), builds made only by GitHub Actions, a published [code signing policy](../code-signing-policy.md) with roles, and a privacy statement.
+2. Wait for approval (days to a few weeks). SignPath then creates an organization for you and installs their GitHub app.
+
+### 2. Set up the project in SignPath (once)
+
+Use these exact names: the release workflow refers to them.
+
+| In SignPath | Value |
+|---|---|
+| Project slug | `qalam` |
+| Signing policy slug | `release-signing` (the one using the SignPath Foundation certificate; approval required) |
+| Artifact configuration `exes` | a zip file containing `Qalam-Windows-x64.exe` and `Qalam-Windows-arm64.exe`, each **Authenticode-signed** |
+| Artifact configuration `installers` | a zip file containing `Qalam-Setup-x64.exe` and `Qalam-Setup-arm64.exe`, each **Authenticode-signed** |
+| Trusted build system | GitHub.com, for the repository `SaShakib/qalam` |
+
+An artifact configuration for this looks like:
+
+```xml
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="*.exe" max-matches="unbounded">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>
+```
+
+### 3. Connect GitHub (once)
+
+In the repository: **Settings → Secrets and variables → Actions**
+
+- **Variables** tab → `SIGNPATH_ORGANIZATION_ID`: your organization id from SignPath.
+- **Secrets** tab → `SIGNPATH_API_TOKEN`: an API token of a SignPath user with submitter rights on the project.
+
+### 4. Every release
+
+Run the release as usual. The Windows job uploads the exes to SignPath and waits. **Approve the signing request in SignPath** (you get an email), and the signed files come back into the release; the same happens for the installers. Without the variable, releases still build, unsigned.
+
+### Other certificates
+
+With your own `.pfx` certificate instead (for example Certum's open-source certificate), add the secrets `WINDOWS_CERT_PFX` (`base64` of the `.pfx`) and `WINDOWS_CERT_PASSWORD`: the release workflow then signs with `signtool`.
+
+Signing shows Qalam's publisher instead of "Unknown publisher". SmartScreen's "Windows protected your PC" can still appear for the first weeks after a release, until enough people have installed it; Microsoft builds reputation from downloads.
 
 The Windows updater replaces `Qalam.exe` in place, so a signed build stays signed through updates.

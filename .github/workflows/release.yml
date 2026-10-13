@@ -92,6 +92,34 @@ jobs:
           "SIGNTOOL=$($signtool.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
           & $signtool.FullName sign /f "$env:RUNNER_TEMP\cert.pfx" /p $env:PFX_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 built\dist\Qalam-Windows-x64.exe built\dist\Qalam-Windows-arm64.exe
           if ($LASTEXITCODE -ne 0) { throw "signing failed" }
+      # SignPath Foundation (free for open source): set up once as in docs/developers/signing.md,
+      # then the repository variable SIGNPATH_ORGANIZATION_ID and secret SIGNPATH_API_TOKEN switch this on.
+      - name: Upload the exes for SignPath
+        id: unsigned-exes
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-exes
+          path: |
+            built/dist/Qalam-Windows-x64.exe
+            built/dist/Qalam-Windows-arm64.exe
+      - name: Sign the exes with SignPath
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: qalam
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: exes
+          github-artifact-id: ${{ steps.unsigned-exes.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: built/signed-exes
+      - name: Use the signed exes
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        run: |
+          Copy-Item built\signed-exes\*.exe built\dist\ -Force
+          Get-AuthenticodeSignature built\dist\Qalam-Windows-*.exe | Format-Table Status, Path
       - name: Build the installers
         working-directory: windows/installer
         run: |
@@ -107,6 +135,32 @@ jobs:
         run: |
           & $env:SIGNTOOL sign /f "$env:RUNNER_TEMP\cert.pfx" /p $env:PFX_PASSWORD /fd sha256 /tr http://timestamp.digicert.com /td sha256 built\dist\Qalam-Setup-x64.exe built\dist\Qalam-Setup-arm64.exe
           if ($LASTEXITCODE -ne 0) { throw "signing failed" }
+      - name: Upload the installers for SignPath
+        id: unsigned-installers
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installers
+          path: |
+            built/dist/Qalam-Setup-x64.exe
+            built/dist/Qalam-Setup-arm64.exe
+      - name: Sign the installers with SignPath
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: qalam
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: installers
+          github-artifact-id: ${{ steps.unsigned-installers.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: built/signed-installers
+      - name: Use the signed installers
+        if: vars.SIGNPATH_ORGANIZATION_ID != ''
+        run: |
+          Copy-Item built\signed-installers\*.exe built\dist\ -Force
+          Get-AuthenticodeSignature built\dist\Qalam-Setup-*.exe | Format-Table Status, Path
       - name: Smoke-test the x64 installer
         run: |
           Start-Process built\dist\Qalam-Setup-x64.exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/TASKS=""' -Wait

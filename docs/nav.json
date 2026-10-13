@@ -1,30 +1,106 @@
 [
-  { "section": "Start here", "pages": [
-    { "name": "index", "title": "Welcome" },
-    { "name": "install", "title": "How to install" },
-    { "name": "install-mac", "title": "Install on Mac" },
-    { "name": "install-windows", "title": "Install on Windows" },
-    { "name": "getting-started", "title": "First-time setup" }
-  ]},
-  { "section": "Using Qalam", "pages": [
-    { "name": "typing", "title": "Typing basics" },
-    { "name": "LAYOUT", "title": "Full key chart" },
-    { "name": "settings", "title": "Settings" },
-    { "name": "shortcuts", "title": "Shortcuts" },
-    { "name": "fonts", "title": "Fonts" },
-    { "name": "updates", "title": "Updates" }
-  ]},
-  { "section": "Help", "pages": [
-    { "name": "faq", "title": "FAQ" },
-    { "name": "troubleshooting", "title": "Troubleshooting" },
-    { "name": "uninstall", "title": "Uninstall" }
-  ]},
-  { "section": "For developers", "pages": [
-    { "name": "developers/building", "title": "Building from source" },
-    { "name": "developers/testing", "title": "Testing (Mac and Windows)" },
-    { "name": "developers/releasing", "title": "Making a release" },
-    { "name": "developers/signing", "title": "Signing and trust" },
-    { "name": "developers/website", "title": "Website and questions board" },
-    { "name": "developers/PLAN-options-and-sukun", "title": "Plan: options and sukūn" }
-  ]}
+  {
+    "section": "Start here",
+    "pages": [
+      {
+        "name": "index",
+        "title": "Welcome"
+      },
+      {
+        "name": "install",
+        "title": "How to install"
+      },
+      {
+        "name": "install-mac",
+        "title": "Install on Mac"
+      },
+      {
+        "name": "install-windows",
+        "title": "Install on Windows"
+      },
+      {
+        "name": "getting-started",
+        "title": "First-time setup"
+      }
+    ]
+  },
+  {
+    "section": "Using Qalam",
+    "pages": [
+      {
+        "name": "typing",
+        "title": "Typing basics"
+      },
+      {
+        "name": "LAYOUT",
+        "title": "Full key chart"
+      },
+      {
+        "name": "settings",
+        "title": "Settings"
+      },
+      {
+        "name": "shortcuts",
+        "title": "Shortcuts"
+      },
+      {
+        "name": "fonts",
+        "title": "Fonts"
+      },
+      {
+        "name": "updates",
+        "title": "Updates"
+      }
+    ]
+  },
+  {
+    "section": "Help",
+    "pages": [
+      {
+        "name": "faq",
+        "title": "FAQ"
+      },
+      {
+        "name": "troubleshooting",
+        "title": "Troubleshooting"
+      },
+      {
+        "name": "uninstall",
+        "title": "Uninstall"
+      },
+      {
+        "name": "code-signing-policy",
+        "title": "Code signing and privacy"
+      }
+    ]
+  },
+  {
+    "section": "For developers",
+    "pages": [
+      {
+        "name": "developers/building",
+        "title": "Building from source"
+      },
+      {
+        "name": "developers/testing",
+        "title": "Testing (Mac and Windows)"
+      },
+      {
+        "name": "developers/releasing",
+        "title": "Making a release"
+      },
+      {
+        "name": "developers/signing",
+        "title": "Signing and trust"
+      },
+      {
+        "name": "developers/website",
+        "title": "Website and questions board"
+      },
+      {
+        "name": "developers/PLAN-options-and-sukun",
+        "title": "Plan: options and sukūn"
+      }
+    ]
+  }
 ]
