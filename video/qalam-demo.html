@@ -177,12 +177,12 @@ const SUBTITLES = [
   [7.5, 13.4, "Type each letter, then its haraka. Sukūn and shadda appear by themselves."],
   [13.5, 18.4, "Long phrases too: hamza, the article and Qur'anic marks are done for you."],
   [18.5, 22.9, "Suggestions appear as you type. Arrows choose, Space puts it in."],
-  [23.0, 26.9, "Turn sukūn or harakat off with one shortcut."],
-  [27.0, 30.0, "Free for Mac and Windows. Get it at sashakib.github.io/qalam"],
+  [23.0, 26.3, "Turn sukūn or harakat off with one shortcut."],
+  [26.5, 30.0, "Qalam is free, for Mac and Windows."],
 ];
 
 // Scenes: [id, start, end]. Each fades in and out over 0.35 s.
-const SCENES = [["s-title", 0, 3], ["s-setup", 3, 7.5], ["s-app", 7.5, 27], ["s-end", 27, 30.5]];
+const SCENES = [["s-title", 0, 3], ["s-setup", 3, 7.5], ["s-app", 7.5, 26.7], ["s-end", 26.4, 30.5]];
 
 const $ = (id) => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -327,7 +327,7 @@ function renderAt(t) {
   $("sub").innerHTML = sub ? `<span>${sub[2]}</span>` : "";
   $("sub").style.opacity = sub ? fade(t, sub[0], sub[1], 0.2) : 0;
   $("progress").style.width = (t / DURATION * 100) + "%";
-  $("keys").style.opacity = t >= 8 && t < 26.8 ? 1 : 0;
+  $("keys").style.opacity = t >= 8 && t < 26.4 ? 1 : 0;
 
   // Title
   const s = 0.85 + 0.15 * ease(t / 0.9);

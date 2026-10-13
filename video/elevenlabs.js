@@ -1,16 +1,19 @@
 // Makes the voice-over with ElevenLabs: one clip per subtitle line, into video/voice/01.mp3 … 07.mp3.
 // Then `node video/render.js --site` lines them up with the subtitles and puts the video on the website.
 //
-//   ELEVENLABS_API_KEY=… node video/elevenlabs.js [voice-id]
+//   ELEVENLABS_API_KEY=… node video/elevenlabs.js [voice-id] [--only 7]   (--only: just those lines, e.g. 3,7)
 //
-// The key is in ElevenLabs → your profile → API Keys. Without a voice id it uses "Rachel" (a calm
-// narrator voice in the default library). Free plan: attribute ElevenLabs where you post the video,
+// The key is in ElevenLabs → your profile → API Keys. Without a voice id it uses "Alice" (a clear
+// educator voice, available on the free plan). Free plan: attribute ElevenLabs where you post the video,
 // and non-commercial use only.
 const fs = require("fs");
 const path = require("path");
 
 const KEY = process.env.ELEVENLABS_API_KEY;
-const VOICE = process.argv[2] || process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM";
+const args = process.argv.slice(2);
+const onlyAt = args.indexOf("--only");
+const ONLY = onlyAt >= 0 ? args.splice(onlyAt, 2)[1].split(",").map(Number) : null;
+const VOICE = args[0] || process.env.ELEVENLABS_VOICE_ID || "Xb7hH8MSUJpSbSDYk0k2";
 if (!KEY) { console.error("Set ELEVENLABS_API_KEY first."); process.exit(1); }
 
 // The subtitles are the script; a few words are spelled out the way they should be said.
@@ -25,6 +28,7 @@ const SAY = [
   const out = path.join(__dirname, "voice");
   fs.mkdirSync(out, { recursive: true });
   for (const [i, line] of lines.entries()) {
+    if (ONLY && !ONLY.includes(i + 1)) continue;
     const text = SAY.reduce((t, [re, s]) => t.replace(re, s), line);
     const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE}?output_format=mp3_44100_128`, {
       method: "POST",

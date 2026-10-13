@@ -114,8 +114,15 @@ const stamp = (t) => {
   if (process.argv.includes("--site")) {
     const media = path.join(ROOT, "website", "media");
     fs.mkdirSync(media, { recursive: true });
-    const src = path.join(OUT, voice ? "qalam-demo-voice.mp4" : "qalam-demo-clean.mp4");
-    fs.copyFileSync(src, path.join(media, "qalam-demo.mp4"));
+    // The site shows its own captions, so it gets the clean video (with the voice, if there is one).
+    const src = path.join(media, "qalam-demo.mp4");
+    if (voice) {
+      execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", path.join(OUT, "qalam-demo-clean.mp4"), "-i", voice,
+        "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-af", "apad", "-t", String(duration),
+        "-movflags", "+faststart", src], { stdio: "inherit" });
+    } else {
+      fs.copyFileSync(path.join(OUT, "qalam-demo-clean.mp4"), src);
+    }
     // WebM (VP9) too, for browsers without H.264.
     execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", src, "-c:v", "libvpx-vp9", "-crf", "34", "-b:v", "0", "-row-mt", "1",
       ...(voice ? ["-c:a", "libopus", "-b:a", "96k"] : ["-an"]), path.join(media, "qalam-demo.webm")], { stdio: "inherit" });

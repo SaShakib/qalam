@@ -49,7 +49,7 @@ Read one line per scene. Each line fits its time slot at a calm pace (about 2.5 
 | 13.5 s | Long phrases too: hamza, the article and Qur'anic marks are done for you. |
 | 18.5 s | Suggestions appear as you type. Arrows choose, Space puts it in. |
 | 23.0 s | Turn sukūn or harakat off with one shortcut. |
-| 27.0 s | Free for Mac and Windows. Get it at sashakib dot github dot io slash qalam. |
+| 26.5 s | Qalam is free, for Mac and Windows. |
 
 Pronunciation: Qalam = *KA-lam*, sukūn = *su-KOON*, haraka = *HA-ra-ka*, harakat = *ha-ra-KAAT*, shadda = *SHAD-da*.
 
