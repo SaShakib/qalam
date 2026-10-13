@@ -1,0 +1,81 @@
+{
+  "voice": {
+    "about": "A clear, slow American male narrator. Speed below 1 slows the speech; the video stretches to fit.",
+    "speed": 0.9,
+    "stability": 0.65,
+    "similarity_boost": 0.8,
+    "style": 0.1
+  },
+  "scenes": [
+    {
+      "id": "intro",
+      "show": "This is Qalam: a free phonetic Arabic keyboard for Mac and Windows. You type Arabic the way you spell it.",
+      "say": "This is Qalam: a free, phonetic Arabic keyboard for Mac and Windows. You type Arabic, the way you spell it."
+    },
+    {
+      "id": "setup",
+      "show": "After you install it, a short setup walks you through everything. It turns the keyboard on, then lets you pick your style, harakat and sukūn.",
+      "say": "After you install it, a short setup walks you through everything. It turns the keyboard on, then lets you pick your style, harakaat, and sukoon."
+    },
+    {
+      "id": "switch",
+      "show": "To switch between English and Arabic, press Control-Space on a Mac, or Ctrl+Alt+A on Windows.",
+      "say": "To switch between English and Arabic, press Control Space on a Mac, or Control, Alt, A, on Windows."
+    },
+    {
+      "id": "basics",
+      "show": "Type each letter, then its vowel. Sukūn and shadda appear by themselves: double a letter, and you get a shadda.",
+      "say": "Type each letter, then its vowel. Sukoon and shadda appear by themselves. Double a letter, and you get a shadda."
+    },
+    {
+      "id": "letters",
+      "show": "Letters with no English match get simple keys. A lowercase e is ʿayn. Capital H, S, D, T and Z are the heavy letters. th, dh, kh and gh work as you'd expect. t' is tāʾ marbūṭa, and capital Y is alif maqṣūra.",
+      "say": "Letters with no English match get simple keys. A lowercase E is ain. Capital H, S, D, T, and Z are the heavy letters. T H, D H, K H, and G H work as you would expect. T apostrophe is taa marbuta, and capital Y is alif maqsura."
+    },
+    {
+      "id": "hamza",
+      "show": "For a hamza, type a capital A followed by its vowel. Qalam picks the right seat for you.",
+      "say": "For a hamza, type a capital A, followed by its vowel. Qalam picks the right seat for you."
+    },
+    {
+      "id": "phrases",
+      "show": "Long phrases work too: the article, sun letters, and in Qur'an style every mark of the mushaf.",
+      "say": "Long phrases work too: the article, the sun letters, and in Quran style, every mark of the mushaf."
+    },
+    {
+      "id": "suggestions",
+      "show": "As you type, Qalam offers other spellings. Use the arrow keys to choose, and Space to put it in.",
+      "say": "As you type, Qalam offers other spellings. Use the arrow keys to choose, and press space to put it in."
+    },
+    {
+      "id": "sukun",
+      "show": "Sukūn is smart: it only appears where it's needed. Control-Shift-O on a Mac, or Ctrl+Alt+O on Windows, turns it off. The Harakat button removes every vowel mark.",
+      "say": "Sukoon is smart: it only appears where it is needed. Control Shift O on a Mac, or Control Alt O on Windows, turns it off. The harakaat button removes every vowel mark."
+    },
+    {
+      "id": "shortcuts",
+      "show": "Every shortcut can be changed in Settings, in case it clashes with another app.",
+      "say": "Every shortcut can be changed in settings, in case it clashes with another app."
+    },
+    {
+      "id": "settings",
+      "show": "Where are the settings? On a Mac, click ق in the menu bar and open Qalam. On Windows, right-click the tray icon and choose Setup & settings.",
+      "say": "Where are the settings? On a Mac, click the Qalam icon in the menu bar, and open Qalam. On Windows, right click the tray icon, and choose setup and settings."
+    },
+    {
+      "id": "fonts",
+      "show": "In Settings you can choose the Arabic font and its size, including a Qur'an font.",
+      "say": "In settings, you can choose the Arabic font and its size, including a Quran font."
+    },
+    {
+      "id": "updates",
+      "show": "Qalam keeps itself up to date. To check now: Settings → Updates on a Mac, or Check for updates in the Windows tray menu.",
+      "say": "Qalam keeps itself up to date. To check now, open settings, then updates, on a Mac, or choose check for updates, in the Windows tray menu."
+    },
+    {
+      "id": "end",
+      "show": "Qalam is free, works offline, and never sends your typing anywhere. Download it from our website.",
+      "say": "Qalam is free, works offline, and never sends your typing anywhere. Download it from our website."
+    }
+  ]
+}
