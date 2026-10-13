@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 	"testing/fstest"
 )
@@ -24,5 +25,17 @@ func TestBundledFonts(t *testing.T) {
 	}
 	if fontName("KFGQPC-Hafs.ttf") != "KFGQPC HAFS Uthmanic Script" || fontName("Other Font.otf") != "Other Font" {
 		t.Errorf("fontName")
+	}
+}
+
+// The fonts actually shipped in the Windows app.
+func TestShippedFonts(t *testing.T) {
+	fonts := loadBundledFonts(os.DirFS("assets"), "fonts")
+	names := []string{}
+	for _, f := range fonts {
+		names = append(names, f.Name)
+	}
+	if len(fonts) != 2 || fonts[0].Name != "Scheherazade New" || fonts[1].Name != "KFGQPC HAFS Uthmanic Script" || !isQuranFont(fonts[1]) {
+		t.Fatalf("shipped fonts = %q", names)
 	}
 }

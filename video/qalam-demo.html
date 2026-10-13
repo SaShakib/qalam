@@ -15,6 +15,7 @@
   @font-face { font-family: "AmiriQ"; src: url("../fonts/AmiriQuran.ttf"); }
   @font-face { font-family: "Scheh"; src: url("../fonts/ScheherazadeNew.ttf"); }
   @font-face { font-family: "NSans"; src: url("../fonts/NotoSansArabic.ttf"); }
+  @font-face { font-family: "KFGQPC"; src: url("../fonts/KFGQPC-HAFS-Uthmanic-Script.ttf"); }
   :root {
     --bg: #f4f1e8; --card: #ffffff; --ink: #18201c; --muted: #66716b; --line: #e2ddd0;
     --accent: #0f7b5f; --accent-soft: #e2f1ea; --gold: #b07d2b; --gold-soft: #f6ead3; --dark: #0d1f19;
@@ -26,8 +27,8 @@
     background: radial-gradient(1200px 700px at 15% 10%, #fbf8f0, transparent 70%),
                 radial-gradient(900px 600px at 90% 95%, #e8efe6, transparent 70%), var(--bg); }
   .scene { position: absolute; inset: 0; opacity: 0; }
-  .ar { font-family: "Naskh", serif; direction: rtl; }
-  .q { font-family: "AmiriQ", "Naskh", serif; }
+  .ar { font-family: "Scheh", "Naskh", serif; direction: rtl; }
+  .q { font-family: "KFGQPC", "AmiriQ", serif; }
   .mono { font-family: "DejaVu Sans Mono", monospace; }
   .heading { position: absolute; left: 160px; top: 54px; font-size: 30px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); }
 
@@ -54,8 +55,8 @@
   .chip.on { background: var(--accent); color: #fff; }
   .chip.flash { background: var(--gold); color: #fff; }
   .doc { position: absolute; top: 64px; left: 0; right: 0; bottom: 0; padding: 60px 90px; }
-  .text { font-family: "Naskh", serif; font-size: 92px; line-height: 1.9; direction: rtl; text-align: right; white-space: pre-wrap; }
-  .text.q { font-family: "AmiriQ", "Naskh", serif; font-size: 86px; }
+  .text { font-family: "Scheh", "Naskh", serif; font-size: 92px; line-height: 1.9; direction: rtl; text-align: right; white-space: pre-wrap; }
+  .text.q { font-family: "KFGQPC", "AmiriQ", serif; font-size: 86px; }
   .text .word { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 5px; text-underline-offset: 26px; }
   .text .caret { display: inline-block; width: 5px; height: 96px; background: var(--accent); vertical-align: middle; margin: 0 4px; }
   .latin { position: absolute; left: 90px; bottom: 50px; font-size: 36px; color: var(--muted); }
@@ -68,7 +69,7 @@
   .opt:first-child { border-top: 0; }
   .opt.sel { background: var(--accent-soft); }
   .opt .n { font: 600 24px "DejaVu Sans Mono", monospace; color: var(--muted); width: 26px; }
-  .opt .t { font-family: "Naskh", serif; font-size: 56px; direction: rtl; flex: 1; text-align: right; line-height: 1.5; }
+  .opt .t { font-family: "Scheh", "Naskh", serif; font-size: 56px; direction: rtl; flex: 1; text-align: right; line-height: 1.5; }
   .opt .l { font-size: 22px; color: var(--muted); width: 230px; }
   .panel .btns { display: flex; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--line); background: #faf9f5; }
   .panel .btn { font-size: 20px; font-weight: 600; padding: 6px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
@@ -122,8 +123,8 @@
   .grid { position: absolute; left: 160px; right: 160px; top: 140px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 22px; }
   .lc { background: var(--card); border: 3px solid var(--line); border-radius: 22px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: none; }
   .lc .k { font: 700 40px "DejaVu Sans Mono", monospace; color: var(--ink); }
-  .lc .l { font-family: "Naskh", serif; font-size: 110px; line-height: 1.25; color: var(--accent); }
-  .lc .w { font-family: "Naskh", serif; font-size: 34px; color: var(--muted); direction: rtl; }
+  .lc .l { font-family: "Scheh", "Naskh", serif; font-size: 110px; line-height: 1.25; color: var(--accent); }
+  .lc .w { font-family: "Scheh", "Naskh", serif; font-size: 34px; color: var(--muted); direction: rtl; }
   .lc .wl { font: 20px "DejaVu Sans Mono", monospace; color: var(--muted); }
   .lc.dim { opacity: .35; }
   .lc.hot { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-6px); box-shadow: 0 16px 40px rgba(15,123,95,.18); }
@@ -516,24 +517,30 @@ const SCENES = {
   fonts: {
     build(el) {
       el.innerHTML = `<div class="heading">Fonts</div>` + APP(`<h4>Fonts in this app</h4><div class="group">
-        <div class="row"><span class="grow">Arabic font</span><span class="select" data-s="1"><span></span><span>▾</span></span></div>
-        <div class="preview ar"></div>
+        <div class="row"><span class="grow">Arabic font</span><span class="select" data-s="a"><span>Scheherazade New</span><span>▾</span></span></div>
+        <div class="preview ar" data-p="a" style="font-family:'Scheh',serif"></div>
+        <div class="row"><span class="grow">Qur'an font</span><span class="select" data-s="q"><span></span><span>▾</span></span></div>
+        <div class="preview ar" data-p="q"></div>
         <div class="row"><span class="grow">Arabic size</span><span class="slider"><span class="fill"></span><span class="knob"></span></span></div></div>`);
     },
     draw(el, u, len) {
-      const fonts = [["Noto Naskh Arabic", "Naskh"], ["Scheherazade New", "Scheh"], ["Amiri Quran", "AmiriQ"]];
-      const k = u < len * 0.3 ? 0 : u < len * 0.55 ? 1 : 2;
-      $('[data-s="1"] span', el).textContent = fonts[k][0];
-      $('[data-s="1"]', el).classList.toggle("open", Math.abs(u - len * 0.3) < 0.4 || Math.abs(u - len * 0.55) < 0.4);
-      const size = 1 + 0.45 * ease((u - len * 0.65) / (len * 0.25));
-      const p = $(".preview", el);
-      p.textContent = T(k === 2 ? "alHamdu lillaAhi rabbi alea^lamiyna" : "AanaA AuHibbu allugat'a alearabiyyat'a", k === 2 ? { style: "quran" } : {});
-      p.style.fontFamily = `"${fonts[k][1]}", serif`;
-      p.style.fontSize = Math.round(58 * size) + "px";
+      // Scheherazade New (SIL) is the default; the Qur'an font is switched to KFGQPC Hafs; then the size goes up.
+      const pick = len * 0.42, grow = len * 0.62;
+      const kfgqpc = u >= pick;
+      $('[data-s="q"] span', el).textContent = kfgqpc ? "KFGQPC HAFS Uthmanic Script" : "Scheherazade New";
+      $('[data-s="q"]', el).classList.toggle("open", Math.abs(u - pick) < 0.45);
+      const size = 1 + 0.35 * ease((u - grow) / (len * 0.25));
+      const a = $('[data-p="a"]', el), q = $('[data-p="q"]', el);
+      a.textContent = T("AanaA AuHibbu allugat'a alearabiyyat'a");
+      q.textContent = T("alHamdu lillaAhi rabbi alea^lamiyna", { style: "quran" });
+      q.style.fontFamily = kfgqpc ? `"KFGQPC", serif` : `"Scheh", serif`;
+      a.style.fontSize = q.style.fontSize = Math.round(46 * size) + "px";
       const pos = (size - 0.8) / 0.8;
       $(".fill", el).style.width = pos * 100 + "%";
       $(".knob", el).style.left = pos * 100 + "%";
-      cursor(el, k < 2 && u < len * 0.62 ? 1300 : lerp(1300, 1060 + 420 * pos, (u - len * 0.62) / 0.4), k < 2 || u < len * 0.62 ? 175 : 560, u > 0.6 && u < len - 0.3);
+      const toPick = clamp((u - 0.6) / Math.max(pick - 0.9, 0.3));
+      cursor(el, u < grow ? lerp(900, 1310, toPick) : lerp(1310, 1060 + 420 * pos, (u - grow) / 0.4),
+        u < grow ? lerp(560, 330, toPick) : lerp(330, 600, (u - grow) / 0.4), u > 0.6 && u < len - 0.3);
       keys([]);
     },
   },
@@ -612,7 +619,7 @@ window.videoReady = new Promise((resolve) => {
     buildTimeline();
     build();
     await document.fonts.ready;
-    await Promise.all(["Naskh", "AmiriQ", "Scheh", "NSans"].map((f) => document.fonts.load(`40px "${f}"`, "قلم")));
+    await Promise.all(["Naskh", "AmiriQ", "Scheh", "NSans", "KFGQPC"].map((f) => document.fonts.load(`40px "${f}"`, "قلم")));
     renderAt(0);
     resolve(true);
     if (!location.search.includes("capture")) {
