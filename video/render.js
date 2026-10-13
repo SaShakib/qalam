@@ -3,7 +3,8 @@
 //   make wasm                 (once: the page uses the real engine)
 //   node video/render.js      → video/out/qalam-demo.mp4 (with subtitles),
 //                               qalam-demo-clean.mp4 (no subtitles), qalam-demo.srt / .vtt, poster.png
-//   With a voice-over in video/voice.mp3 (or .wav / .m4a), also qalam-demo-voice.mp4.
+//   With a voice-over, also qalam-demo-voice.mp4: either one file, video/voice.mp3 (or .wav / .m4a),
+//   or one clip per subtitle line in video/voice/01.mp3 … 07.mp3, which are lined up automatically.
 //   node video/render.js --site  also copies the video, poster and captions into website/media/.
 //
 // Needs Playwright (npm i -D playwright) and ffmpeg with libx264.
@@ -81,7 +82,30 @@ const stamp = (t) => {
   fs.rmSync(frames, { recursive: true, force: true });
 
   // The voice-over, if there is one: put it under the subtitled video (the video stays 30 s).
-  const voice = ["voice.mp3", "voice.wav", "voice.m4a"].map((f) => path.join(__dirname, f)).find((f) => fs.existsSync(f));
+  // Either one file (video/voice.mp3), or one clip per subtitle line in video/voice/ (01.mp3 … 07.mp3,
+  // in subtitle order): each clip starts with its subtitle, and is sped up a little if it's longer than its slot.
+  let voice = ["voice.mp3", "voice.wav", "voice.m4a"].map((f) => path.join(__dirname, f)).find((f) => fs.existsSync(f));
+  const clipDir = path.join(__dirname, "voice");
+  const clips = fs.existsSync(clipDir) ? fs.readdirSync(clipDir).filter((f) => /^\d+\.(mp3|wav|m4a)$/.test(f)).sort() : [];
+  if (!voice && clips.length) {
+    if (clips.length !== subs.length) throw new Error(`video/voice/ has ${clips.length} clips but there are ${subs.length} subtitle lines`);
+    const args = ["-y", "-loglevel", "error"];
+    const parts = [];
+    clips.forEach((f, i) => {
+      const file = path.join(clipDir, f);
+      args.push("-i", file);
+      const len = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString());
+      const [start] = subs[i];
+      const slot = (i + 1 < subs.length ? subs[i + 1][0] : duration) - start - 0.1;
+      const tempo = Math.min(Math.max(len / slot, 1), 1.3);
+      if (len / slot > 1.3) console.warn(`line ${i + 1} is ${len.toFixed(1)} s for a ${slot.toFixed(1)} s slot: shorten its text`);
+      parts.push(`[${i}:a]atempo=${tempo.toFixed(3)},adelay=${Math.round(start * 1000)}:all=1[a${i}]`);
+    });
+    const mix = parts.join(";") + ";" + clips.map((_, i) => `[a${i}]`).join("") + `amix=inputs=${clips.length}:normalize=0,apad[out]`;
+    voice = path.join(OUT, "voice-synced.wav");
+    execFileSync("ffmpeg", [...args, "-filter_complex", mix, "-map", "[out]", "-t", String(duration), voice], { stdio: "inherit" });
+    console.log("voice: placed", clips.length, "clips at their subtitles");
+  }
   if (voice) {
     execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", path.join(OUT, "qalam-demo.mp4"), "-i", voice,
       "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-af", "apad", "-t", String(duration),
