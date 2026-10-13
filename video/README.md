@@ -1,82 +1,58 @@
 # Demo video
 
-A 30-second video (1920×1080, 30 fps) made from an HTML animation: `qalam-demo.html`. Every Arabic word in it comes from the real Qalam engine, so it always matches what the app types.
+A narrated walkthrough of Qalam (about 2¼ minutes, 1920×1080, 30 fps) made from an HTML animation, `qalam-demo.html`. Every Arabic word in it comes from the real Qalam engine.
 
-| Time | Scene |
-|---|---|
-| 0–3 s | Title: قَلَم, "Type Arabic the way you spell it" |
-| 3–7.5 s | The setup steps: keyboard on, style, harakat & sukūn |
-| 7.5–13.5 s | Typing words letter by letter: `kataba`, `kitaAbuN`, `madrasat'uN` |
-| 13.5–18.5 s | A long Qur'an-style phrase: `alHamdu lillaAhi rabbi alea^lamiyna` |
-| 18.5–23 s | Suggestions: `qaraA`, ↓ ↓, Space |
-| 23–27 s | Sukūn off (Ctrl+Alt+O), then harakat off |
-| 27–30 s | End card: free for Mac & Windows, website address |
+The voice drives the timing: **each scene lasts as long as its narration**, so picture, voice and subtitles always match, whatever the voice's pace.
+
+## Scenes
+
+| # | Scene | Narration (see `script.json`) |
+|---|---|---|
+| 1 | Title | What Qalam is |
+| 2 | Setup steps | The guided setup after installing |
+| 3 | Switch keyboards | Control-Space on Mac, Ctrl+Alt+A on Windows |
+| 4 | Typing | Letter then vowel; sukūn and shadda by themselves |
+| 5 | Unusual letters | e = ع, H S D T Z, th dh kh gh, t' = ة, Y = ى |
+| 6 | Hamza | Capital A + vowel; the seat is chosen |
+| 7 | Phrases | The article, sun letters, Qur'an style |
+| 8 | Suggestions | The options panel, ↑ ↓ and Space |
+| 9 | Sukūn and harakat | Smart sukūn, the shortcuts, the Harakat button |
+| 10 | Shortcuts | Changing a shortcut in Settings |
+| 11 | Where the settings are | The Mac ق menu, the Windows tray menu |
+| 12 | Fonts | Font and size in Settings |
+| 13 | Updates | Settings → Updates; Windows tray menu |
+| 14 | End card | Free, offline, private; the website |
 
 ## Make it
 
 ```bash
-make wasm                     # once: the animation uses the real engine
-npm i -D playwright           # or a global Playwright
-node video/render.js          # → video/out/
-node video/render.js --site   # … and copy it to website/media/ for the website
+make wasm                                   # once: the animation uses the real engine
+ELEVENLABS_API_KEY=… node video/elevenlabs.js   # the voice: video/voice/01.mp3 … 14.mp3
+node video/render.js --site                 # the video, and a copy on the website
 ```
+
+`elevenlabs.js` picks an American male voice from your ElevenLabs account (it chose **Brian**) and reads slightly slower than normal (`speed` in `script.json`). Pass a voice id to use another voice. `--only 5,9` remakes just those lines.
 
 `video/out/` then has:
 
 | File | What |
 |---|---|
-| `qalam-demo.mp4` | with subtitles drawn in |
-| `qalam-demo-clean.mp4` | without subtitles (for YouTube with the `.srt`, or for adding your own) |
-| `qalam-demo.srt`, `qalam-demo.vtt` | the subtitles as files |
-| `qalam-demo-voice.mp4` | with your voice-over, if `video/voice.mp3` exists |
-| `poster.png` | a still for thumbnails |
+| `qalam-demo.mp4` | with voice and subtitles: **post this one** |
+| `qalam-demo-clean.mp4` | with voice, no subtitles (for YouTube, with the `.srt`) |
+| `qalam-demo.srt`, `qalam-demo.vtt` | the subtitles |
+| `poster.png` | a thumbnail |
 
-To watch the animation live, serve the repository (`python3 -m http.server` in the repository folder) and open http://localhost:8000/video/qalam-demo.html.
+To watch the animation live (with estimated timing and no voice): run `python3 -m http.server` in the repository folder and open http://localhost:8000/video/qalam-demo.html.
 
-To change words, timing or subtitles, edit `qalam-demo.html` (`SUBTITLES` at the top, and the scenes in `app()`) and render again.
+## Change it
 
-## Voice-over
+- **Words:** edit `script.json`. `say` is what the voice reads (spelled for good pronunciation, such as "sukoon"); `show` is the subtitle. Then remake that line's voice (`--only N`) and render again.
+- **Pictures:** each scene is an entry in `SCENES` in `qalam-demo.html`, with a `build` and a `draw(el, u, len)`; timings inside a scene are fractions of its length, or tied to its subtitle sentences.
 
-### The script
+## Posting
 
-Read one line per scene. Each line fits its time slot at a calm pace (about 2.5 words a second):
+On ElevenLabs' free plan the voice is for non-commercial use, and you must credit ElevenLabs. Put something like this in the description:
 
-| Start | Say |
-|---|---|
-| 0.3 s | Meet Qalam. Type Arabic the way you spell it. |
-| 3.1 s | Install it, and a short setup turns on the keyboard and picks your style. |
-| 7.5 s | Type each letter, then its haraka. Sukūn and shadda appear by themselves. |
-| 13.5 s | Long phrases too: hamza, the article and Qur'anic marks are done for you. |
-| 18.5 s | Suggestions appear as you type. Arrows choose, Space puts it in. |
-| 23.0 s | Turn sukūn or harakat off with one shortcut. |
-| 26.5 s | Qalam is free, for Mac and Windows. |
-
-Pronunciation: Qalam = *KA-lam*, sukūn = *su-KOON*, haraka = *HA-ra-ka*, harakat = *ha-ra-KAAT*, shadda = *SHAD-da*.
-
-### Add it (synced automatically)
-
-**One clip per line (easiest):** save the 7 lines as `video/voice/01.mp3` … `07.mp3`, in the order above, and run `node video/render.js --site`. Each clip is placed at its subtitle's start time, and sped up a little (up to 1.3×) if it runs longer than its slot, so you don't have to line anything up. You get `video/out/qalam-demo-voice.mp4`, and the website uses it.
-
-**With ElevenLabs, all at once:** `ELEVENLABS_API_KEY=… node video/elevenlabs.js` makes the 7 clips from the subtitles (key: ElevenLabs → profile → API Keys), then run `node video/render.js --site`. On the free plan, credit ElevenLabs where you post the video.
-
-**One finished file:** save a 30-second voice track as `video/voice.mp3` (or `.wav` / `.m4a`) and run `node video/render.js --site`.
-
-Or with ffmpeg only, on the finished video:
-
-```bash
-ffmpeg -i video/out/qalam-demo.mp4 -i voice.mp3 -map 0:v -map 1:a -c:v copy -c:a aac -af apad -t 30 qalam-demo-voice.mp4
-```
-
-### Free ways to get a voice
-
-| Option | Cost | Good for |
-|---|---|---|
-| **Record yourself** with your phone, or [Audacity](https://www.audacityteam.org/) on the computer | free | the most natural, and you can say the Arabic words properly. Record each line, then line them up to the times above. |
-| **[Piper](https://github.com/rhasspy/piper)** | free, open source, runs offline | good neural voices with no account and no limits. `pip install piper-tts`, then `echo "Meet Qalam…" \| piper -m en_US-lessac-medium --output_file line1.wav` |
-| **[CapCut](https://www.capcut.com/)** (desktop or web) | free | import the video, use **Text to speech** on each subtitle, and it can also make auto captions. Easiest all-in-one editor. |
-| **[Clipchamp](https://clipchamp.com/)** (built into Windows 11) | free tier | **Record & create → Text to speech**, many voices and languages, export 1080p |
-| **[edge-tts](https://github.com/rany2/edge-tts)** | free | Microsoft's neural voices from the command line: `edge-tts --voice en-US-AriaNeural --text "…" --write-media line1.mp3`. Check Microsoft's terms for your use. |
-| **[ElevenLabs](https://elevenlabs.io/)** | free tier (about 10,000 characters a month) | very natural voices. The free tier needs attribution and is for non-commercial use. |
-| **[TTSMaker](https://ttsmaker.com/)** | free | quick web text-to-speech with MP3 download |
-
-Tip for generated voices: make one audio file per line, then put them together at the start times above, in CapCut, Clipchamp or Audacity. That keeps the voice in step with the subtitles.
+> Qalam: type Arabic the way you spell it. Free for Mac & Windows.
+> Download: https://sashakib.github.io/qalam/
+> Voice: ElevenLabs

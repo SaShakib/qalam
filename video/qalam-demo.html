@@ -4,17 +4,20 @@
 <meta charset="utf-8">
 <title>Qalam Demo Video</title>
 <!--
-  The 30-second demo video, as an animation. Every frame is drawn from a time t (seconds) by
-  renderAt(t), so `node video/render.js` can capture it frame by frame into an MP4.
-  Open this file in a browser (from the repository, after `make wasm`) and it plays live.
-  The Arabic is produced by the real Qalam engine (website/demo/qalam.wasm).
+  The Qalam demo video, as an animation. The narration is video/script.json; each scene lasts as long
+  as its voice clip (render.js measures video/voice/NN.mp3 and calls setVoiceDurations), so picture,
+  voice and subtitles stay together whatever the voice's pace. Without clips, durations are estimated.
+  Every frame is drawn from a time t by renderAt(t). The Arabic comes from the real Qalam engine.
+  Watch it live: serve the repository (python3 -m http.server) and open /video/qalam-demo.html
 -->
 <style>
   @font-face { font-family: "Naskh"; src: url("../fonts/NotoNaskhArabic.ttf"); }
   @font-face { font-family: "AmiriQ"; src: url("../fonts/AmiriQuran.ttf"); }
+  @font-face { font-family: "Scheh"; src: url("../fonts/ScheherazadeNew.ttf"); }
+  @font-face { font-family: "NSans"; src: url("../fonts/NotoSansArabic.ttf"); }
   :root {
     --bg: #f4f1e8; --card: #ffffff; --ink: #18201c; --muted: #66716b; --line: #e2ddd0;
-    --accent: #0f7b5f; --accent-soft: #e2f1ea; --gold: #b07d2b; --dark: #0d1f19;
+    --accent: #0f7b5f; --accent-soft: #e2f1ea; --gold: #b07d2b; --gold-soft: #f6ead3; --dark: #0d1f19;
   }
   * { box-sizing: border-box; margin: 0; }
   html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--dark); }
@@ -26,57 +29,61 @@
   .ar { font-family: "Naskh", serif; direction: rtl; }
   .q { font-family: "AmiriQ", "Naskh", serif; }
   .mono { font-family: "DejaVu Sans Mono", monospace; }
+  .heading { position: absolute; left: 160px; top: 54px; font-size: 30px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); }
 
   /* Title and end cards */
   .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-  .logo { font-family: "Naskh", serif; font-size: 260px; color: var(--accent); line-height: 1.1; }
-  .name { font-size: 76px; font-weight: 800; letter-spacing: -1px; margin-top: 10px; }
-  .tag { font-size: 44px; color: var(--muted); margin-top: 12px; }
-  .example { margin-top: 46px; display: flex; gap: 28px; align-items: center; font-size: 46px; }
-  .key { display: inline-block; font: 600 40px "DejaVu Sans Mono", monospace; background: var(--accent-soft); border: 2px solid #c9dfd5; border-bottom-width: 5px; border-radius: 14px; padding: 8px 20px; }
+  .logo { font-family: "Naskh", serif; font-size: 240px; color: var(--accent); line-height: 1.1; }
+  .name { font-size: 76px; font-weight: 800; letter-spacing: -1px; margin-top: 6px; }
+  .tag { font-size: 42px; color: var(--muted); margin-top: 12px; }
+  .example { margin-top: 44px; display: flex; gap: 28px; align-items: center; font-size: 46px; height: 120px; }
+  .key { display: inline-block; font: 600 40px "DejaVu Sans Mono", monospace; background: var(--accent-soft); border: 2px solid #c9dfd5; border-bottom-width: 5px; border-radius: 14px; padding: 8px 20px; white-space: nowrap; }
   .arrow { color: var(--muted); font-size: 46px; }
-  .pill { display: inline-block; background: var(--accent); color: #fff; font-size: 46px; font-weight: 700; padding: 18px 40px; border-radius: 999px; margin-top: 40px; }
-  .platforms { font-size: 52px; font-weight: 700; margin-top: 18px; }
+  .pill { display: inline-block; background: var(--accent); color: #fff; font-size: 46px; font-weight: 700; padding: 18px 40px; border-radius: 999px; margin-top: 36px; }
+  .badges { display: flex; gap: 18px; margin-top: 26px; }
+  .badge { font-size: 30px; font-weight: 600; padding: 10px 24px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
 
-  /* The app window */
-  .window { position: absolute; left: 160px; top: 80px; width: 1600px; height: 700px; background: var(--card); border-radius: 26px;
+  /* The app window (an editor) */
+  .window { position: absolute; left: 160px; top: 120px; width: 1600px; height: 660px; background: var(--card); border-radius: 26px;
     box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 30px 80px rgba(20,40,30,.18); overflow: hidden; border: 1px solid var(--line); }
   .bar { height: 64px; background: #f7f5ef; border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 24px; gap: 12px; }
   .dot { width: 18px; height: 18px; border-radius: 50%; }
   .bar .title { margin-left: 18px; font-size: 24px; color: var(--muted); font-weight: 600; }
   .bar .chips { margin-left: auto; display: flex; gap: 12px; }
-  .chip { font-size: 22px; font-weight: 600; padding: 7px 16px; border-radius: 999px; background: #eeebe2; color: var(--muted); transition: none; }
+  .chip { font-size: 22px; font-weight: 600; padding: 7px 16px; border-radius: 999px; background: #eeebe2; color: var(--muted); }
   .chip.on { background: var(--accent); color: #fff; }
   .chip.flash { background: var(--gold); color: #fff; }
-  .doc { position: absolute; top: 64px; left: 0; right: 0; bottom: 0; padding: 70px 90px; }
-  .text { font-family: "Naskh", serif; font-size: 96px; line-height: 1.9; direction: rtl; text-align: right; white-space: pre-wrap; min-height: 200px; }
-  .text.q { font-family: "AmiriQ", "Naskh", serif; font-size: 92px; }
+  .doc { position: absolute; top: 64px; left: 0; right: 0; bottom: 0; padding: 60px 90px; }
+  .text { font-family: "Naskh", serif; font-size: 92px; line-height: 1.9; direction: rtl; text-align: right; white-space: pre-wrap; }
+  .text.q { font-family: "AmiriQ", "Naskh", serif; font-size: 86px; }
   .text .word { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 5px; text-underline-offset: 26px; }
-  .text .caret { display: inline-block; width: 5px; height: 100px; background: var(--accent); vertical-align: middle; margin: 0 4px; }
-  .latin { position: absolute; left: 90px; bottom: 60px; font-size: 36px; color: var(--muted); }
+  .text .caret { display: inline-block; width: 5px; height: 96px; background: var(--accent); vertical-align: middle; margin: 0 4px; }
+  .latin { position: absolute; left: 90px; bottom: 50px; font-size: 36px; color: var(--muted); }
   .latin b { color: var(--ink); font-family: "DejaVu Sans Mono", monospace; font-weight: 600; }
+  .note { position: absolute; right: 90px; bottom: 46px; font-size: 30px; font-weight: 600; color: var(--gold); background: var(--gold-soft); padding: 8px 20px; border-radius: 12px; opacity: 0; }
 
   /* Options panel */
-  .panel { position: absolute; width: 640px; background: #fff; border: 2px solid var(--line); border-radius: 22px; box-shadow: 0 18px 50px rgba(20,40,30,.18); overflow: hidden; }
+  .panel { position: absolute; width: 660px; background: #fff; border: 2px solid var(--line); border-radius: 22px; box-shadow: 0 18px 50px rgba(20,40,30,.18); overflow: hidden; }
   .opt { display: flex; align-items: center; gap: 22px; padding: 10px 26px; border-top: 1px solid var(--line); }
   .opt:first-child { border-top: 0; }
   .opt.sel { background: var(--accent-soft); }
   .opt .n { font: 600 24px "DejaVu Sans Mono", monospace; color: var(--muted); width: 26px; }
   .opt .t { font-family: "Naskh", serif; font-size: 56px; direction: rtl; flex: 1; text-align: right; line-height: 1.5; }
-  .opt .l { font-size: 22px; color: var(--muted); width: 210px; }
+  .opt .l { font-size: 22px; color: var(--muted); width: 230px; }
   .panel .btns { display: flex; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--line); background: #faf9f5; }
   .panel .btn { font-size: 20px; font-weight: 600; padding: 6px 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  .panel .btn.press { background: var(--gold); color: #fff; border-color: var(--gold); }
 
   /* Setup wizard */
-  .wizard { position: absolute; left: 260px; top: 110px; width: 1400px; height: 720px; background: var(--card); border-radius: 26px; border: 1px solid var(--line);
-    box-shadow: 0 30px 80px rgba(20,40,30,.18); padding: 50px 64px; overflow: hidden; }
+  .wizard { position: absolute; left: 260px; top: 120px; width: 1400px; height: 660px; background: var(--card); border-radius: 26px; border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(20,40,30,.18); padding: 46px 64px; overflow: hidden; }
   .wizard h2 { font-size: 50px; font-weight: 800; display: flex; align-items: center; gap: 22px; }
   .wizard h2 .ar { color: var(--accent); font-size: 64px; }
-  .steps { display: flex; gap: 8px; margin: 26px 0 36px; flex-wrap: nowrap; }
+  .steps { display: flex; gap: 8px; margin: 24px 0 30px; }
   .step { font-size: 18px; white-space: nowrap; padding: 7px 12px; border-radius: 999px; background: #eeebe2; color: var(--muted); }
   .step.done { background: var(--accent-soft); color: var(--accent); }
   .step.on { background: var(--accent); color: #fff; }
-  .pane { position: absolute; left: 64px; right: 64px; top: 240px; opacity: 0; }
+  .pane { position: absolute; left: 64px; right: 64px; top: 230px; opacity: 0; }
   .pane h3 { font-size: 40px; margin-bottom: 26px; }
   .cards { display: flex; gap: 26px; }
   .card { flex: 1; border: 3px solid var(--line); border-radius: 20px; padding: 24px 28px; }
@@ -86,6 +93,73 @@
   .card .ar { font-size: 50px; text-align: right; margin-top: 10px; line-height: 1.7; }
   .ok { font-size: 38px; color: var(--accent); font-weight: 700; display: flex; align-items: center; gap: 18px; }
   .ok .big { font-size: 60px; }
+
+  /* Mac and Windows halves */
+  .half { position: absolute; top: 130px; width: 760px; height: 640px; background: var(--card); border-radius: 26px; border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(20,40,30,.14); overflow: hidden; }
+  .half.left { left: 160px; } .half.right { left: 1000px; }
+  .half .label { position: absolute; left: 34px; top: 26px; font-size: 34px; font-weight: 800; }
+  .menubar { position: absolute; left: 0; right: 0; top: 90px; height: 52px; background: #ecebe7; display: flex; align-items: center; justify-content: flex-end; gap: 26px; padding: 0 28px; font-size: 24px; color: #333; }
+  .menubar .ime { font-family: "Naskh", serif; font-size: 30px; padding: 0 10px; border-radius: 6px; }
+  .menubar .ime.open { background: #c9c7c0; }
+  .menu { position: absolute; background: #fbfaf8; border: 1px solid #d6d3cb; border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,.18); padding: 8px 0; font-size: 23px; min-width: 470px; }
+  .menu .it { padding: 7px 26px 7px 46px; position: relative; white-space: nowrap; }
+  .menu .it.chk::before { content: "✓"; position: absolute; left: 16px; }
+  .menu .it.hi { background: #2a6fdb; color: #fff; border-radius: 6px; margin: 0 6px; padding-left: 40px; }
+  .menu .sep { height: 1px; background: #dedbd2; margin: 6px 0; }
+  .menu .it .k { float: right; color: #888; margin-left: 30px; }
+  .menu .it.hi .k { color: #dfe8ff; }
+  .taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: #e9eef3; border-top: 1px solid #d5dbe2; display: flex; align-items: center; justify-content: flex-end; gap: 22px; padding: 0 26px; font-size: 22px; color: #333; }
+  .tray { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-family: "Naskh", serif; font-size: 30px; color: #fff; background: #9aa3a0; }
+  .tray.on { background: var(--accent); }
+  .toast { position: absolute; right: 26px; bottom: 84px; width: 420px; background: #fff; border: 1px solid #d5dbe2; border-radius: 14px; padding: 18px 22px; box-shadow: 0 12px 30px rgba(0,0,0,.12); opacity: 0; }
+  .toast b { display: block; font-size: 24px; } .toast span { font-size: 20px; color: var(--muted); }
+  .bigkeys { position: absolute; left: 0; right: 0; top: 400px; display: flex; justify-content: center; gap: 16px; }
+  .bigkeys .key { font-size: 44px; background: #fff; border-color: var(--line); }
+  .bigkeys .key.down { background: var(--accent); color: #fff; border-color: var(--accent); transform: translateY(4px); }
+
+  /* Letter cards */
+  .grid { position: absolute; left: 160px; right: 160px; top: 140px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 22px; }
+  .lc { background: var(--card); border: 3px solid var(--line); border-radius: 22px; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: none; }
+  .lc .k { font: 700 40px "DejaVu Sans Mono", monospace; color: var(--ink); }
+  .lc .l { font-family: "Naskh", serif; font-size: 110px; line-height: 1.25; color: var(--accent); }
+  .lc .w { font-family: "Naskh", serif; font-size: 34px; color: var(--muted); direction: rtl; }
+  .lc .wl { font: 20px "DejaVu Sans Mono", monospace; color: var(--muted); }
+  .lc.dim { opacity: .35; }
+  .lc.hot { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-6px); box-shadow: 0 16px 40px rgba(15,123,95,.18); }
+
+  /* Settings window (Mac app) */
+  .app { position: absolute; left: 160px; top: 110px; width: 1600px; height: 690px; background: var(--card); border-radius: 26px; border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(20,40,30,.18); overflow: hidden; }
+  .app .side { position: absolute; left: 0; top: 64px; bottom: 0; width: 330px; background: #f5f3ee; border-right: 1px solid var(--line); padding: 22px 16px; }
+  .app .side div { font-size: 25px; padding: 12px 18px; border-radius: 10px; color: #333; }
+  .app .side div.on { background: #dcd8cd; font-weight: 600; }
+  .app .main { position: absolute; left: 330px; right: 0; top: 64px; bottom: 0; padding: 30px 46px; }
+  .app h4 { font-size: 22px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin: 6px 0 14px; }
+  .group { border: 1px solid var(--line); border-radius: 16px; background: #fbfaf7; }
+  .row { display: flex; align-items: center; gap: 18px; padding: 18px 24px; border-top: 1px solid var(--line); font-size: 27px; min-height: 76px; }
+  .row:first-child { border-top: 0; }
+  .row .grow { flex: 1; }
+  .field { font-size: 26px; padding: 8px 20px; border-radius: 10px; background: #fff; border: 2px solid var(--line); min-width: 190px; text-align: center; font-weight: 600; }
+  .field.rec { border-color: var(--accent); color: var(--accent); }
+  .field.new { background: var(--accent-soft); border-color: var(--accent); }
+  .select { font-size: 26px; padding: 8px 18px; border-radius: 10px; background: #fff; border: 2px solid var(--line); min-width: 470px; display: flex; justify-content: space-between; }
+  .select.open { border-color: var(--accent); }
+  .slider { width: 420px; height: 8px; background: #ddd8cc; border-radius: 4px; position: relative; }
+  .slider .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; }
+  .slider .knob { position: absolute; top: -12px; width: 32px; height: 32px; margin-left: -16px; border-radius: 50%; background: #fff; border: 2px solid #bbb; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+  .toggle { width: 64px; height: 36px; border-radius: 18px; background: var(--accent); position: relative; }
+  .toggle::after { content: ""; position: absolute; right: 4px; top: 4px; width: 28px; height: 28px; border-radius: 50%; background: #fff; }
+  .button { font-size: 25px; font-weight: 600; padding: 10px 22px; border-radius: 10px; background: #fff; border: 2px solid var(--line); }
+  .button.press { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .status { font-size: 25px; color: var(--muted); }
+  .status.good { color: var(--accent); font-weight: 700; }
+  .preview { font-size: 70px; text-align: right; direction: rtl; line-height: 1.8; padding: 6px 24px 0; }
+  .banner { position: absolute; left: 0; right: 0; top: 64px; height: 70px; background: var(--accent-soft); display: flex; align-items: center; gap: 18px; padding: 0 30px; font-size: 26px; opacity: 0; z-index: 2; }
+  .banner .button { margin-left: auto; background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cursor { position: absolute; width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-bottom: 34px solid #111;
+    transform: rotate(-35deg); filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); opacity: 0; z-index: 5; }
+  .cursor::after { content: ""; position: absolute; left: -16px; top: 30px; width: 32px; height: 0; }
 
   /* Keys pressed */
   .keys { position: absolute; left: 160px; top: 812px; display: flex; gap: 14px; align-items: center; opacity: 0; }
@@ -101,266 +175,449 @@
 </style>
 </head>
 <body>
-<div id="stage">
-  <!-- 1. Title -->
-  <div class="scene" id="s-title"><div class="center">
-    <div class="logo">قَلَم</div>
-    <div class="name">Qalam</div>
-    <div class="tag">Type Arabic the way you spell it</div>
-    <div class="example"><span class="key">kitaAbuN</span><span class="arrow">→</span><span class="ar" style="font-size:84px" id="title-ex"></span></div>
-  </div></div>
-
-  <!-- 2. Setup -->
-  <div class="scene" id="s-setup">
-    <div class="wizard">
-      <h2><span class="ar">قَلَم</span> Set up Qalam</h2>
-      <div class="steps" id="steps"></div>
-      <div class="pane" id="p-keyboard">
-        <h3>Turn on the Qalam keyboard</h3>
-        <div class="ok"><span class="big">✓</span> Qalam is in your keyboards. Switch with 🌐 or Ctrl+Alt+A.</div>
-      </div>
-      <div class="pane" id="p-style">
-        <h3>Writing style</h3>
-        <div class="cards">
-          <div class="card" id="c-every"><div class="t">Everyday</div><div class="d">Books, messages, notes</div><div class="ar" id="prev-every"></div></div>
-          <div class="card" id="c-quran"><div class="t">Qur'an (Uthmani)</div><div class="d">As in the mushaf</div><div class="ar q" id="prev-quran"></div></div>
-        </div>
-      </div>
-      <div class="pane" id="p-marks">
-        <h3>Harakat and sukūn</h3>
-        <div class="cards">
-          <div class="card sel"><div class="t">Smart sukūn</div><div class="d">Only where needed</div><div class="ar" id="prev-smart"></div></div>
-          <div class="card"><div class="t">Full sukūn</div><div class="d">Every stop</div><div class="ar" id="prev-full"></div></div>
-          <div class="card"><div class="t">No harakat</div><div class="d">Plain letters</div><div class="ar" id="prev-none"></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3–6. Typing in an app -->
-  <div class="scene" id="s-app">
-    <div class="window">
-      <div class="bar">
-        <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
-        <span class="title" id="app-title">Notes</span>
-        <div class="chips"><span class="chip" id="chip-style"></span><span class="chip" id="chip-sukun"></span><span class="chip" id="chip-harakat"></span></div>
-      </div>
-      <div class="doc">
-        <div class="text" id="text"></div>
-        <div class="latin" id="latin"></div>
-      </div>
-    </div>
-    <div class="panel" id="panel" style="display:none"></div>
-  </div>
-
-  <!-- 7. End -->
-  <div class="scene" id="s-end"><div class="center">
-    <div class="logo" style="font-size:200px">قَلَم</div>
-    <div class="platforms">Free for Mac &amp; Windows</div>
-    <div class="tag">Every app · Everyday and Qur'an style · Offline</div>
-    <div class="pill">sashakib.github.io/qalam</div>
-  </div></div>
-
-  <div class="keys" id="keys"></div>
-  <div class="sub" id="sub"></div>
-  <div class="progress" id="progress"></div>
-</div>
+<div id="stage"></div>
 
 <script src="../website/demo/wasm_exec.js"></script>
 <script>
-const DURATION = 30;
+// ---------- Timing ----------
+// Scene i lasts LEAD + narration i + TAIL (or its minimum). The voice starts LEAD after the scene starts.
+const LEAD = 0.5, TAIL = 0.8;
+const MIN = { intro: 5, end: 6 };
+const HOLD_END = 1.5;      // the end card stays a moment after the last word
+let SCRIPT = null, DUR = [], TL = [], SUBS = [], DURATION = 0;
 
-// Subtitles, which are also the voice-over script (render.js writes them to an .srt file).
-const SUBTITLES = [
-  [0.3, 3.0, "Meet Qalam. Type Arabic the way you spell it."],
-  [3.1, 7.4, "Install it, and a short setup turns on the keyboard and picks your style."],
-  [7.5, 13.4, "Type each letter, then its haraka. Sukūn and shadda appear by themselves."],
-  [13.5, 18.4, "Long phrases too: hamza, the article and Qur'anic marks are done for you."],
-  [18.5, 22.9, "Suggestions appear as you type. Arrows choose, Space puts it in."],
-  [23.0, 26.3, "Turn sukūn or harakat off with one shortcut."],
-  [26.5, 30.0, "Qalam is free, for Mac and Windows."],
-];
+function buildTimeline() {
+  TL = []; SUBS = [];
+  let t = 0;
+  SCRIPT.scenes.forEach((s, i) => {
+    const words = s.say.split(/\s+/).length;
+    const voice = DUR[i] != null ? DUR[i] : words / 2.3;
+    const extra = i === 0 ? 0.5 : 0;
+    const lead = LEAD + extra;
+    let len = Math.max(lead + voice + TAIL, MIN[s.id] || 3);
+    if (i === SCRIPT.scenes.length - 1) len += HOLD_END;
+    TL.push({ id: s.id, start: t, len, voiceStart: t + lead, voiceLen: voice });
+    // Subtitles: the line in sentences, each shown for its share of the narration (by length).
+    const parts = splitSentences(s.show);
+    const total = parts.reduce((a, p) => a + p.length, 0);
+    let at = t + lead;
+    parts.forEach((p, j) => {
+      const d = voice * p.length / total;
+      SUBS.push({ scene: i, part: j, start: at, end: j === parts.length - 1 ? t + lead + voice + 0.3 : at + d, text: p });
+      at += d;
+    });
+    t += len;
+  });
+  DURATION = t;
+}
 
-// Scenes: [id, start, end]. Each fades in and out over 0.35 s.
-const SCENES = [["s-title", 0, 3], ["s-setup", 3, 7.5], ["s-app", 7.5, 26.7], ["s-end", 26.4, 30.5]];
+// Sentences, and long ones split at a comma, so a subtitle stays on one or two lines.
+function splitSentences(text) {
+  const out = [];
+  for (const s of text.match(/[^.?!]+[.?!]+(\s|$)|[^.?!]+$/g).map((x) => x.trim()).filter(Boolean)) {
+    if (s.length <= 95) { out.push(s); continue; }
+    const mid = s.length / 2;
+    let best = -1;
+    for (let k = s.indexOf(","); k >= 0; k = s.indexOf(",", k + 1)) if (best < 0 || Math.abs(k - mid) < Math.abs(best - mid)) best = k;
+    if (best < 0) { out.push(s); continue; }
+    out.push(s.slice(0, best + 1).trim(), s.slice(best + 1).trim());
+  }
+  return out;
+}
 
-const $ = (id) => document.getElementById(id);
+// ---------- Helpers ----------
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 const opts = (o = {}) => Object.assign({ style: "everyday", harakat: "full", sukun: "smart", spelling: true, digits: false }, o);
+const T = (s, o) => qalam.text(s, opts(o));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function fade(t, a, b, d = 0.35) { return Math.min(ease((t - a) / d), ease((b - t) / d)); }
+const $ = (sel, el = document) => el.querySelector(sel);
 
-function fade(t, a, b, d = 0.35) {
-  return Math.min(ease((t - a) / d), ease((b - t) / d));
-}
-
-// Typing: `script` typed from t0 at cps keys a second; returns what's on screen at time t.
-function typing(script, t0, cps, t, o) {
-  const n = clamp(Math.floor((t - t0) * cps), 0, script.length);
+// Typing `script` between local times a and b: what's on screen at u.
+function typing(script, a, b, u, o) {
+  const cps = script.length / Math.max(b - a, 0.1);
+  const n = clamp(Math.floor((u - a) * cps), 0, script.length);
   const typed = script.slice(0, n);
   const cut = typed.lastIndexOf(" ") + 1;
   const done = typed.slice(0, cut), buffer = typed.slice(cut);
-  const committed = done ? qalam.text(done, o) : "";
-  const cands = buffer ? qalam.candidates(buffer, o) : [];
+  const cands = buffer ? qalam.candidates(buffer, opts(o)) : [];
   const last = n > 0 ? script[n - 1] : "";
-  const sinceKey = n > 0 ? t - (t0 + (n - 1) / cps) : 99;
-  return { n, typed, committed, buffer, cands, last, sinceKey, finished: n === script.length };
+  const sinceKey = n > 0 ? u - (a + (n - 1) / cps) : 99;
+  return { n, committed: done ? T(done, o) : "", buffer, cands, last, sinceKey, preview: cands[0] ? cands[0].text : buffer };
 }
 
-function showText(committed, preview, caret = true) {
-  const el = $("text");
-  el.textContent = committed;
-  if (preview) {
-    const w = document.createElement("span");
-    w.className = "word";
-    w.textContent = preview;
-    el.append(w);
-  }
-  if (caret) {
-    const c = document.createElement("span");
-    c.className = "caret";
-    el.append(c);
-  }
-}
-
-function showKeys(list, hint = "") {
-  $("keys").innerHTML = list.map(([k, down]) => `<span class="key ${down ? "down" : ""}">${k}</span>`).join("") +
-    (hint ? `<span class="hint">${hint}</span>` : "");
+function editor(el, text, preview, caret = true) {
+  el.textContent = text;
+  if (preview) { const w = document.createElement("span"); w.className = "word"; w.textContent = preview; el.append(w); }
+  if (caret) { const c = document.createElement("span"); c.className = "caret"; el.append(c); }
 }
 
 function keyLabel(ch) { return ch === " " ? "Space" : ch; }
+let keysNow = [], hintNow = "";
+function keys(list, hint = "") { keysNow = list; hintNow = hint; }
 
-function chips(style, sukun, harakat, flash = "") {
-  $("chip-style").textContent = style === "quran" ? "Qur'an style" : "Everyday";
-  $("chip-style").className = "chip" + (style === "quran" ? " on" : "") + (flash === "style" ? " flash" : "");
-  $("chip-sukun").textContent = "Sukūn: " + { smart: "Smart", full: "Full", off: "Off" }[sukun];
-  $("chip-sukun").className = "chip" + (flash === "sukun" ? " flash" : "");
-  $("chip-harakat").textContent = "Harakat: " + (harakat === "none" ? "Off" : "On");
-  $("chip-harakat").className = "chip" + (flash === "harakat" ? " flash" : "");
+const WINDOW = (title, chipsHTML = "") => `<div class="window"><div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="title">${title}</span><div class="chips">${chipsHTML}</div></div><div class="doc"><div class="text"></div><div class="latin"></div><div class="note"></div></div></div>`;
+function chips(el, style, sukun, harakat, flash = "") {
+  el.querySelector(".chips").innerHTML =
+    `<span class="chip ${style === "quran" ? "on" : ""} ${flash === "style" ? "flash" : ""}">${style === "quran" ? "Qur'an style" : "Everyday"}</span>` +
+    `<span class="chip ${flash === "sukun" ? "flash" : ""}">Sukūn: ${{ smart: "Smart", full: "Full", off: "Off" }[sukun]}</span>` +
+    `<span class="chip ${flash === "harakat" ? "flash" : ""}">Harakat: ${harakat === "none" ? "Off" : "On"}</span>`;
 }
+function latin(el, buffer) { el.querySelector(".latin").innerHTML = buffer ? `typed: <b>${esc(buffer)}</b>` : ""; }
 
-function setup(t) {
-  const names = ["Welcome", "Keyboard", "Style", "Harakat & sukūn", "While typing", "Shortcuts", "Fonts", "Updates", "Practice"];
-  const step = t < 4.6 ? 1 : t < 6.0 ? 2 : 3;
-  $("steps").innerHTML = names.map((n, i) => `<span class="step ${i < step ? "done" : i === step ? "on" : ""}">${i + 1}. ${n}</span>`).join("");
-  $("p-keyboard").style.opacity = fade(t, 3.2, 4.6, 0.25);
-  $("p-style").style.opacity = fade(t, 4.6, 6.0, 0.25);
-  $("p-marks").style.opacity = fade(t, 6.0, 8, 0.25);
-  const picked = t > 5.3;
-  $("c-every").className = "card" + (picked ? " sel" : "");
-  $("c-quran").className = "card";
+const SIDEBAR = (on) => `<div class="side">${["Welcome", "Letters & keys", "Word list", "Practice", "Write", "Settings"].map((p) => `<div class="${p === on ? "on" : ""}">${p}</div>`).join("")}</div>`;
+const APP = (inner, on = "Settings") => `<div class="app"><div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="title">Qalam</span></div>${SIDEBAR(on)}<div class="main">${inner}</div><div class="banner"></div><div class="cursor"></div></div>`;
+
+function cursor(el, x, y, show = true) {
+  const c = el.querySelector(".cursor");
+  c.style.opacity = show ? 1 : 0;
+  c.style.left = x + "px"; c.style.top = y + "px";
 }
+const lerp = (a, b, k) => a + (b - a) * ease(k);
 
-function app(t) {
-  $("panel").style.display = "none";
-  let keys = [], hint = "";
+// Times of this scene's subtitle sentences, relative to the scene start.
+function parts(i) { return SUBS.filter((s) => s.scene === i).map((s) => ({ a: s.start - TL[i].start, b: s.end - TL[i].start })); }
 
-  if (t < 13.5) {
-    // 3. Everyday typing
-    const o = opts();
-    $("text").classList.remove("q");
-    chips("everyday", "smart", "full");
-    const st = typing("kataba kitaAbuN madrasat'uN ", 8.0, 6.5, t, o);
-    showText(st.committed, st.cands[0] ? st.cands[0].text : st.buffer);
-    $("latin").innerHTML = st.buffer ? `typed: <b>${st.buffer}</b>` : "";
-    if (st.last) keys = [[keyLabel(st.last), st.sinceKey < 0.12]];
-  } else if (t < 18.5) {
-    // 4. Qur'an style, a long phrase
-    const o = opts({ style: "quran" });
-    $("text").classList.add("q");
-    chips("quran", "smart", "full", t < 14.2 ? "style" : "");
-    const st = typing("alHamdu lillaAhi rabbi alea^lamiyna ", 14.0, 9, t, o);
-    showText(st.committed, st.cands[0] ? st.cands[0].text : st.buffer);
-    $("latin").innerHTML = st.buffer ? `typed: <b>${st.buffer}</b>` : "";
-    if (st.last) keys = [[keyLabel(st.last), st.sinceKey < 0.1]];
-  } else if (t < 23) {
-    // 5. Suggestions
-    $("text").classList.remove("q");
-    const o = opts();
-    chips("everyday", "smart", "full");
-    const st = typing("qaraA", 18.8, 6, t, o);
-    let sel = t < 20.3 ? 0 : t < 21.0 ? 1 : 2;
-    const committedAt = 21.9;
-    if (t < committedAt) {
-      showText("", st.cands[sel] ? st.cands[sel].text : st.buffer);
-      $("latin").innerHTML = st.buffer ? `typed: <b>${st.buffer}</b>` : "";
-      if (st.cands.length && st.n >= 2) {
-        const panel = $("panel");
-        panel.style.display = "block";
-        panel.style.left = "1080px";
-        panel.style.top = "360px";
-        panel.innerHTML = st.cands.map((c, i) =>
-          `<div class="opt ${i === sel ? "sel" : ""}"><span class="n">${i + 1}</span><span class="t"></span><span class="l"></span></div>`).join("") +
+// ---------- Scenes ----------
+// Each scene: build(el) once, then draw(el, u, len, i) every frame (u = seconds since the scene started).
+const SCENES = {
+  intro: {
+    build: (el) => el.innerHTML = `<div class="center"><div class="logo">قَلَم</div><div class="name">Qalam</div><div class="tag">Type Arabic the way you spell it</div><div class="example"></div></div>`,
+    draw(el, u, len) {
+      $(".logo", el).style.transform = `scale(${0.85 + 0.15 * ease(u / 0.9)})`;
+      const ex = ["kitaAbuN", "eilmuN", "madrasat'uN", "alshamsu"];
+      const k = Math.min(ex.length - 1, Math.floor(u / (len / ex.length)));
+      const local = u - k * (len / ex.length);
+      $(".example", el).innerHTML = `<span class="key">${esc(ex[k])}</span><span class="arrow">→</span><span class="ar" style="font-size:84px">${T(ex[k])}</span>`;
+      $(".example", el).style.opacity = u < 1 ? ease(u - 0.2) : clamp(local / 0.25);
+    },
+  },
+
+  setup: {
+    build(el) {
+      el.innerHTML = `<div class="heading">After installing</div><div class="wizard"><h2><span class="ar">قَلَم</span> Set up Qalam</h2><div class="steps"></div>
+        <div class="pane" data-p="0"><h3>Turn on the Qalam keyboard</h3><div class="ok"><span class="big">✓</span> Qalam is in your keyboards.</div></div>
+        <div class="pane" data-p="1"><h3>Writing style</h3><div class="cards"><div class="card sel"><div class="t">Everyday</div><div class="d">Books, messages, notes</div><div class="ar">${T("alHamdu lillaAhi")}</div></div><div class="card"><div class="t">Qur'an (Uthmani)</div><div class="d">As in the mushaf</div><div class="ar q">${T("alHamdu lillaAhi", { style: "quran" })}</div></div></div></div>
+        <div class="pane" data-p="2"><h3>Harakat and sukūn</h3><div class="cards"><div class="card sel"><div class="t">Smart sukūn</div><div class="d">Only where needed</div><div class="ar">${T("maktab qul")}</div></div><div class="card"><div class="t">Full sukūn</div><div class="d">Every stop</div><div class="ar">${T("maktab qul", { sukun: "full" })}</div></div><div class="card"><div class="t">No harakat</div><div class="d">Plain letters</div><div class="ar">${T("maktab qul", { harakat: "none" })}</div></div></div></div>
+        <div class="pane" data-p="3"><h3>You're ready</h3><div class="ok"><span class="big">✓</span> Optional: a 20-word practice of every special key.</div></div></div>`;
+    },
+    draw(el, u, len) {
+      const names = ["Welcome", "Keyboard", "Style", "Harakat & sukūn", "While typing", "Shortcuts", "Fonts", "Updates", "Practice"];
+      const p = Math.min(3, Math.floor(u / (len / 4)));
+      const stepOf = [1, 2, 3, 8][p];
+      $(".steps", el).innerHTML = names.map((n, i) => `<span class="step ${i < stepOf ? "done" : i === stepOf ? "on" : ""}">${i + 1}. ${n}</span>`).join("");
+      el.querySelectorAll(".pane").forEach((pane, k) => pane.style.opacity = fade(u, k * len / 4, (k + 1) * len / 4 + (k === 3 ? 9 : 0), 0.3));
+    },
+  },
+
+  switch: {
+    build(el) {
+      el.innerHTML = `<div class="heading">Switch keyboards</div>
+        <div class="half left"><div class="label">Mac</div><div class="menubar"><span>Wi-Fi</span><span class="ime">A</span><span>Mon 9:41</span></div>
+          <div class="menu" style="right:150px;top:150px;opacity:0"><div class="it abc chk">ABC</div><div class="it qal">Qalam ق</div><div class="sep"></div><div class="it">Open Keyboard Settings…</div></div>
+          <div class="bigkeys"><span class="key" data-k="ctl">Control</span><span class="key" data-k="sp">Space</span></div></div>
+        <div class="half right"><div class="label">Windows</div>
+          <div class="bigkeys"><span class="key" data-k="c">Ctrl</span><span class="key" data-k="a">Alt</span><span class="key" data-k="A">A</span></div>
+          <div class="toast"><b>Qalam is on</b><span>Type Arabic anywhere.</span></div>
+          <div class="taskbar"><span>ENG</span><span class="tray">ق</span><span>9:41</span></div></div>`;
+    },
+    draw(el, u, len, i) {
+      const ps = parts(i);
+      const macAt = ps[0].a + (ps[0].b - ps[0].a) * 0.55, winAt = ps[0].a + (ps[0].b - ps[0].a) * 0.85;
+      const macOn = u >= macAt + 0.3, winOn = u >= winAt + 0.3;
+      el.querySelector(".ime").textContent = macOn ? "ق" : "A";
+      el.querySelector(".ime").classList.toggle("open", u >= macAt && u < macAt + 1.6);
+      const menu = el.querySelector(".menu");
+      menu.style.opacity = u >= macAt && u < macAt + 1.6 ? 1 : 0;
+      el.querySelector(".abc").className = "it abc" + (macOn ? "" : " chk");
+      el.querySelector(".qal").className = "it qal" + (macOn ? " chk hi" : "");
+      const down = (at) => u >= at && u < at + 0.45;
+      el.querySelector('[data-k="ctl"]').classList.toggle("down", down(macAt - 0.1));
+      el.querySelector('[data-k="sp"]').classList.toggle("down", down(macAt));
+      el.querySelector('[data-k="c"]').classList.toggle("down", down(winAt - 0.15));
+      el.querySelector('[data-k="a"]').classList.toggle("down", down(winAt - 0.08));
+      el.querySelector('[data-k="A"]').classList.toggle("down", down(winAt));
+      el.querySelector(".tray").classList.toggle("on", winOn);
+      el.querySelector(".toast").style.opacity = fade(u, winAt + 0.3, winAt + 3.2, 0.3);
+    },
+  },
+
+  basics: {
+    build(el) { el.innerHTML = `<div class="heading">Typing</div>` + WINDOW("Notes"); },
+    draw(el, u, len) {
+      chips(el, "everyday", "smart", "full");
+      const s = "kataba darrasa maktabuN ";
+      const st = typing(s, 0.6, len - 0.8, u);
+      editor($(".text", el), st.committed, st.preview);
+      latin(el, st.buffer);
+      const n = $(".note", el);
+      const typedSoFar = s.slice(0, st.n);
+      n.textContent = typedSoFar.length > 9 && typedSoFar.length < 16 ? "rr → shadda ّ" : typedSoFar.length >= 16 ? "kt → sukūn ْ" : "";
+      n.style.opacity = n.textContent ? 1 : 0;
+      if (st.last) keys([[keyLabel(st.last), st.sinceKey < 0.12]]);
+    },
+  },
+
+  letters: {
+    build(el) {
+      const cards = [
+        ["e", "ع", "eilmuN"], ["H", "ح", "Hubb"], ["S", "ص", "Sabr"], ["D", "ض", "Daw'"], ["T", "ط", "Taalib"], ["Z", "ظ", "Zuhr"],
+        ["th", "ث", "thalaathat'uN"], ["dh", "ذ", "dhahab"], ["kh", "خ", "khubz"], ["gh", "غ", "gharb"], ["t'", "ة", "madrasat'uN"], ["Y", "ى", "eiysaY"],
+      ];
+      el.innerHTML = `<div class="heading">Letters with no English match</div><div class="grid">${cards.map(([k, l, w]) =>
+        `<div class="lc"><div class="k">${esc(k)}</div><div class="l">${l}</div><div class="w">${T(w)}</div><div class="wl">${esc(w)}</div></div>`).join("")}</div>`;
+    },
+    draw(el, u, len, i) {
+      // Sentences: intro, e, HSDTZ, th dh kh gh, t' and Y (the last may be split in two).
+      const ps = parts(i);
+      const groups = [[0], [1, 2, 3, 4, 5], [6, 7, 8, 9], [10, 11]];
+      const at = (j) => (ps[Math.min(j, ps.length - 1)] || { a: 0 }).a;
+      let g = -1;
+      for (let j = 0; j < 4; j++) if (u >= at(j + 1) - 0.1) g = j;
+      el.querySelectorAll(".lc").forEach((c, k) => {
+        const inGroup = g >= 0 && groups[g].includes(k);
+        c.className = "lc" + (g < 0 ? "" : inGroup ? " hot" : " dim");
+        c.style.opacity = g < 0 ? clamp((u - k * 0.08) / 0.4) : "";
+      });
+    },
+  },
+
+  hamza: {
+    build(el) { el.innerHTML = `<div class="heading">Hamza</div>` + WINDOW("Notes"); },
+    draw(el, u, len) {
+      chips(el, "everyday", "smart", "full");
+      const s = "saAala AaHmadu su'aAluN ";
+      const st = typing(s, 0.6, len - 1.0, u);
+      editor($(".text", el), st.committed, st.preview);
+      latin(el, st.buffer);
+      const n = $(".note", el);
+      n.textContent = /A[aiu]|'/.test(st.buffer) || st.n > 4 ? "A + vowel → hamza: أ إ ؤ ئ ء" : "";
+      n.style.opacity = n.textContent ? 1 : 0;
+      if (st.last) keys([[keyLabel(st.last), st.sinceKey < 0.12]]);
+    },
+  },
+
+  phrases: {
+    build(el) { el.innerHTML = `<div class="heading">Phrases and Qur'an style</div>` + WINDOW("Notes"); },
+    draw(el, u, len) {
+      const s = "bismi allaAhi alrraHma^ni alrraHiymi ";
+      const switchAt = len * 0.62;
+      const quran = u >= switchAt;
+      chips(el, quran ? "quran" : "everyday", "smart", "full", u >= switchAt && u < switchAt + 0.8 ? "style" : "");
+      const text = $(".text", el);
+      text.classList.toggle("q", quran);
+      const st = typing(s, 0.5, switchAt - 0.6, u, quran ? { style: "quran" } : {});
+      editor(text, st.committed, st.preview);
+      latin(el, st.buffer);
+      const n = $(".note", el);
+      n.textContent = u < switchAt ? (u > 1.5 ? "al + sun letter → الرَّ" : "") : "Qur'an style: ٱ  ـٰ";
+      n.style.opacity = n.textContent ? 1 : 0;
+      if (u < switchAt && st.last) keys([[keyLabel(st.last), st.sinceKey < 0.1]]);
+      else if (u >= switchAt) keys([["Qur'an style", u < switchAt + 0.4]], "from the ق menu");
+    },
+  },
+
+  suggestions: {
+    build(el) { el.innerHTML = `<div class="heading">Suggestions</div>` + WINDOW("Notes") + `<div class="panel" style="display:none;left:1060px;top:380px"></div>`; },
+    draw(el, u, len) {
+      chips(el, "everyday", "smart", "full");
+      const s = "qaraA";
+      const st = typing(s, 0.5, 1.8, u);
+      const d1 = len * 0.42, d2 = len * 0.58, pick = len * 0.74;
+      const sel = u < d1 ? 0 : u < d2 ? 1 : 2;
+      const panel = $(".panel", el);
+      if (u < pick) {
+        editor($(".text", el), "", st.cands[sel] ? st.cands[sel].text : st.buffer);
+        latin(el, st.buffer);
+        panel.style.display = st.n >= 2 ? "block" : "none";
+        panel.innerHTML = st.cands.map((c, k) => `<div class="opt ${k === sel ? "sel" : ""}"><span class="n">${k + 1}</span><span class="t">${c.text}</span><span class="l">${esc(c.label)}</span></div>`).join("") +
           `<div class="btns"><span class="btn">Sukūn: Smart</span><span class="btn">Harakat: On</span><span class="btn" style="margin-left:auto">↑ ↓ choose</span></div>`;
-        panel.querySelectorAll(".opt").forEach((row, i) => {
-          row.querySelector(".t").textContent = st.cands[i].text;
-          row.querySelector(".l").textContent = st.cands[i].label;
-        });
+        if (u >= d1) keys([["↓", (u >= d1 && u < d1 + 0.18) || (u >= d2 && u < d2 + 0.18)]], "next option");
+        else if (st.last) keys([[keyLabel(st.last), st.sinceKey < 0.12]]);
+      } else {
+        panel.style.display = "none";
+        editor($(".text", el), qalam.candidates(s, opts())[2].text + " ", "");
+        latin(el, "");
+        keys([["Space", u < pick + 0.2]], "puts it in");
       }
-      if (t >= 20.3) keys = [["↓", (t >= 20.3 && t < 20.45) || (t >= 21.0 && t < 21.15)]];
-      else if (st.last) keys = [[keyLabel(st.last), st.sinceKey < 0.12]];
-      if (t >= 20.3) hint = "next option";
-    } else {
-      const c = qalam.candidates("qaraA", o)[2];
-      showText(c.text + " ", "");
-      $("latin").innerHTML = "";
-      keys = [["Space", t < 22.05]];
-      hint = "puts it in";
-    }
-  } else {
-    // 6. Sukūn and harakat off
-    const phrase = "maktabuN qul";
-    const sukunOff = t >= 24.2, harakatOff = t >= 25.6;
-    const o = opts({ sukun: sukunOff ? "off" : "smart", harakat: harakatOff ? "none" : "full" });
-    chips("everyday", sukunOff ? "off" : "smart", harakatOff ? "none" : "full",
-      t >= 24.2 && t < 24.9 ? "sukun" : t >= 25.6 && t < 26.3 ? "harakat" : "");
-    showText(qalam.text(phrase, o), "");
-    $("latin").innerHTML = `typed: <b>${phrase}</b>`;
-    if (t >= 23.6 && t < 25.3) { keys = [["Ctrl", t >= 24.0 && t < 24.4], ["Alt", t >= 24.0 && t < 24.4], ["O", t >= 24.1 && t < 24.4]]; hint = "sukūn off"; }
-    else if (t >= 25.3) { keys = [["Harakat button", t >= 25.5 && t < 25.8]]; hint = "harakat off"; }
-  }
-  showKeys(keys, hint);
+    },
+  },
+
+  sukun: {
+    build(el) { el.innerHTML = `<div class="heading">Sukūn and harakat</div>` + WINDOW("Notes") + `<div class="panel" style="left:1060px;top:470px;width:600px"><div class="btns" style="border-top:0"><span class="btn" data-b="s">Sukūn: Smart</span><span class="btn" data-b="h">Harakat: On</span></div></div>`; },
+    draw(el, u, len, i) {
+      const ps = parts(i);
+      const offAt = ps[Math.min(1, ps.length - 1)].a + 0.6;
+      const harAt = ps[ps.length - 1].a + 1.0;
+      const sukunOff = u >= offAt, harOff = u >= harAt;
+      const o = { sukun: sukunOff ? "off" : "smart", harakat: harOff ? "none" : "full" };
+      chips(el, "everyday", o.sukun, o.harakat, u >= offAt && u < offAt + 0.8 ? "sukun" : u >= harAt && u < harAt + 0.8 ? "harakat" : "");
+      editor($(".text", el), T("maktabuN qul bayt", o), "", false);
+      latin(el, "maktabuN qul bayt");
+      $('[data-b="s"]', el).textContent = "Sukūn: " + (sukunOff ? "Off" : "Smart");
+      $('[data-b="h"]', el).textContent = "Harakat: " + (harOff ? "Off" : "On");
+      $('[data-b="h"]', el).classList.toggle("press", u >= harAt - 0.15 && u < harAt + 0.3);
+      if (u >= offAt - 0.5 && u < harAt - 0.4) keys([["⌃ Control", u >= offAt - 0.2 && u < offAt + 0.3], ["⇧ Shift", u >= offAt - 0.1 && u < offAt + 0.3], ["O", u >= offAt && u < offAt + 0.3]], "Mac  ·  Windows: Ctrl + Alt + O");
+      else if (u >= harAt - 0.4) keys([["Harakat button", u >= harAt - 0.15 && u < harAt + 0.3]], "every vowel mark off");
+      else keys([]);
+    },
+  },
+
+  shortcuts: {
+    build(el) {
+      el.innerHTML = `<div class="heading">Change shortcuts</div>` + APP(`<h4>Shortcuts</h4><div class="group">
+        <div class="row"><span class="grow">Sukūn off / on</span><span class="field">⌃⇧O</span></div>
+        <div class="row"><span class="grow">Harakat off / on</span><span class="field" data-f="h">None</span></div></div>
+        <p class="status" style="margin-top:20px">Click a shortcut, then press the new keys. Windows: tray menu → Shortcuts.</p>`);
+    },
+    draw(el, u, len) {
+      const click = len * 0.3, rec = len * 0.62;
+      const f = $('[data-f="h"]', el);
+      f.textContent = u < click ? "None" : u < rec ? "Press keys…" : "⌃⇧H";
+      f.className = "field" + (u >= click && u < rec ? " rec" : u >= rec ? " new" : "");
+      const x = lerp(900, 1360, (u - 0.3) / (click - 0.3)), y = lerp(520, 260, (u - 0.3) / (click - 0.3));
+      cursor(el, x, y, u < rec + 0.6);
+      if (u >= rec - 0.4 && u < rec + 1.4) keys([["⌃ Control", u >= rec - 0.3], ["⇧ Shift", u >= rec - 0.2], ["H", u >= rec]], "new harakat shortcut");
+      else keys([]);
+    },
+  },
+
+  settings: {
+    build(el) {
+      el.innerHTML = `<div class="heading">Where are the settings?</div>
+        <div class="half left"><div class="label">Mac: the ق menu</div><div class="menubar"><span>Wi-Fi</span><span class="ime">ق</span><span>Mon 9:41</span></div>
+          <div class="menu" data-m="mac" style="right:110px;top:150px">
+            <div class="it" data-hi="1">Open Qalam (letters, words, practice)…</div><div class="sep"></div>
+            <div class="it chk">Everyday style</div><div class="it">Qur'an style</div><div class="sep"></div>
+            <div class="it chk">Full harakat</div><div class="it">No harakat</div><div class="sep"></div>
+            <div class="it chk">Sukūn: Smart</div><div class="it">Sukūn: Off <span class="k">⌃⇧O</span></div><div class="it">Change shortcuts…</div></div></div>
+        <div class="half right"><div class="label">Windows: right-click ق</div>
+          <div class="menu" data-m="win" style="right:60px;bottom:80px">
+            <div class="it chk">Arabic typing <span class="k">Ctrl+Alt+A</span></div><div class="sep"></div>
+            <div class="it chk">Everyday style</div><div class="it">Sukūn: Smart</div><div class="it">Shortcuts ▸</div><div class="sep"></div>
+            <div class="it" data-hi="1">Setup &amp; settings…</div><div class="it">Letters, words &amp; practice…</div>
+            <div class="it">Check for updates… (version 1.3.0)</div><div class="it">Quit Qalam</div></div>
+          <div class="taskbar"><span>ENG</span><span class="tray on">ق</span><span>9:41</span></div></div>`;
+    },
+    draw(el, u, len, i) {
+      const ps = parts(i);
+      const macAt = ps[Math.min(1, ps.length - 1)].a, winAt = ps[Math.min(2, ps.length - 1)].a;
+      const mac = $('[data-m="mac"]', el), win = $('[data-m="win"]', el);
+      mac.style.opacity = clamp((u - macAt + 0.3) / 0.3);
+      win.style.opacity = clamp((u - winAt + 0.3) / 0.3);
+      $(".left .ime", el).classList.toggle("open", u >= macAt - 0.3);
+      $('[data-m="mac"] [data-hi]', el).classList.toggle("hi", u >= macAt + 1.2);
+      $('[data-m="win"] [data-hi]', el).classList.toggle("hi", u >= winAt + 1.6);
+      keys([]);
+    },
+  },
+
+  fonts: {
+    build(el) {
+      el.innerHTML = `<div class="heading">Fonts</div>` + APP(`<h4>Fonts in this app</h4><div class="group">
+        <div class="row"><span class="grow">Arabic font</span><span class="select" data-s="1"><span></span><span>▾</span></span></div>
+        <div class="preview ar"></div>
+        <div class="row"><span class="grow">Arabic size</span><span class="slider"><span class="fill"></span><span class="knob"></span></span></div></div>`);
+    },
+    draw(el, u, len) {
+      const fonts = [["Noto Naskh Arabic", "Naskh"], ["Scheherazade New", "Scheh"], ["Amiri Quran", "AmiriQ"]];
+      const k = u < len * 0.3 ? 0 : u < len * 0.55 ? 1 : 2;
+      $('[data-s="1"] span', el).textContent = fonts[k][0];
+      $('[data-s="1"]', el).classList.toggle("open", Math.abs(u - len * 0.3) < 0.4 || Math.abs(u - len * 0.55) < 0.4);
+      const size = 1 + 0.45 * ease((u - len * 0.65) / (len * 0.25));
+      const p = $(".preview", el);
+      p.textContent = T(k === 2 ? "alHamdu lillaAhi rabbi alea^lamiyna" : "AanaA AuHibbu allugat'a alearabiyyat'a", k === 2 ? { style: "quran" } : {});
+      p.style.fontFamily = `"${fonts[k][1]}", serif`;
+      p.style.fontSize = Math.round(58 * size) + "px";
+      const pos = (size - 0.8) / 0.8;
+      $(".fill", el).style.width = pos * 100 + "%";
+      $(".knob", el).style.left = pos * 100 + "%";
+      cursor(el, k < 2 && u < len * 0.62 ? 1300 : lerp(1300, 1060 + 420 * pos, (u - len * 0.62) / 0.4), k < 2 || u < len * 0.62 ? 175 : 560, u > 0.6 && u < len - 0.3);
+      keys([]);
+    },
+  },
+
+  updates: {
+    build(el) {
+      el.innerHTML = `<div class="heading">Updates</div>` + APP(`<h4>Updates</h4><div class="group">
+        <div class="row"><span class="grow">Version</span><span class="status">1.3.0</span></div>
+        <div class="row"><span class="grow">Check for updates automatically</span><span class="toggle"></span></div>
+        <div class="row"><span class="grow">Install updates automatically</span><span class="toggle"></span></div>
+        <div class="row"><span class="button" data-b="1">Check for updates now</span><span class="status" data-st="1" style="margin-left:auto"></span></div></div>
+        <p class="status" style="margin-top:20px">Windows: right-click ق → Check for updates…</p>`);
+    },
+    draw(el, u, len) {
+      const press = len * 0.45, done = press + 1.4;
+      $('[data-b="1"]', el).classList.toggle("press", u >= press && u < press + 0.35);
+      const st = $('[data-st="1"]', el);
+      st.textContent = u < press ? "Last checked today" : u < done ? "Checking…" : "You have the latest version ✓";
+      st.className = "status" + (u >= done ? " good" : "");
+      cursor(el, lerp(1200, 560, (u - 0.6) / (press - 0.8)), lerp(260, 470, (u - 0.6) / (press - 0.8)), u > 0.4);
+      keys([]);
+    },
+  },
+
+  end: {
+    build: (el) => el.innerHTML = `<div class="center"><div class="logo" style="font-size:200px">قَلَم</div><div class="name" style="font-size:60px">Free for Mac &amp; Windows</div>
+      <div class="badges"><span class="badge">Every app</span><span class="badge">Everyday &amp; Qur'an style</span><span class="badge">Offline · private</span></div>
+      <div class="pill">sashakib.github.io/qalam</div></div>`,
+    draw() { keys([]); },
+  },
+};
+
+// ---------- Drawing a frame ----------
+const els = [];
+function build() {
+  const stage = document.getElementById("stage");
+  stage.innerHTML = "";
+  TL.forEach((s) => {
+    const el = document.createElement("div");
+    el.className = "scene";
+    SCENES[s.id].build(el);
+    stage.append(el);
+    els.push(el);
+  });
+  stage.insertAdjacentHTML("beforeend", `<div class="keys" id="keys"></div><div class="sub" id="sub"></div><div class="progress" id="progress"></div>`);
 }
 
 function renderAt(t) {
-  for (const [id, a, b] of SCENES) $(id).style.opacity = fade(t, a, b);
-  const sub = SUBTITLES.find(([a, b]) => t >= a && t < b);
-  $("sub").innerHTML = sub ? `<span>${sub[2]}</span>` : "";
-  $("sub").style.opacity = sub ? fade(t, sub[0], sub[1], 0.2) : 0;
-  $("progress").style.width = (t / DURATION * 100) + "%";
-  $("keys").style.opacity = t >= 8 && t < 26.4 ? 1 : 0;
-
-  // Title
-  const s = 0.85 + 0.15 * ease(t / 0.9);
-  document.querySelector("#s-title .logo").style.transform = `scale(${s})`;
-  if (t < 3.5) setup(3.2);
-  if (t >= 2.9 && t < 7.7) setup(t);
-  if (t >= 7.3 && t < 27.2) app(t);
+  keys([]);
+  TL.forEach((s, i) => {
+    const vis = fade(t, s.start, s.start + s.len + (i === TL.length - 1 ? 9 : 0.2), 0.35);
+    els[i].style.opacity = vis;
+    if (t >= s.start - 0.4 && t < s.start + s.len + 0.4) SCENES[s.id].draw(els[i], t - s.start, s.len, i);
+  });
+  // Keys belong to whichever scene is current.
+  const cur = TL.findIndex((s) => t >= s.start && t < s.start + s.len);
+  if (cur >= 0) SCENES[TL[cur].id].draw(els[cur], t - TL[cur].start, TL[cur].len, cur);
+  const k = document.getElementById("keys");
+  k.innerHTML = keysNow.map(([label, down]) => `<span class="key ${down ? "down" : ""}">${esc(label)}</span>`).join("") + (hintNow ? `<span class="hint">${esc(hintNow)}</span>` : "");
+  k.style.opacity = keysNow.length ? 1 : 0;
+  const sub = SUBS.find((s) => t >= s.start && t < s.end);
+  const subEl = document.getElementById("sub");
+  subEl.innerHTML = sub ? `<span>${esc(sub.text)}</span>` : "";
+  subEl.style.opacity = sub ? fade(t, sub.start, sub.end, 0.15) : 0;
+  document.getElementById("progress").style.width = (t / DURATION * 100) + "%";
 }
 
-// Fixed text drawn by the engine once it's ready.
-function prepare() {
-  $("title-ex").textContent = qalam.text("kitaAbuN", opts());
-  const phrase = "alHamdu lillaAhi";
-  $("prev-every").textContent = qalam.text(phrase, opts());
-  $("prev-quran").textContent = qalam.text(phrase, opts({ style: "quran" }));
-  $("prev-smart").textContent = qalam.text("maktab qul", opts());
-  $("prev-full").textContent = qalam.text("maktab qul", opts({ sukun: "full" }));
-  $("prev-none").textContent = qalam.text("maktab qul", opts({ harakat: "none" }));
-}
-
+// render.js: the real narration lengths (seconds), then the timeline it should follow.
+window.setVoiceDurations = (d) => { DUR = d; buildTimeline(); els.length = 0; build(); renderAt(0);
+  return { duration: DURATION, scenes: TL, subtitles: SUBS }; };
 window.renderAt = renderAt;
-window.SUBTITLES = SUBTITLES;
-window.DURATION = DURATION;
+
 window.videoReady = new Promise((resolve) => {
   window.addEventListener("qalam-ready", async () => {
-    prepare();
+    SCRIPT = await (await fetch("script.json")).json();
+    buildTimeline();
+    build();
     await document.fonts.ready;
+    await Promise.all(["Naskh", "AmiriQ", "Scheh", "NSans"].map((f) => document.fonts.load(`40px "${f}"`, "قلم")));
     renderAt(0);
     resolve(true);
-    // Opened in a browser (not by render.js): play it.
     if (!location.search.includes("capture")) {
       const start = performance.now();
-      const loop = () => { const t = ((performance.now() - start) / 1000) % (DURATION + 1); renderAt(Math.min(t, DURATION - 0.01)); requestAnimationFrame(loop); };
+      const loop = () => { renderAt(((performance.now() - start) / 1000) % DURATION); requestAnimationFrame(loop); };
       requestAnimationFrame(loop);
     }
   }, { once: true });
