@@ -50,10 +50,10 @@ final class AppState: ObservableObject {
     @Published var installedFonts: [String] = []
     @Published var kfgqpcFamily: String?
     @Published var fontName: String {
-        didSet { UserDefaults.standard.set(fontName, forKey: "arabicFont2") }
+        didSet { UserDefaults.standard.set(fontName, forKey: "arabicFont3") }
     }
     @Published var quranFontName: String {
-        didSet { UserDefaults.standard.set(quranFontName, forKey: "quranFont") }
+        didSet { UserDefaults.standard.set(quranFontName, forKey: "quranFont2") }
     }
     @Published var fontScale: Double {
         didSet { UserDefaults.standard.set(fontScale, forKey: "fontScale") }
@@ -62,8 +62,9 @@ final class AppState: ObservableObject {
     init() {
         options = SharedSettings.load()
         ArabicFonts.registerBundled()
-        fontName = UserDefaults.standard.string(forKey: "arabicFont2") ?? "Noto Naskh Arabic"
-        quranFontName = UserDefaults.standard.string(forKey: "quranFont") ?? "Amiri Quran"
+        // A font the user picked stays; otherwise SIL Scheherazade New, and KFGQPC Hafs for Qur'an text once it's there.
+        fontName = UserDefaults.standard.string(forKey: "arabicFont3") ?? ArabicFonts.defaultArabic
+        quranFontName = UserDefaults.standard.string(forKey: "quranFont2") ?? ArabicFonts.defaultQuran()
         let scale = UserDefaults.standard.double(forKey: "fontScale")
         fontScale = scale == 0 ? 1 : scale
         let practiced = UserDefaults.standard.bool(forKey: "firstPracticeDone")

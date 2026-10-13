@@ -58,7 +58,7 @@ func TestSetupPageNeedsToken(t *testing.T) {
 	if w := call(srv, "GET", "/api/state?t="+srv.token, "", ""); w.Code != 403 {
 		t.Errorf("API must take the token from the header only: %d", w.Code)
 	}
-	if w := call(srv, "GET", "/noto-naskh.ttf?t="+srv.token, "", ""); w.Code != 200 || w.Body.String() != "font" {
+	if w := call(srv, "GET", "/arabic.ttf?t="+srv.token, "", ""); w.Code != 200 || w.Body.String() != "font" {
 		t.Errorf("font: %d", w.Code)
 	}
 }

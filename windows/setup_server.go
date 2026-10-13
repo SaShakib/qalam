@@ -32,6 +32,13 @@ type setupState struct {
 	SetupDone       bool              `json:"setupDone"`
 	Keys            map[string]string `json:"keys"`      // name → "Ctrl+Alt+A" or "none"
 	Recording       string            `json:"recording"` // shortcut being recorded, or ""
+	Fonts           []fontState       `json:"fonts"`     // Qalam's fonts, and whether each is installed for all apps
+}
+
+type fontState struct {
+	Name      string `json:"name"`
+	Quran     bool   `json:"quran"`
+	Installed bool   `json:"installed"`
 }
 
 // setupPatch changes some settings; nil fields stay as they are.
@@ -53,7 +60,7 @@ type setupPatch struct {
 type setupHost interface {
 	State() setupState
 	Apply(p setupPatch) setupState
-	// Action runs a button: "record:<name>", "unset:<name>", "resetKeys", "cancelRecord", "guide".
+	// Action runs a button: "record:<name>", "unset:<name>", "resetKeys", "cancelRecord", "guide", "installFonts".
 	Action(name string) error
 }
 
@@ -181,7 +188,7 @@ func (s *setupServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := r.Header.Get("X-Qalam-Token")
-	if r.URL.Path == "/" || r.URL.Path == "/noto-naskh.ttf" {
+	if r.URL.Path == "/" || r.URL.Path == "/arabic.ttf" {
 		token = r.URL.Query().Get("t") // links and the page's font can't send a header
 	}
 	if token != s.token {
@@ -196,7 +203,7 @@ func (s *setupServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.URL.Path == "/" && r.Method == http.MethodGet:
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(s.page)
-	case r.URL.Path == "/noto-naskh.ttf" && r.Method == http.MethodGet:
+	case r.URL.Path == "/arabic.ttf" && r.Method == http.MethodGet:
 		w.Header().Set("Content-Type", "font/ttf")
 		w.Write(s.font)
 	case r.URL.Path == "/api/state" && r.Method == http.MethodGet:

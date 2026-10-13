@@ -71,7 +71,8 @@ bundle: build icons
 	cp $(BIN)/QalamApp "$(APP)/Contents/MacOS/Qalam"
 	cp mac/bundle/Qalam-Info.plist "$(APP)/Contents/Info.plist"
 	cp $(BUILD)/icons/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
-	cp fonts/*.ttf fonts/OFL-*.txt "$(APP)/Contents/Resources/Fonts/"
+	cp fonts/*.ttf "$(APP)/Contents/Resources/Fonts/"
+	cp fonts/*.txt "$(APP)/Contents/Resources/Fonts/"
 	for p in "$(IME_APP)" "$(APP)"; do \
 	  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" "$$p/Contents/Info.plist"; \
 	  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" "$$p/Contents/Info.plist"; \
@@ -100,7 +101,11 @@ guide: icons
 	$(SWIFT) --product qalam
 	mkdir -p windows/assets
 	$(RELEASE)/qalam --guide windows/assets/guide.html windows
-	cp $(BUILD)/icons/qalam-on.ico $(BUILD)/icons/qalam-off.ico fonts/NotoNaskhArabic.ttf windows/assets/
+	cp $(BUILD)/icons/qalam-on.ico $(BUILD)/icons/qalam-off.ico windows/assets/
+	# The fonts the Windows app carries and installs: SIL Scheherazade New, and KFGQPC Hafs when it's in fonts/.
+	mkdir -p windows/assets/fonts
+	cp fonts/ScheherazadeNew.ttf fonts/OFL-ScheherazadeNew.txt windows/assets/fonts/
+	for f in fonts/*KFGQPC* fonts/*Hafs* fonts/*HAFS*; do [ -f "$$f" ] && cp "$$f" windows/assets/fonts/ || true; done
 
 windows: guide
 	mkdir -p $(DIST)

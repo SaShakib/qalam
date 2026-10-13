@@ -8,6 +8,14 @@ if [ -n "$home" ]; then
   rm -rf "$home/Library/Input Methods/QalamInput.app" "$home/Applications/Qalam.app"
 fi
 
+# Fonts for every app (Pages, Word…): SIL Scheherazade New, and KFGQPC Hafs when it's included.
+if [ -n "$home" ] && [ "$user" != "root" ]; then
+  sudo -u "$user" mkdir -p "$home/Library/Fonts"
+  for f in /Applications/Qalam.app/Contents/Resources/Fonts/ScheherazadeNew*.ttf /Applications/Qalam.app/Contents/Resources/Fonts/*KFGQPC*.ttf /Applications/Qalam.app/Contents/Resources/Fonts/*Hafs*.ttf; do
+    [ -f "$f" ] && [ ! -f "$home/Library/Fonts/$(basename "$f")" ] && sudo -u "$user" cp "$f" "$home/Library/Fonts/"
+  done
+fi
+
 # Restart the keyboard so the new version is used, and refresh the input menu.
 killall QalamInput 2>/dev/null || true
 [ -n "$user" ] && pkill -u "$user" TextInputMenuAgent 2>/dev/null || true

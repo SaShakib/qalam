@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Qalam Setup</title>
 <style>
-  @font-face { font-family: "Qalam Naskh"; src: url("/noto-naskh.ttf?t=TOKEN") format("truetype"); }
+  @font-face { font-family: "Qalam Arabic"; src: url("/arabic.ttf?t=TOKEN") format("truetype"); }
   :root {
     --bg: #f6f4ef; --card: #ffffff; --ink: #1d2320; --muted: #5d6762; --line: #e2ded4;
     --accent: #0f7b5f; --accent-ink: #ffffff; --accent-soft: #e3f2ec; --warn: #9a5b00;
-    --arabic: "Qalam Naskh", "Segoe UI", "Arabic Typesetting", "Traditional Arabic", serif;
+    --arabic: "Qalam Arabic", "Segoe UI", "Arabic Typesetting", "Traditional Arabic", serif;
   }
   @media (prefers-color-scheme: dark) {
     :root { --bg: #151917; --card: #1f2522; --ink: #ecefed; --muted: #a3ada8; --line: #313a36;
@@ -134,12 +134,10 @@
 
   <section class="step" data-title="Fonts">
     <h2>Fonts</h2>
-    <p class="lead">Qalam types Unicode Arabic, so the app you type in chooses the font. Pick an Arabic font there (in Word: the font box, then <b>Complex scripts</b>).</p>
-    <div class="row"><div class="grow"><b>Noto Naskh Arabic</b><div class="d">Clear naskh for everyday text. Qalam's typing box uses it.</div></div><a href="https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic" target="_blank" rel="noopener">Get it</a></div>
-    <div class="row"><div class="grow"><b>Amiri Quran</b><div class="d">Classic mushaf style for Qur'an text.</div></div><a href="https://fonts.google.com/specimen/Amiri+Quran" target="_blank" rel="noopener">Get it</a></div>
-    <div class="row"><div class="grow"><b>Scheherazade New</b><div class="d">Large, very readable harakat (SIL).</div></div><a href="https://software.sil.org/scheherazade/" target="_blank" rel="noopener">Get it</a></div>
-    <div class="row"><div class="grow"><b>KFGQPC Hafs</b><div class="d">The Madinah mushaf font, from the King Fahd Complex.</div></div><a href="https://fonts.qurancomplex.gov.sa/" target="_blank" rel="noopener">Get it</a></div>
-    <div class="note">Windows already has Arabic fonts (Segoe UI, Arial, Traditional Arabic, Sakkal Majalla), so this step is optional. Chrome, Edge and other Chrome-based apps get a small fix so اللَّه shows its harakat correctly.</div>
+    <p class="lead">Qalam types standard Arabic, so the app you type in shows it in its own font. Qalam includes good Arabic fonts: install them so every app (Word, Notepad, your browser) can use them.</p>
+    <div id="fontList"></div>
+    <p><button class="btn primary" id="fontsBtn" data-action="installFonts">Install fonts for all apps</button> <span id="fontsDone" class="d"></span></p>
+    <div class="note">Then pick the font in your app. In Word: the font box, or <b>Complex scripts</b> in the Font dialog (Ctrl+D). Scheherazade New (SIL) suits everyday text; KFGQPC Hafs is the standard Madinah mushaf font for Qur'an text. Chrome, Edge and other Chrome-based apps get a small fix so اللَّه shows its harakat correctly.</div>
   </section>
 
   <section class="step" data-title="Windows">
@@ -208,6 +206,23 @@
       $("#keys").append(row);
     }
     $("#recordNote").hidden = !state.recording;
+    const fonts = state.fonts || [];
+    $("#fontList").innerHTML = "";
+    for (const f of fonts) {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `<div class="grow"><b></b><div class="d"></div></div><span></span>`;
+      row.querySelector("b").textContent = f.name;
+      row.querySelector(".d").textContent = f.quran ? "The Madinah mushaf font, for Qur'an text" : "SIL, large and very readable harakat, for everyday text";
+      row.querySelector("span").textContent = f.installed ? "✓ Installed" : "Not installed yet";
+      $("#fontList").append(row);
+    }
+    if (!fonts.some((f) => f.quran)) {
+      $("#fontList").insertAdjacentHTML("beforeend", `<div class="row"><div class="grow"><b>KFGQPC Hafs</b><div class="d">The Madinah mushaf font, for Qur'an text. Until you have it, use Scheherazade New.</div></div><a href="https://fonts.qurancomplex.gov.sa/" target="_blank" rel="noopener">Get it</a></div>`);
+    }
+    const allIn = fonts.length > 0 && fonts.every((f) => f.installed);
+    $("#fontsBtn").hidden = allIn;
+    $("#fontsDone").textContent = allIn ? "✓ Every app can use them now." : "";
     if (state.recording && !poll) poll = setInterval(refresh, 500);
     if (!state.recording && poll) { clearInterval(poll); poll = null; }
     previews();
