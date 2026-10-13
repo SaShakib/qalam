@@ -29,7 +29,6 @@ var guideHTML []byte
 //go:embed assets/NotoNaskhArabic.ttf
 var previewFont []byte
 
-var version = "dev" // set at build time: -X main.version=…
 
 var (
 	settings  Settings
@@ -50,6 +49,8 @@ func main() {
 			return
 		case "--updated":
 			updated = true
+		case "--selftest":
+			os.Exit(selfTest(os.Args))
 		}
 	}
 
@@ -101,6 +102,7 @@ func main() {
 
 	if updated {
 		go cleanupAfterUpdate()
+		noteVersion()
 		balloon("Qalam updated", "You now have version "+version+".")
 	}
 	startUpdateLoop()
@@ -110,8 +112,11 @@ func main() {
 		settings.Enabled = true
 		saveSettings(settings)
 		updateTray()
-		openGuide()
-		balloon("Qalam is on", "Type Arabic anywhere. "+settings.hotkeyText("toggle")+" switches between Arabic and English (change it: right-click the tray icon → Shortcuts).")
+		balloon("Qalam is on", "Type Arabic anywhere. "+settings.hotkeyText("toggle")+" switches between Arabic and English. Right-click the ق icon for settings.")
+	}
+	// The setup steps open until they are finished or skipped (also after an update that added them).
+	if !settings.SetupDone {
+		openSetup("")
 	}
 
 	var m msg

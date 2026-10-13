@@ -40,6 +40,7 @@ const (
 	cmdOptions
 	cmdQuit
 	cmdKeysReset
+	cmdSetup
 	cmdKeysFirst // + index into hotkeyNames
 )
 
@@ -124,6 +125,9 @@ func trayProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			showMenu()
 		}
 		return 0
+	case message == wmRunOnUI:
+		drainUICalls()
+		return 0
 	case message == taskbarCreated && taskbarCreated != 0:
 		trayCall(nimAdd) // Explorer restarted
 		return 0
@@ -178,6 +182,7 @@ func showMenu() {
 	item(cmdDigits, "Arabic digits ١٢٣", o.ArabicDigits)
 	item(cmdSpelling, "Smart spelling (اللَّه، هَٰذَا)", o.SpellingWords)
 	sep()
+	item(cmdSetup, "Setup && settings…", false)
 	item(cmdGuide, "Letters, words && practice…", false)
 	item(cmdStartup, "Start with Windows", startupEnabled())
 	item(cmdCheckUpdate, "Check for updates… (version "+version+")", false)
@@ -213,6 +218,9 @@ func showMenu() {
 		settings.SpellingWords = !settings.SpellingWords
 	case cmdGuide:
 		openGuide()
+		return
+	case cmdSetup:
+		openSetup("settings")
 		return
 	case cmdStartup:
 		setStartup(!startupEnabled())

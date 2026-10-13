@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: Engine and Windows app (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: windows/go.mod
+      - name: Vet
+        working-directory: windows
+        run: |
+          go vet ./...
+          # The Win32 hook reads the key from an lParam pointer, which vet's unsafeptr check can't follow.
+          GOOS=windows GOARCH=amd64 go vet -unsafeptr=false .
+          GOOS=windows GOARCH=arm64 go vet -unsafeptr=false .
+      - name: Test (golden cases, options parity, setup page, settings)
+        working-directory: windows
+        run: go test ./...
+      - name: Cross-build Windows exes
+        working-directory: windows
+        run: |
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o /tmp/Qalam-x64.exe .
+          GOOS=windows GOARCH=arm64 go build -trimpath -ldflags "-H windowsgui -s -w" -o /tmp/Qalam-arm64.exe .
+      - name: Build the website (with the WebAssembly demo)
+        run: make site GO=go
+
+  windows:
+    name: Windows ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            arch: x64
+            goarch: amd64
+          - os: windows-11-arm
+            arch: arm64
+            goarch: arm64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: windows/go.mod
+      - name: Test on Windows
+        working-directory: windows
+        run: go test -v ./...
+      - name: Build Qalam.exe
+        working-directory: windows
+        env:
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          New-Item -ItemType Directory -Force ..\dist | Out-Null
+          go build -trimpath -ldflags "-H windowsgui -s -w -X main.version=0.0.0-ci" -o ..\dist\Qalam-Windows-${{ matrix.arch }}.exe .
+      - name: Self-test the exe
+        run: |
+          $p = Start-Process -FilePath dist\Qalam-Windows-${{ matrix.arch }}.exe -ArgumentList '--selftest', "$PWD\selftest.txt" -Wait -PassThru
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { throw "self-test failed ($($p.ExitCode))" }
+      - name: Get Inno Setup
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          if (-not (Test-Path $iscc)) { throw "Inno Setup is not installed" }
+          "ISCC=$iscc" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build the installer
+        working-directory: windows/installer
+        run: |
+          & $env:ISCC /Q /DAppVersion=0.0.0 /DArch=${{ matrix.arch }} "/DExe=..\..\dist\Qalam-Windows-${{ matrix.arch }}.exe" qalam.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed" }
+      - name: Install, start, uninstall
+        run: |
+          $setup = "dist\Qalam-Setup-${{ matrix.arch }}.exe"
+          $dir = "$env:LOCALAPPDATA\Programs\Qalam"
+          $run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+          $apps = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F1C2E7A-6A51-4C1B-9E0B-6D5A3C1B7E41}_is1'
+
+          Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/TASKS="startup"' -Wait
+          if (-not (Test-Path "$dir\Qalam.exe")) { throw "Qalam.exe was not installed" }
+          if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Qalam.lnk")) { throw "no Start menu entry" }
+          if ((Get-ItemProperty $run).Qalam -ne "`"$dir\Qalam.exe`"") { throw "not set to start with Windows" }
+          if ((Get-ItemProperty $apps).DisplayName -notlike 'Qalam*') { throw "not listed in Apps" }
+
+          # Start it as a returning user (no setup page or browser), check it keeps running and writes its settings.
+          New-Item -ItemType Directory -Force "$env:APPDATA\Qalam" | Out-Null
+          '{"enabled":true,"firstRunDone":true,"setupDone":true,"askedInstall":true,"noAutoUpdate":true,"spellingWords":true}' |
+            Set-Content "$env:APPDATA\Qalam\settings.json"
+          $app = Start-Process "$dir\Qalam.exe" -PassThru
+          Start-Sleep -Seconds 5
+          if ($app.HasExited) { throw "Qalam quit right after starting (exit code $($app.ExitCode))" }
+          if (-not (Test-Path "$env:APPDATA\Qalam\qalam-on.ico")) { throw "Qalam did not set up its tray icon files" }
+
+          # The uninstaller closes the running Qalam and removes everything.
+          Start-Process "$dir\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+          Start-Sleep -Seconds 3
+          if (Test-Path "$dir\Qalam.exe") { throw "Qalam.exe is still there" }
+          if (Test-Path $apps) { throw "still listed in Apps" }
+          if ((Get-ItemProperty $run -ErrorAction SilentlyContinue).Qalam) { throw "still starts with Windows" }
+          if (Test-Path "$env:APPDATA\Qalam") { throw "settings were not removed" }
+          if (Get-Process -Name Qalam -ErrorAction SilentlyContinue) { throw "Qalam is still running" }
+          "Install, start and uninstall all OK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: |
+            dist/Qalam-Setup-${{ matrix.arch }}.exe
+            dist/Qalam-Windows-${{ matrix.arch }}.exe
+          retention-days: 7
+
+  mac:
+    name: Mac (universal build)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: windows/go.mod
+      - name: Test (Swift and Go engines)
+        run: make test
+      - name: Build both apps, universal and ad-hoc signed
+        run: make bundle
+      - name: Check the apps
+        run: |
+          for bin in build/Qalam.app/Contents/MacOS/Qalam build/QalamInput.app/Contents/MacOS/QalamInput; do
+            archs=$(lipo -archs "$bin")
+            echo "$bin: $archs"
+            [[ "$archs" == *arm64* && "$archs" == *x86_64* ]] || { echo "not universal"; exit 1; }
+          done
+          codesign --verify --strict --verbose=2 build/Qalam.app build/QalamInput.app
+          plutil -lint build/Qalam.app/Contents/Info.plist build/QalamInput.app/Contents/Info.plist

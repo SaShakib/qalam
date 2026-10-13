@@ -86,18 +86,19 @@ struct SettingsView: View {
                 if updater.method == .homebrew {
                     Text("Installed with Homebrew: updates run `brew upgrade --cask qalam`.").font(.caption).foregroundStyle(.secondary)
                 } else if updater.method == .pkg {
-                    Text("Installed with the .pkg: updates download the new installer for you to open.").font(.caption).foregroundStyle(.secondary)
+                    Text("Installed with the .pkg: updates ask for your password once, then install by themselves.").font(.caption).foregroundStyle(.secondary)
                 }
             }
 
             Section("Keyboard status") {
-                LabeledContent("Installed", value: InputSource.isInstalled ? "Yes" : "No: run make install")
+                LabeledContent("Installed", value: InputSource.isInstalled ? "Yes" : "No: reinstall Qalam")
                 LabeledContent("In the input menu", value: enabled ? "Yes" : "No")
                 HStack {
                     if !enabled {
                         Button("Add Qalam now") { enabled = InputSource.enable() }
                     }
                     Button("Open Keyboard Settings…") { InputSource.openKeyboardSettings() }
+                    Button("Run setup again") { app.restartSetup() }
                     Button("Show welcome again") { app.page = .welcome }
                     Button("Do the 20-word starter practice again") { app.restartFirstPractice() }
                 }

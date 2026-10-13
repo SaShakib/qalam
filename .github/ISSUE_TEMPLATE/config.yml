@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Docs and install guide
+    url: https://sashakib.github.io/qalam/docs.html
+    about: How to install, set up and use Qalam.
+  - name: Questions board
+    url: https://sashakib.github.io/qalam/questions.html
+    about: See what others asked before asking.

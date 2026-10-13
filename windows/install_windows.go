@@ -40,6 +40,10 @@ func install() error {
 	}
 	exe := installedExe()
 	setStartup(true)
+	// Qalam-Setup.exe already put Qalam in Settings → Apps; don't list it twice.
+	if innoUninstaller() != "" {
+		return exec.Command(exe).Start()
+	}
 	if k, err := regCreate(uninstallKey); err == nil {
 		regSetString(k, "DisplayName", "Qalam (phonetic Arabic keyboard)")
 		regSetString(k, "DisplayVersion", version)
@@ -88,9 +92,38 @@ func closeRunningCopy() {
 	}
 }
 
+// innoUninstaller is the uninstaller left by Qalam-Setup.exe (Inno Setup), if Qalam was installed with it.
+func innoUninstaller() string {
+	p := filepath.Join(installDir(), "unins000.exe")
+	if fileExists(p) {
+		return p
+	}
+	return ""
+}
+
 func startUninstall() {
+	if u := innoUninstaller(); u != "" {
+		exec.Command(u).Start()
+		return
+	}
 	cmd := exec.Command(installedExe(), "--uninstall")
 	cmd.Start()
+}
+
+// innoKey is where Qalam-Setup.exe registers Qalam in Settings → Apps (AppId in installer/qalam.iss).
+const innoKey = `Software\Microsoft\Windows\CurrentVersion\Uninstall\{6F1C2E7A-6A51-4C1B-9E0B-6D5A3C1B7E41}_is1`
+
+// noteVersion shows the new version in Settings → Apps after an update.
+func noteVersion() {
+	for _, path := range []string{uninstallKey, innoKey} {
+		var k uintptr
+		if r, _, _ := pRegOpenKeyExW.Call(hkeyCurrentUser, uintptr(unsafe.Pointer(utf16Ptr(path))), 0, keyAllAccess,
+			uintptr(unsafe.Pointer(&k))); r != 0 {
+			continue
+		}
+		regSetString(k, "DisplayVersion", version)
+		pRegCloseKey.Call(k)
+	}
 }
 
 func uninstall() {

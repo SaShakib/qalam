@@ -14,6 +14,7 @@ type Settings struct {
 	engine.Options
 	Enabled      bool              `json:"enabled"`
 	FirstRunDone bool              `json:"firstRunDone"`
+	SetupDone    bool              `json:"setupDone"` // finished (or skipped) the setup steps
 	AskedInstall bool              `json:"askedInstall"`
 	NoAutoUpdate bool              `json:"noAutoUpdate"`
 	NoOptions    bool              `json:"noOptions"`    // hide the options panel (show only the word)

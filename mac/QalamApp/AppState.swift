@@ -40,6 +40,8 @@ final class AppState: ObservableObject {
     @Published var page: Page?
     @Published var practiceSet: PracticeSet = .starter
     @Published var firstPracticeDone: Bool
+    /// The setup steps were finished or skipped (people who used Qalam before 1.3 count as done).
+    @Published var setupDone: Bool
     @Published var options: Options {
         didSet { SharedSettings.save(options); shown.removeAll() }
     }
@@ -64,7 +66,9 @@ final class AppState: ObservableObject {
         quranFontName = UserDefaults.standard.string(forKey: "quranFont") ?? "Amiri Quran"
         let scale = UserDefaults.standard.double(forKey: "fontScale")
         fontScale = scale == 0 ? 1 : scale
-        firstPracticeDone = UserDefaults.standard.bool(forKey: "firstPracticeDone")
+        let practiced = UserDefaults.standard.bool(forKey: "firstPracticeDone")
+        firstPracticeDone = practiced
+        setupDone = UserDefaults.standard.object(forKey: "setupDone") as? Bool ?? practiced
         page = .letters
     }
 
@@ -72,6 +76,22 @@ final class AppState: ObservableObject {
         UserDefaults.standard.set(true, forKey: "firstPracticeDone")
         firstPracticeDone = true
         page = .letters
+    }
+
+    /// End of the setup steps: on to the 20-word practice, or straight into the app.
+    func finishSetup(practice: Bool) {
+        UserDefaults.standard.set(true, forKey: "setupDone")
+        setupDone = true
+        if practice {
+            restartFirstPractice()
+        } else if !firstPracticeDone {
+            finishFirstPractice()
+        }
+    }
+
+    func restartSetup() {
+        UserDefaults.standard.set(false, forKey: "setupDone")
+        setupDone = false
     }
 
     func restartFirstPractice() {
@@ -96,6 +116,14 @@ final class AppState: ObservableObject {
         let s = Qalam.text(latin, o)
         shown[key] = s
         return s
+    }
+
+    /// What the keyboard writes for `latin` with the current settings changed by `change`
+    /// (the setup steps show each choice before it is picked).
+    func preview(_ latin: String, _ change: (inout Options) -> Void) -> String {
+        var o = options
+        change(&o)
+        return Qalam.text(latin, o)
     }
 
     /// Other ways to type `latin` (cached).

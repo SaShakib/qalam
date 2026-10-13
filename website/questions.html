@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qalam Questions</title>
+<meta name="description" content="Questions and answers about Qalam, the phonetic Arabic keyboard. Ask your own.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f7b5f'/%3E%3Ctext x='32' y='46' font-size='40' text-anchor='middle' fill='white' font-family='serif'%3E%D9%82%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="questions">
+<main class="wrap" style="padding:32px 16px 60px">
+  <h1 class="title" style="font-size:clamp(28px,4vw,40px);margin:0 0 6px">Questions</h1>
+  <p class="intro">Confused about a key, a setting or installing? Someone may have asked already. If not, ask: answers stay here for the next person.</p>
+
+  <div class="cta" style="margin-bottom:22px">
+    <a class="btn primary" id="ask" href="#">Ask a question</a>
+    <a class="btn" href="docs.html?p=faq">Read the FAQ</a>
+    <a class="btn" href="docs.html?p=troubleshooting">Troubleshooting</a>
+  </div>
+  <p class="muted" style="font-size:14px;margin-top:-8px">Asking opens a short form on GitHub (a free account is needed to post). Questions are public; don't include personal details.</p>
+
+  <div class="board-head">
+    <input type="search" id="q" placeholder="Search questions… (English or Arabic)" aria-label="Search questions">
+    <div class="tabs" role="tablist">
+      <button class="on" data-f="all">All</button>
+      <button data-f="answered">Answered</button>
+      <button data-f="open">Waiting for an answer</button>
+    </div>
+  </div>
+  <div id="status" class="muted">Loading questions…</div>
+  <div class="board" id="board"></div>
+</main>
+<script src="config.js"></script>
+<script src="assets/site.js"></script>
+<script src="assets/board.js"></script>
+</body>
+</html>
