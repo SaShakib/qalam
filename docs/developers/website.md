@@ -38,7 +38,17 @@ Windows visitors whose browser can't tell the processor (Firefox) also get an "O
 
 `make wasm` compiles the Go engine (`windows/wasm/`) to `website/demo/qalam.wasm`, so the pad types exactly like the apps. The Pages workflow builds it; it isn't committed.
 
-## The docs (wiki)
+## The docs and the wiki
+
+All documentation is written **once**, as Markdown files in `docs/`, and shows up in three places:
+
+| Where | Address | How it gets there |
+|---|---|---|
+| The repository | https://github.com/SaShakib/qalam/tree/main/docs | the files themselves |
+| The website | https://sashakib.github.io/qalam/docs.html | `pages.yml` copies `docs/` into the site, `docs.html` renders it with search |
+| The GitHub Wiki | https://github.com/SaShakib/qalam/wiki | `wiki.yml` runs `tools/docs_to_wiki.py` on every push to `main` and pushes the pages, with a sidebar |
+
+**Edit `docs/`, never the wiki directly:** the next push to `main` rewrites the wiki's pages. Each wiki page ends with a link to the file it came from.
 
 Docs are Markdown files in `docs/`. To add a page, create `docs/<name>.md` and list it in `docs/nav.json`. Links between pages are ordinary relative Markdown links (`[Fonts](fonts.md)`), so they work on GitHub too. Every page has **Edit this page**, which opens the file on GitHub for a pull request: that's how anyone can improve the wiki.
 

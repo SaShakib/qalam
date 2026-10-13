@@ -31,4 +31,4 @@ kitaAbuN → كِتَابٌ     saAala → سَأَلَ     eilmuN → عِلْ�
 
 Search these pages (the box at the top left), then look at the [questions board](https://sashakib.github.io/qalam/questions.html). If nobody has asked yet, [ask your question](https://github.com/SaShakib/qalam/issues/new?template=question.yml).
 
-These pages are written in Markdown in the [`docs/` folder](https://github.com/SaShakib/qalam/tree/main/docs) of the repository. Anyone can improve one with **Edit this page** at the top right.
+These pages are also on the [GitHub Wiki](https://github.com/SaShakib/qalam/wiki). They are written in Markdown in the [`docs/` folder](https://github.com/SaShakib/qalam/tree/main/docs) of the repository. Anyone can improve one with **Edit this page** at the top right.
