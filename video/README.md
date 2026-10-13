@@ -53,11 +53,13 @@ Read one line per scene. Each line fits its time slot at a calm pace (about 2.5 
 
 Pronunciation: Qalam = *KA-lam*, sukūn = *su-KOON*, haraka = *HA-ra-ka*, harakat = *ha-ra-KAAT*, shadda = *SHAD-da*.
 
-### Add it
+### Add it (synced automatically)
 
-1. Record or generate the voice (see below) as **one file, 30 seconds or a little less**, starting at 0.
-2. Save it as `video/voice.mp3` (or `.wav` / `.m4a`).
-3. Run `node video/render.js --site`. You get `video/out/qalam-demo-voice.mp4`, and the website uses it.
+**One clip per line (easiest):** save the 7 lines as `video/voice/01.mp3` … `07.mp3`, in the order above, and run `node video/render.js --site`. Each clip is placed at its subtitle's start time, and sped up a little (up to 1.3×) if it runs longer than its slot, so you don't have to line anything up. You get `video/out/qalam-demo-voice.mp4`, and the website uses it.
+
+**With ElevenLabs, all at once:** `ELEVENLABS_API_KEY=… node video/elevenlabs.js` makes the 7 clips from the subtitles (key: ElevenLabs → profile → API Keys), then run `node video/render.js --site`. On the free plan, credit ElevenLabs where you post the video.
+
+**One finished file:** save a 30-second voice track as `video/voice.mp3` (or `.wav` / `.m4a`) and run `node video/render.js --site`.
 
 Or with ffmpeg only, on the finished video:
 
