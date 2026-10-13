@@ -176,6 +176,8 @@ site: wasm
 	cp -R website/. $(BUILD)/site/
 	cp -R docs $(BUILD)/site/docs
 	cp LAYOUT.md $(BUILD)/site/docs/LAYOUT.md
+	mkdir -p $(BUILD)/site/fonts
+	cp fonts/KFGQPC-HAFS-Uthmanic-Script.ttf fonts/LICENSE-KFGQPC.txt $(BUILD)/site/fonts/
 	@echo "Preview: python3 -m http.server -d $(BUILD)/site 8000"
 
 clean:
