@@ -1,7 +1,7 @@
 name: Release
 
-# Push a tag (git tag v1.3.0 && git push origin v1.3.0) to build every download and make a draft
-# release. Signing and notarization happen when the secrets in docs/developers/signing.md are set.
+# Push a tag (git tag v1.3.0 && git push origin v1.3.0), or run it from Actions → Release → Run workflow,
+# to build every download and make a draft release (the version comes from the Makefile). Signing and notarization happen when the secrets in docs/developers/signing.md are set.
 
 on:
   push:
@@ -139,7 +139,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version=$(sed -n 's/^VERSION *:= *//p' Makefile)
-          gh release create "v$version" dist/* --draft --title "Qalam $version" --generate-notes --verify-tag || \
+          # Started by a tag push, the tag exists; started by hand (Actions → Release → Run workflow),
+          # the release creates the v<version> tag on the commit that was built.
+          gh release create "v$version" dist/* --draft --title "Qalam $version" --generate-notes --target "$GITHUB_SHA" || \
             gh release upload "v$version" dist/* --clobber
           sha=$(sha256sum dist/Qalam-mac.zip | cut -d' ' -f1)
           {
