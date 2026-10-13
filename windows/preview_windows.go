@@ -49,7 +49,7 @@ func scale(px int32) int32 {
 	return px * int32(dpi) / 96
 }
 
-// loadPreviewFont makes the bundled Noto Naskh Arabic available to Qalam only.
+// loadPreviewFont makes the bundled Scheherazade New (SIL) available to Qalam's typing box.
 func loadPreviewFont() {
 	if len(previewFont) == 0 {
 		return
@@ -57,7 +57,7 @@ func loadPreviewFont() {
 	var count uint32
 	h, _, _ := pAddFontMem.Call(uintptr(unsafe.Pointer(&previewFont[0])), uintptr(len(previewFont)), 0, uintptr(unsafe.Pointer(&count)))
 	if h != 0 {
-		previewFamily = "Noto Naskh Arabic"
+		previewFamily = typingFont(fonts).Name
 	}
 }
 

@@ -58,6 +58,12 @@ if [ -d "/Applications/Qalam.app" ] || [ -d "/Library/Input Methods/QalamInput.a
   echo "      Remove it to avoid two copies: sudo rm -rf /Applications/Qalam.app '/Library/Input Methods/QalamInput.app'"
 fi
 
+# Fonts for every app (Pages, Word…): SIL Scheherazade New, and KFGQPC Hafs when it's included.
+mkdir -p "$HOME/Library/Fonts"
+for f in "$APP"/Contents/Resources/Fonts/ScheherazadeNew*.ttf "$APP"/Contents/Resources/Fonts/*KFGQPC*.ttf "$APP"/Contents/Resources/Fonts/*Hafs*.ttf; do
+  if [ -f "$f" ] && [ ! -f "$HOME/Library/Fonts/$(basename "$f")" ]; then cp "$f" "$HOME/Library/Fonts/"; fi
+done
+
 # Refresh the menu-bar input menu so it sees the new keyboard (macOS relaunches it at once).
 killall TextInputMenuAgent 2>/dev/null || true
 

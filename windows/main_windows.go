@@ -26,10 +26,6 @@ var iconOff []byte
 //go:embed assets/guide.html
 var guideHTML []byte
 
-//go:embed assets/NotoNaskhArabic.ttf
-var previewFont []byte
-
-
 var (
 	settings  Settings
 	composer  engine.Composer
@@ -51,6 +47,12 @@ func main() {
 			updated = true
 		case "--selftest":
 			os.Exit(selfTest(os.Args))
+		case "--install-fonts":
+			// Run by Qalam-Setup.exe: the Arabic fonts for every app, for this user.
+			if installFonts() != nil {
+				os.Exit(1)
+			}
+			return
 		}
 	}
 

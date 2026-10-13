@@ -285,9 +285,10 @@ private struct FontsStep: View {
                 .font(app.arabic(30, quran: true))
                 .frame(maxWidth: .infinity, alignment: .trailing)
             Slider(value: $app.fontScale, in: 0.8...1.6) { Text("Arabic size") }
+            InstallFontsRow()
             if app.kfgqpcFamily == nil {
                 HStack {
-                    Text("KFGQPC Hafs (the Madinah mushaf font) isn't installed. You can add it any time.")
+                    Text("KFGQPC Hafs (the Madinah mushaf font) isn't installed. Until it is, Qur'an text uses Scheherazade New.")
                         .font(.callout).foregroundStyle(.secondary)
                     Spacer()
                     Link("Get KFGQPC Hafs…", destination: ArabicFonts.kfgqpcDownload)

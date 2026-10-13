@@ -75,6 +75,8 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
   ValueData: """{app}\Qalam.exe"""; Tasks: startup; Flags: uninsdeletevalue
 
 [Run]
+; The Arabic fonts (SIL Scheherazade New, and KFGQPC Hafs when included) for every app, for this user.
+Filename: "{app}\Qalam.exe"; Parameters: "--install-fonts"; StatusMsg: "Installing the Arabic fonts..."; Flags: runhidden waituntilterminated
 Filename: "{app}\Qalam.exe"; Description: "Start Qalam now and set it up"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]

@@ -60,13 +60,14 @@ struct SettingsView: View {
                 Slider(value: $app.fontScale, in: 0.8...1.6) { Text("Arabic size") }
                 if app.kfgqpcFamily == nil {
                     HStack {
-                        Text("KFGQPC Hafs (the Madinah mushaf font) isn't installed. Install it, then pick it above.")
+                        Text("KFGQPC Hafs (the Madinah mushaf font) isn't installed. Until it is, Qur'an text uses Scheherazade New.")
                             .font(.callout).foregroundStyle(.secondary)
                         Spacer()
                         Link("Get KFGQPC Hafs…", destination: ArabicFonts.kfgqpcDownload)
                     }
                 }
-                Text("Fonts apply to this app. In other apps, choose the font in that app (these fonts can be installed from the Qalam folder's fonts/ directory).")
+                InstallFontsRow()
+                Text("Fonts here apply to this app. In other apps, choose the font in that app once it's installed for all apps.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
@@ -123,6 +124,29 @@ extension SettingsView {
                 return "Last checked " + d.formatted(.relative(presentation: .named))
             }
             return ""
+        }
+    }
+}
+
+/// Puts Qalam's fonts (Scheherazade New, and KFGQPC Hafs when included) in ~/Library/Fonts, for every app.
+struct InstallFontsRow: View {
+    @State private var installed = ArabicFonts.installedForAllApps
+    private var names: String {
+        ArabicFonts.forAllApps.map { $0.deletingPathExtension().lastPathComponent }.joined(separator: " and ")
+    }
+
+    var body: some View {
+        if !ArabicFonts.forAllApps.isEmpty {
+            HStack {
+                if installed {
+                    Label("Installed for all your apps (Pages, Word, Notes…)", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                } else {
+                    Text("Use \(names) in every app, not just Qalam.").font(.callout)
+                    Spacer()
+                    Button("Install fonts for all apps") { installed = ArabicFonts.installForAllApps() }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
         }
     }
 }

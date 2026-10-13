@@ -40,6 +40,7 @@ func selfTest(args []string) int {
 
 	check(len(guideHTML) > 1000 && len(setupHTML) > 1000, "embedded guide and setup pages")
 	check(len(iconOn) > 0 && len(iconOff) > 0 && len(previewFont) > 100000, "embedded icons and font")
+	check(typingFont(fonts) != nil && typingFont(fonts).Name == "Scheherazade New", "the typing box uses Scheherazade New (SIL)")
 	check(!isChromiumExe(exePath()), "Qalam.exe itself is not a Chrome app")
 	check(isChromiumExe(`C:\Program Files\WindowsApps\x\msedgewebview2.exe`), "WebView2 apps are Chrome apps")
 	check(strings.HasPrefix(assetName(), "Qalam-Windows-"), "update file name")

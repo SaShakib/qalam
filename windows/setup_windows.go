@@ -65,6 +65,9 @@ func (appHost) State() setupState {
 		st.Recording = recording
 	})
 	st.Startup = startupEnabled()
+	for _, f := range fonts {
+		st.Fonts = append(st.Fonts, fontState{Name: f.Name, Quran: isQuranFont(f), Installed: fontInstalled(f)})
+	}
 	return st
 }
 
@@ -119,6 +122,8 @@ func (appHost) Action(name string) error {
 			updateTray()
 		case name == "guide":
 			openGuide()
+		case name == "installFonts":
+			err = installFonts()
 		default:
 			err = fmt.Errorf("unknown action %q", name)
 		}

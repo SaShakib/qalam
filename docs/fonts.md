@@ -2,39 +2,31 @@
 
 Qalam types standard Unicode Arabic, so **the app you type in decides the font**. Any Arabic font shows the text; some show harakat more clearly than others.
 
-## Fonts that come with Qalam (Mac app)
+## The default fonts
 
-The Mac app includes four open-licence fonts. It uses them for its own pages (letters, words, practice, write):
+| Text | Font | Notes |
+|---|---|---|
+| Everyday Arabic | **Scheherazade New** (SIL) | large, very readable harakat; included with Qalam |
+| Qur'an text | **KFGQPC HAFS Uthmanic Script** (King Fahd Complex) | the standard Madinah mushaf font; included with Qalam |
 
-| Font | Good for |
+On the Mac you can pick other fonts in **Qalam → Settings → Fonts in this app** (also Noto Naskh Arabic, Amiri Quran and Noto Sans Arabic, which are included), and change the Arabic text size. On Windows, Qalam's typing box uses Scheherazade New.
+
+## Fonts in all your apps
+
+Qalam types standard Unicode Arabic, so **the app you type in decides the font**. Qalam installs Scheherazade New and KFGQPC Hafs for every app (Word, Pages, Notes, your browser…), just for your user, with no password:
+
+| Installed with | The fonts |
 |---|---|
-| **Noto Naskh Arabic** (default) | clear naskh for everyday text |
-| **Amiri Quran** (default for Qur'an text) | classic mushaf style |
-| **Scheherazade New** (SIL) | large, very readable harakat |
-| **Noto Sans Arabic** | modern sans-serif |
+| Mac installer package (`.pkg`) or the Terminal command | installed automatically |
+| Homebrew | click **Install fonts for all apps** in the setup's Fonts step, or in Settings → Fonts |
+| Windows installer (`Qalam-Setup`) | installed automatically |
+| Windows single `.exe` | click **Install fonts for all apps** in the setup page's Fonts step (right-click ق → Setup & settings…) |
 
-Choose them in **Qalam → Settings → Fonts in this app**, along with the Arabic text size. If **KFGQPC Hafs** is installed, it shows there too.
-
-The Windows typing box uses Noto Naskh Arabic.
-
-## Fonts for your other apps
-
-To use these fonts in Word, Pages, Keynote and so on, install them on your computer:
-
-| Font | Where to get it |
-|---|---|
-| Noto Naskh Arabic | [Google Fonts](https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic) |
-| Amiri Quran | [Google Fonts](https://fonts.google.com/specimen/Amiri+Quran) |
-| Scheherazade New | [SIL](https://software.sil.org/scheherazade/) |
-| Noto Sans Arabic | [Google Fonts](https://fonts.google.com/noto/specimen/Noto+Sans+Arabic) |
-| KFGQPC Hafs (Madinah mushaf) | [King Fahd Complex](https://fonts.qurancomplex.gov.sa/) |
-
-The same font files are also in the [`fonts/` folder](https://github.com/SaShakib/qalam/tree/main/fonts) of the repository, with their licences.
-
-- **Mac:** double-click a `.ttf` file → **Install**.
-- **Windows:** right-click a `.ttf` file → **Install**.
+Then choose the font in your app.
 
 > **In Microsoft Word,** Arabic uses the **Complex scripts** font: Home → Font dialog (Ctrl + D) → **Complex scripts**.
+
+If you'd rather install fonts yourself, they're in the [`fonts/` folder](https://github.com/SaShakib/qalam/tree/main/fonts) of the repository with their licences. KFGQPC Hafs comes from the [King Fahd Complex](https://fonts.qurancomplex.gov.sa/); its licence lets Qalam include it unmodified and free of charge. On a Mac, double-click a `.ttf` file → **Install**; on Windows, right-click → **Install**.
 
 ## Harakat look wrong?
 

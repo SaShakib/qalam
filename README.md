@@ -81,7 +81,7 @@ While you type, the word is shown underlined (macOS) or in a small preview box (
 
 ## Fonts
 
-The app includes four open-licence Arabic fonts: **Noto Naskh Arabic** (default), **Amiri Quran** (default for Qur'an text), **Scheherazade New** (SIL) and **Noto Sans Arabic**. If **KFGQPC Hafs** is installed (from [fonts.qurancomplex.gov.sa](https://fonts.qurancomplex.gov.sa/)), you can pick it in Settings. Font licences are in `fonts/`.
+Qalam includes **Scheherazade New** (SIL, the default Arabic font) and **KFGQPC HAFS Uthmanic Script** (the Madinah mushaf font from the [King Fahd Complex](https://fonts.qurancomplex.gov.sa/), the default for Qur'an text), and installs both for every app: automatically with the Mac `.pkg`, `install.sh` and the Windows installer, or with **Install fonts for all apps** in the setup. The Mac app also includes Noto Naskh Arabic, Amiri Quran and Noto Sans Arabic. Font licences are in `fonts/`. More: [docs/fonts.md](docs/fonts.md).
 
 ## Build from source
 

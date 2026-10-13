@@ -97,6 +97,9 @@ jobs:
           if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Qalam.lnk")) { throw "no Start menu entry" }
           if ((Get-ItemProperty $run).Qalam -ne "`"$dir\Qalam.exe`"") { throw "not set to start with Windows" }
           if ((Get-ItemProperty $apps).DisplayName -notlike 'Qalam*') { throw "not listed in Apps" }
+          $font = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\ScheherazadeNew.ttf"
+          if (-not (Test-Path $font)) { throw "the Arabic font was not installed" }
+          if ((Get-ItemProperty 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts').'Scheherazade New (TrueType)' -ne $font) { throw "the font is not registered" }
 
           # Start it as a returning user (no setup page or browser), check it keeps running and writes its settings.
           New-Item -ItemType Directory -Force "$env:APPDATA\Qalam" | Out-Null
