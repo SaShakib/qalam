@@ -1,0 +1,5 @@
+# Test data and scripts keep LF line ends on every system (Windows CI reads them byte for byte).
+*.tsv text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.go text eol=lf

@@ -5,7 +5,7 @@ import Foundation
 /// How it installs depends on how Qalam was installed:
 ///   • install.sh / per-user copy → downloads the zip and replaces both bundles in place
 ///   • Homebrew                   → runs `brew upgrade --cask qalam`
-///   • .pkg in /Applications      → downloads the new .pkg and opens it in Installer
+///   • .pkg in /Applications      → downloads the new .pkg and installs it (asks for the password)
 @MainActor
 final class Updater: ObservableObject {
     static let repo = "SaShakib/qalam"
@@ -139,6 +139,7 @@ final class Updater: ObservableObject {
         defer { try? FileManager.default.removeItem(at: work) }
         let zip = work.appendingPathComponent("Qalam-mac.zip")
         try FileManager.default.moveItem(at: tmpFile, to: zip)
+        Self.clearQuarantine(zip)
 
         status = .working("Installing…")
         try run("/usr/bin/ditto", ["-x", "-k", zip.path, work.appendingPathComponent("x").path])
@@ -189,6 +190,9 @@ final class Updater: ObservableObject {
         relaunch()
     }
 
+    /// .pkg installs live in /Applications, so updating needs an administrator. Instead of opening the
+    /// download in Installer (where an unsigned package meets Gatekeeper again), run `installer` with
+    /// the standard macOS password prompt. If that is cancelled, fall back to opening the package.
     private func openPkg(_ release: Release) async throws {
         guard let url = release.asset({ $0.hasSuffix(".pkg") }) else { throw UpdateError("The release has no installer package.") }
         status = .working("Downloading the installer…")
@@ -196,8 +200,34 @@ final class Updater: ObservableObject {
         let dest = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
         try? FileManager.default.removeItem(at: dest)
         try FileManager.default.moveItem(at: tmpFile, to: dest)
-        NSWorkspace.shared.open(dest)
-        status = .working("Finish the update in the Installer window.")
+        Self.clearQuarantine(dest)
+
+        status = .working("Installing… (macOS asks for your password)")
+        let wasEnabled = InputSource.isEnabled || InputSource.rememberedEnabled
+        // The path is in the temporary folder: no quotes or backslashes in it.
+        let script = "do shell script \"/usr/sbin/installer -pkg \" & quoted form of \"\(dest.path)\" & \" -target /\" with administrator privileges"
+        var error: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&error)
+        if let error {
+            // -128: the user cancelled the password prompt.
+            if (error[NSAppleScript.errorNumber] as? Int) == -128 {
+                NSWorkspace.shared.open(dest)
+                status = .working("Finish the update in the Installer window.")
+                return
+            }
+            throw UpdateError((error[NSAppleScript.errorMessage] as? String) ?? "The installer failed.")
+        }
+        try? FileManager.default.removeItem(at: dest)
+        if wasEnabled { InputSource.enable() }
+        InputSource.refreshInputMenu()
+        status = .installed(release.version)
+        relaunch()
+    }
+
+    /// Files this app downloads aren't normally quarantined, but if one is, Gatekeeper would ask
+    /// "Open Anyway?" again for every update of an app that isn't notarized. Clear it.
+    nonisolated static func clearQuarantine(_ url: URL) {
+        _ = try? runStatic("/usr/bin/xattr", ["-dr", "com.apple.quarantine", url.path])
     }
 
     private func relaunch() {

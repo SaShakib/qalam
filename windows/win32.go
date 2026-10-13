@@ -57,9 +57,11 @@ var (
 	pGetDpiForSystem               = user32.NewProc("GetDpiForSystem")
 	pFindWindowW                   = user32.NewProc("FindWindowW")
 
-	pGetModuleHandleW = kernel32.NewProc("GetModuleHandleW")
-	pCreateMutexW     = kernel32.NewProc("CreateMutexW")
-	pCloseHandle      = kernel32.NewProc("CloseHandle")
+	pGetModuleHandleW           = kernel32.NewProc("GetModuleHandleW")
+	pCreateMutexW               = kernel32.NewProc("CreateMutexW")
+	pCloseHandle                = kernel32.NewProc("CloseHandle")
+	pOpenProcess                = kernel32.NewProc("OpenProcess")
+	pQueryFullProcessImageNameW = kernel32.NewProc("QueryFullProcessImageNameW")
 
 	pShellNotifyIconW = shell32.NewProc("Shell_NotifyIconW")
 	pShellExecuteW    = shell32.NewProc("ShellExecuteW")
@@ -72,6 +74,7 @@ var (
 	pCreateSolidBrush = gdi32.NewProc("CreateSolidBrush")
 
 	pRegCreateKeyExW  = advapi32.NewProc("RegCreateKeyExW")
+	pRegOpenKeyExW    = advapi32.NewProc("RegOpenKeyExW")
 	pRegSetValueExW   = advapi32.NewProc("RegSetValueExW")
 	pRegQueryValueExW = advapi32.NewProc("RegQueryValueExW")
 	pRegDeleteValueW  = advapi32.NewProc("RegDeleteValueW")

@@ -15,7 +15,8 @@ func TestGoldenCases(t *testing.T) {
 		t.Fatal(err)
 	}
 	pass := 0
-	for n, line := range strings.Split(string(data), "\n") {
+	// Git on Windows may check the file out with CRLF line ends.
+	for n, line := range strings.Split(strings.ReplaceAll(string(data), "\r", ""), "\n") {
 		if strings.TrimSpace(line) == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
@@ -64,7 +65,7 @@ func TestCandidatesMatchSwift(t *testing.T) {
 	if err != nil {
 		t.Skip("no candidates.tsv")
 	}
-	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+	for _, line := range strings.Split(strings.TrimSpace(strings.ReplaceAll(string(data), "\r", "")), "\n") {
 		cols := strings.SplitN(line, "\t", 2)
 		if len(cols) != 2 {
 			continue

@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qalam Setup</title>
+<style>
+  @font-face { font-family: "Qalam Naskh"; src: url("/noto-naskh.ttf?t=TOKEN") format("truetype"); }
+  :root {
+    --bg: #f6f4ef; --card: #ffffff; --ink: #1d2320; --muted: #5d6762; --line: #e2ded4;
+    --accent: #0f7b5f; --accent-ink: #ffffff; --accent-soft: #e3f2ec; --warn: #9a5b00;
+    --arabic: "Qalam Naskh", "Segoe UI", "Arabic Typesetting", "Traditional Arabic", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151917; --card: #1f2522; --ink: #ecefed; --muted: #a3ada8; --line: #313a36;
+            --accent: #3fbf93; --accent-ink: #08130f; --accent-soft: #1d3a30; --warn: #f0b35a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 "Segoe UI", system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 18px 28px; border-bottom: 1px solid var(--line); background: var(--card); }
+  header .logo { font-family: var(--arabic); font-size: 34px; color: var(--accent); line-height: 1; }
+  header h1 { font-size: 20px; margin: 0; }
+  header .sub { color: var(--muted); font-size: 14px; }
+  header .spacer { flex: 1; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 20px 120px; }
+  .progress { display: flex; gap: 6px; margin: 4px 0 22px; flex-wrap: wrap; }
+  .progress button { border: 0; background: var(--line); color: var(--muted); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .progress button.on { background: var(--accent); color: var(--accent-ink); }
+  .progress button.done { background: var(--accent-soft); color: var(--accent); }
+  section.step { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 26px 28px; margin-bottom: 18px; }
+  section.step.on, body.all section.step { display: block; }
+  h2 { margin: 0 0 6px; font-size: 24px; }
+  p.lead { color: var(--muted); margin: 0 0 18px; }
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  label.choice { display: block; border: 2px solid var(--line); border-radius: 12px; padding: 14px 16px; cursor: pointer; }
+  label.choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  label.choice input { margin-right: 8px; }
+  label.choice .t { font-weight: 600; }
+  label.choice .d { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .ar { font-family: var(--arabic); font-size: 28px; direction: rtl; text-align: right; margin-top: 8px; line-height: 1.9; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .row .grow { flex: 1; }
+  .row .d { color: var(--muted); font-size: 14px; }
+  kbd { font: 600 14px ui-monospace, Consolas, monospace; background: var(--accent-soft); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; }
+  button.btn { font: inherit; border-radius: 10px; padding: 9px 18px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  button.btn:disabled { opacity: .5; cursor: default; }
+  textarea { width: 100%; min-height: 90px; font-family: var(--arabic); font-size: 26px; direction: rtl; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  .samples { display: grid; grid-template-columns: max-content max-content 1fr; gap: 6px 16px; align-items: center; margin: 12px 0; }
+  .samples .arrow { color: var(--muted); }
+  .samples kbd { justify-self: start; }
+  .note { background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-top: 14px; }
+  .warn { color: var(--warn); }
+  footer.nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); padding: 12px 20px; }
+  footer.nav .in { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+  footer.nav .grow { flex: 1; color: var(--muted); font-size: 14px; }
+  body.all .progress, body.all footer.nav .stepnav { display: none; }
+  #offline { display: none; background: #b3261e; color: #fff; padding: 10px 20px; text-align: center; }
+  @media (max-width: 600px) { header { padding: 14px 16px; } main { padding: 16px 16px 120px; } section.step { padding: 18px; } }
+</style>
+</head>
+<body>
+<div id="offline">Qalam isn't answering. Is it still running? Open this page again from the ق tray icon → Setup &amp; settings…</div>
+<header>
+  <div class="logo">قَلَم</div>
+  <div><h1 id="title">Set up Qalam</h1><div class="sub">Version <span id="ver"></span> · Changes are saved as you make them.</div></div>
+  <div class="spacer"></div>
+  <button class="btn" id="modeBtn">Show all settings</button>
+</header>
+<main>
+  <div class="progress" id="progress"></div>
+
+  <section class="step" data-title="Welcome">
+    <h2>Welcome to Qalam</h2>
+    <p class="lead">Type Arabic the way you spell it: each letter, then its haraka. Sukūn and shadda appear by themselves. These steps take about two minutes, and you can change everything later from the <b>ق</b> icon in the system tray.</p>
+    <div class="samples" id="welcomeSamples"></div>
+    <p>Qalam is already running. Try it here: type <kbd>kataba</kbd> then <kbd>Space</kbd>.</p>
+    <textarea placeholder="Type here" spellcheck="false"></textarea>
+  </section>
+
+  <section class="step" data-title="On & off">
+    <h2>Switch between Arabic and English</h2>
+    <p class="lead">Qalam works in every app. Turn it on when you want Arabic, off for English.</p>
+    <div class="row"><div class="grow"><b>Shortcut</b><div class="d">Press it anywhere to switch.</div></div><kbd id="toggleKey"></kbd></div>
+    <div class="row"><div class="grow"><b>Or click the tray icon</b><div class="d">Bottom right of the taskbar (under ^ if hidden). Green ق = Arabic on. Right-click it for every setting.</div></div></div>
+    <div class="row"><div class="grow"><b>Arabic typing is</b> <span id="enabledText"></span></div><button class="btn" id="enabledBtn"></button></div>
+    <div class="note">While you type a word, a small box shows the Arabic. <kbd>Space</kbd> or punctuation puts it in, <kbd>Backspace</kbd> removes the last English key, <kbd>Esc</kbd> gives back the English letters.</div>
+  </section>
+
+  <section class="step" data-title="Style">
+    <h2>Writing style</h2>
+    <p class="lead">Everyday is standard modern spelling. Qur'an style adds ٱ, dagger alif, maddah and the mushaf spelling.</p>
+    <div class="choices">
+      <label class="choice"><input type="radio" name="style" value="everyday"><span class="t">Everyday</span><div class="d">Books, messages, study notes</div><div class="ar" data-preview="alHamdu lillaAhi rabbi alea^lamiyna" data-patch='{"style":"everyday"}'></div></label>
+      <label class="choice"><input type="radio" name="style" value="quran"><span class="t">Qur'an (Uthmani)</span><div class="d">Āyāt as in the mushaf</div><div class="ar" data-preview="alHamdu lillaAhi rabbi alea^lamiyna" data-patch='{"style":"quran"}'></div></label>
+    </div>
+    <div class="row" style="margin-top:10px"><div class="grow"><b>Madinah-mushaf sukūn in Qur'an style</b><div class="d">قۡ instead of قْ (needs a mushaf font such as KFGQPC Hafs).</div></div><input type="checkbox" name="quranSmallSukun"></div>
+  </section>
+
+  <section class="step" data-title="Harakat & sukūn">
+    <h2>Harakat and sukūn</h2>
+    <p class="lead">How many marks Qalam writes.</p>
+    <h3>Harakat</h3>
+    <div class="choices">
+      <label class="choice"><input type="radio" name="harakat" value="full"><span class="t">Full</span><div class="d">Every haraka, sukūn added for you</div><div class="ar" data-preview="maktabuN qul" data-patch='{"harakat":"full"}'></div></label>
+      <label class="choice"><input type="radio" name="harakat" value="astyped"><span class="t">Only what I type</span><div class="d">No automatic marks</div><div class="ar" data-preview="maktabuN qul" data-patch='{"harakat":"astyped"}'></div></label>
+      <label class="choice"><input type="radio" name="harakat" value="none"><span class="t">None</span><div class="d">Plain letters, for chat and search</div><div class="ar" data-preview="maktabuN qul" data-patch='{"harakat":"none"}'></div></label>
+    </div>
+    <h3>Sukūn</h3>
+    <div class="choices">
+      <label class="choice"><input type="radio" name="sukun" value="smart"><span class="t">Smart</span><div class="d">Only at a stop inside a word. <kbd>o</kbd> adds one by hand.</div><div class="ar" data-preview="maktab qul bayt" data-patch='{"harakat":"full","sukun":"smart"}'></div></label>
+      <label class="choice"><input type="radio" name="sukun" value="full"><span class="t">Full</span><div class="d">On every stop, like a mushaf</div><div class="ar" data-preview="maktab qul bayt" data-patch='{"harakat":"full","sukun":"full"}'></div></label>
+      <label class="choice"><input type="radio" name="sukun" value="off"><span class="t">Off</span><div class="d">No sukūn at all</div><div class="ar" data-preview="maktab qul bayt" data-patch='{"harakat":"full","sukun":"off"}'></div></label>
+    </div>
+    <div class="note">Words typed with no vowels come out as bare letters: <kbd>ktb</kbd> → كتب.</div>
+  </section>
+
+  <section class="step" data-title="While typing">
+    <h2>While you type</h2>
+    <p class="lead">Small helpers you can switch off.</p>
+    <div class="row"><div class="grow"><b>Show options while typing</b><div class="d">Up to 4 versions of the word (another hamza seat, no harakat, small alif). <kbd>↑</kbd> <kbd>↓</kbd> choose, Space puts it in. Qalam remembers what you pick.</div></div><input type="checkbox" name="showOptions"></div>
+    <div class="row"><div class="grow"><b>Smart spelling</b><div class="d">Words written differently from how they sound: <span class="ar" style="font-size:20px" data-preview="allaAh ha^dhaA dha^lika" data-patch='{"spellingWords":true}'></span></div></div><input type="checkbox" name="spellingWords"></div>
+    <div class="row"><div class="grow"><b>Arabic digits</b><div class="d">١٢٣ instead of 123</div></div><input type="checkbox" name="arabicDigits"></div>
+  </section>
+
+  <section class="step" data-title="Shortcuts">
+    <h2>Shortcuts</h2>
+    <p class="lead">Change any that clash with shortcuts you already use. Click <b>Change</b>, then press the new keys anywhere (hold Ctrl or the left Alt). The buttons in the typing box always work too.</p>
+    <div id="keys"></div>
+    <div class="note" id="recordNote" hidden>Press the new shortcut now… <kbd>Esc</kbd> cancels, <kbd>Backspace</kbd> means no shortcut.</div>
+    <p><button class="btn" data-action="resetKeys">Reset to Ctrl+Alt+A / Ctrl+Alt+O</button></p>
+  </section>
+
+  <section class="step" data-title="Fonts">
+    <h2>Fonts</h2>
+    <p class="lead">Qalam types Unicode Arabic, so the app you type in chooses the font. Pick an Arabic font there (in Word: the font box, then <b>Complex scripts</b>).</p>
+    <div class="row"><div class="grow"><b>Noto Naskh Arabic</b><div class="d">Clear naskh for everyday text. Qalam's typing box uses it.</div></div><a href="https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic" target="_blank" rel="noopener">Get it</a></div>
+    <div class="row"><div class="grow"><b>Amiri Quran</b><div class="d">Classic mushaf style for Qur'an text.</div></div><a href="https://fonts.google.com/specimen/Amiri+Quran" target="_blank" rel="noopener">Get it</a></div>
+    <div class="row"><div class="grow"><b>Scheherazade New</b><div class="d">Large, very readable harakat (SIL).</div></div><a href="https://software.sil.org/scheherazade/" target="_blank" rel="noopener">Get it</a></div>
+    <div class="row"><div class="grow"><b>KFGQPC Hafs</b><div class="d">The Madinah mushaf font, from the King Fahd Complex.</div></div><a href="https://fonts.qurancomplex.gov.sa/" target="_blank" rel="noopener">Get it</a></div>
+    <div class="note">Windows already has Arabic fonts (Segoe UI, Arial, Traditional Arabic, Sakkal Majalla), so this step is optional. Chrome, Edge and other Chrome-based apps get a small fix so اللَّه shows its harakat correctly.</div>
+  </section>
+
+  <section class="step" data-title="Windows">
+    <h2>Start and updates</h2>
+    <p class="lead">How Qalam runs on this PC.</p>
+    <div class="row"><div class="grow"><b>Start with Windows</b><div class="d">Qalam is ready after you sign in.</div></div><input type="checkbox" name="startup"></div>
+    <div class="row"><div class="grow"><b>Install updates automatically</b><div class="d">Qalam checks GitHub once a day and restarts itself with the new version.</div></div><input type="checkbox" name="autoUpdate"></div>
+  </section>
+
+  <section class="step" data-title="Practice">
+    <h2>You're ready</h2>
+    <p class="lead">An optional 20-word practice teaches every special key (about 5 minutes). The guide also has the full letter chart.</p>
+    <p><button class="btn primary" data-action="guide">Open the practice and letter chart</button></p>
+    <div class="note">Settings are always in the tray menu: right-click <b>ق</b> → <b>Setup &amp; settings…</b></div>
+  </section>
+</main>
+<footer class="nav"><div class="in">
+  <span class="grow" id="saved"></span>
+  <span class="stepnav"><button class="btn" id="skipBtn">Skip setup</button></span>
+  <span class="stepnav"><button class="btn" id="backBtn">Back</button></span>
+  <span class="stepnav"><button class="btn primary" id="nextBtn">Next</button></span>
+</div></footer>
+
+<script>
+(() => {
+  const token = new URLSearchParams(location.search).get("t") || "";
+  document.querySelector("style").textContent = document.querySelector("style").textContent.replace("TOKEN", encodeURIComponent(token));
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const steps = $$("section.step");
+  let state = null, step = 0, poll = null;
+
+  async function api(path, body) {
+    const opts = { headers: { "X-Qalam-Token": token } };
+    if (body !== undefined) { opts.method = "POST"; opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    try {
+      const r = await fetch(path, opts);
+      if (!r.ok) throw new Error(await r.text());
+      $("#offline").style.display = "none";
+      return r.json();
+    } catch (e) {
+      $("#offline").style.display = "block";
+      throw e;
+    }
+  }
+
+  function render() {
+    if (!state) return;
+    $("#ver").textContent = state.version;
+    for (const el of $$("input[type=radio]")) el.checked = state[el.name] === el.value;
+    for (const el of $$("input[type=checkbox]")) el.checked = !!state[el.name];
+    $("#toggleKey").textContent = state.keys.toggle;
+    $("#enabledText").textContent = state.enabled ? "on" : "off";
+    $("#enabledBtn").textContent = state.enabled ? "Turn off" : "Turn on";
+    const titles = { toggle: "Arabic on / off", sukun: "Sukūn off / on", harakat: "Harakat off / on" };
+    $("#keys").innerHTML = "";
+    for (const [name, title] of Object.entries(titles)) {
+      const row = document.createElement("div");
+      row.className = "row";
+      const rec = state.recording === name;
+      row.innerHTML = `<div class="grow"><b></b></div><kbd></kbd>
+        <button class="btn" data-action="record:${name}">${rec ? "Press keys…" : "Change"}</button>
+        <button class="btn" data-action="unset:${name}">Remove</button>`;
+      row.querySelector("b").textContent = title;
+      row.querySelector("kbd").textContent = state.keys[name];
+      $("#keys").append(row);
+    }
+    $("#recordNote").hidden = !state.recording;
+    if (state.recording && !poll) poll = setInterval(refresh, 500);
+    if (!state.recording && poll) { clearInterval(poll); poll = null; }
+    previews();
+  }
+
+  async function refresh() { state = await api("/api/state"); render(); }
+
+  let previewKey = "";
+  async function previews() {
+    const els = $$("[data-preview]");
+    const key = JSON.stringify([state.style, state.harakat, state.sukun, state.spellingWords, state.quranSmallSukun, state.arabicDigits]);
+    if (key === previewKey) return;
+    previewKey = key;
+    await Promise.all(els.map(async el => {
+      const out = await api("/api/preview", { words: el.dataset.preview.split(" "), patch: JSON.parse(el.dataset.patch || "{}") });
+      el.textContent = out.join(" ");
+    }));
+    const words = ["kataba", "kitaAbuN", "saAala", "madrasat'uN", "alshamsu"];
+    const out = await api("/api/preview", { words, patch: { harakat: "full" } });
+    $("#welcomeSamples").innerHTML = "";
+    words.forEach((w, i) => {
+      $("#welcomeSamples").insertAdjacentHTML("beforeend", `<kbd></kbd><span class="arrow">→</span><span class="ar" style="margin:0"></span>`);
+      const k = $$("#welcomeSamples kbd").at(-1), a = $$("#welcomeSamples .ar").at(-1);
+      k.textContent = w; a.textContent = out[i];
+    });
+  }
+
+  let savedTimer;
+  async function save(patch) {
+    state = await api("/api/settings", patch);
+    render();
+    $("#saved").textContent = "Saved ✓";
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(() => $("#saved").textContent = "", 1500);
+  }
+
+  document.addEventListener("change", e => {
+    const el = e.target;
+    if (el.type === "radio") save({ [el.name]: el.value });
+    if (el.type === "checkbox" && el.name) save({ [el.name]: el.checked });
+  });
+  document.addEventListener("click", async e => {
+    const b = e.target.closest("[data-action]");
+    if (!b) return;
+    state = await api("/api/action/" + b.dataset.action, {});
+    render();
+  });
+  $("#enabledBtn").onclick = () => save({ enabled: !state.enabled });
+
+  function go(i) {
+    step = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, n) => s.classList.toggle("on", n === step));
+    $$("#progress button").forEach((b, n) => { b.classList.toggle("on", n === step); b.classList.toggle("done", n < step); });
+    $("#backBtn").disabled = step === 0;
+    $("#nextBtn").textContent = step === steps.length - 1 ? "Finish" : "Next";
+    window.scrollTo(0, 0);
+  }
+  steps.forEach((s, n) => {
+    const b = document.createElement("button");
+    b.textContent = `${n + 1}. ${s.dataset.title}`;
+    b.onclick = () => go(n);
+    $("#progress").append(b);
+  });
+  async function finish() {
+    await save({ setupDone: true });
+    setMode(true);
+  }
+  $("#backBtn").onclick = () => go(step - 1);
+  $("#nextBtn").onclick = () => step === steps.length - 1 ? finish() : go(step + 1);
+  $("#skipBtn").onclick = finish;
+
+  function setMode(all) {
+    document.body.classList.toggle("all", all);
+    $("#title").textContent = all ? "Qalam settings" : "Set up Qalam";
+    $("#modeBtn").textContent = all ? "Walk through the steps" : "Show all settings";
+    if (!all) go(0);
+  }
+  $("#modeBtn").onclick = () => setMode(!document.body.classList.contains("all"));
+
+  setMode(location.hash === "#settings");
+  refresh();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+})();
+</script>
+</body>
+</html>

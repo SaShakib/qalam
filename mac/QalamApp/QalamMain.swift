@@ -32,7 +32,13 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             UpdateBanner()
-            if app.firstPracticeDone { mainView } else { FirstRunView() }
+            if !app.setupDone {
+                SetupView()
+            } else if app.firstPracticeDone {
+                mainView
+            } else {
+                FirstRunView()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             // "Change shortcuts…" in the keyboard's menu opens Settings.
@@ -69,7 +75,7 @@ struct UpdateBanner: View {
         switch updater.status {
         case .available(let v, _):
             bar("arrow.down.circle.fill", "Qalam \(v) is available (you have \(updater.current)).", .accentColor) {
-                Button(updater.method == .pkg ? "Download installer" : "Install update") { Task { await updater.install() } }
+                Button("Install update") { Task { await updater.install() } }
                     .buttonStyle(.borderedProminent)
             }
         case .working(let text):

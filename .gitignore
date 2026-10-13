@@ -2,3 +2,6 @@
 build/
 dist/
 .DS_Store
+# Built by `make wasm` / `make site` (CI builds them for the website)
+website/demo/qalam.wasm
+website/demo/wasm_exec.js

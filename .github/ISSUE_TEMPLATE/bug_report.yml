@@ -1,0 +1,46 @@
+name: Report a bug
+description: Something types wrong, crashes, or doesn't install.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you got. For typing problems, the English letters you typed and the Arabic you expected.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Computer
+      options:
+        - Mac (Apple Silicon)
+        - Mac (Intel)
+        - Windows (x64)
+        - Windows (ARM64)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Qalam version
+      placeholder: "1.3.0"
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: Which app were you typing in?
+      placeholder: "Chrome, Word, Notes, WhatsApp…"
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install Qalam?
+      options:
+        - Mac .pkg installer
+        - Homebrew
+        - install.sh (curl)
+        - Windows installer (Qalam-Setup)
+        - Windows single .exe
+        - Built from source

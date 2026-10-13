@@ -1,0 +1,33 @@
+name: Ask a question
+description: Confused about a key, a setting or installing? Ask here. Questions show on the website's questions board.
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for asking. Please check the [FAQ](https://sashakib.github.io/qalam/docs.html?p=faq) first. Questions are public, so don't include personal details.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What are you trying to do, and what happened? If it's about typing, write what you typed and what you expected (for example `kitaAbuN` → كِتَابٌ).
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Computer
+      options:
+        - Mac
+        - Windows
+        - Both / not about one computer
+        - I haven't installed it yet
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Qalam version (if installed)
+      description: "Mac: Qalam → Settings → Updates. Windows: right-click the ق tray icon, it's next to \"Check for updates\"."
+      placeholder: "1.3.0"

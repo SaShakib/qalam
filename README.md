@@ -8,11 +8,11 @@ kitaAbuN → كِتَابٌ     saAala → سَأَلَ     eilmuN → عِلْ�
 
 Works in every app, on **macOS** (a native input method, like [Lekho](https://github.com/ARahim3/Lekho)) and **Windows** (a tray app). There is an **Everyday** style and a **Qur'an (Uthmani)** style with ٱ, dagger alif, maddah, waqf signs and āyah numbers.
 
-The full key chart is in **[LAYOUT.md](LAYOUT.md)**.
+**Website, download and live demo: https://sashakib.github.io/qalam/** · **[Docs](docs/README.md)** · **[Questions](https://sashakib.github.io/qalam/questions.html)** · The full key chart is in **[LAYOUT.md](LAYOUT.md)**.
 
 ## Install on macOS
 
-macOS 13 (Ventura) or later.
+macOS 13 (Ventura) or later, Apple Silicon or Intel (universal from 1.3.0). Step-by-step guide: [docs/install-mac.md](docs/install-mac.md).
 
 **Homebrew**
 
@@ -36,18 +36,19 @@ Homebrew 7 asks you to trust a tap before installing from it (the second command
 curl -fsSL https://raw.githubusercontent.com/SaShakib/qalam/main/install.sh | bash
 ```
 
-**Installer package:** download `Qalam-<version>.pkg` from [Releases](https://github.com/SaShakib/qalam/releases/latest) and double-click it. The package isn't notarized yet. If macOS blocks it, go to System Settings → Privacy & Security and click **Open Anyway**.
+**Installer package:** download `Qalam-mac.pkg` from [Releases](https://github.com/SaShakib/qalam/releases/latest) and double-click it. The package isn't notarized yet. If macOS blocks it, go to System Settings → Privacy & Security and click **Open Anyway** (once; in-app updates don't ask again).
 
-The Qalam app then opens. It adds the keyboard to your input menu and offers an optional **20-word practice** that covers every special key (skip it any time). Switch keyboards with **🌐 Globe** or **Control-Space**.
+The Qalam app then opens a **short guided setup**: it adds the keyboard to your input menu, then lets you pick the style, harakat, sukūn, typing options, shortcuts, fonts and updates, and offers an optional **20-word practice**. Switch keyboards with **🌐 Globe** or **Control-Space**.
 
 ## Install on Windows
 
-Download **`Qalam-Windows-x64.exe`** (or `-arm64` for ARM laptops) from [Releases](https://github.com/SaShakib/qalam/releases/latest) and run it.
+Download **`Qalam-Setup-x64.exe`** (or `-arm64` for ARM laptops) from [Releases](https://github.com/SaShakib/qalam/releases/latest) and run it. Step-by-step guide: [docs/install-windows.md](docs/install-windows.md).
 
-- It offers to install for your user: Start menu, start with Windows, and an uninstall entry in Settings → Apps. No admin rights are needed.
+- It installs for your user (no admin rights): Start menu, start with Windows (optional), and an uninstall entry in Settings → Apps. Silent install: `/VERYSILENT`.
+- Qalam then opens a **setup page** in your browser (served by Qalam on your PC) with the same steps as on the Mac. Open it again from the tray: right-click **ق** → **Setup & settings…**
 - **Ctrl + Alt + A** (or a click on the ق tray icon) switches Arabic on and off.
-- Right-click the tray icon for style, harakat, Arabic digits, and the guide and practice page.
-- The exe isn't code-signed yet. If SmartScreen warns, click **More info → Run anyway**.
+- The single-file `Qalam-Windows-x64.exe` / `-arm64.exe` still works without an installer.
+- The downloads aren't code-signed yet. If SmartScreen warns, click **More info → Run anyway** (once; updates don't ask again).
 
 ## Updates
 
@@ -98,16 +99,18 @@ make install
 make release
 ```
 
-- `make test` runs 175 golden cases against both engines.
+- `make test` runs 175+ golden cases against both engines, plus the Windows app's tests.
 - `make install` installs on this Mac.
-- `make release` builds the Mac zip and .pkg and the Windows exes into `dist/`.
+- `make release` builds the Mac zip and .pkg (universal) and the Windows exes into `dist/`. Pushing a `v*` tag builds everything in CI, including the Windows installers, as a draft release ([docs/developers/releasing.md](docs/developers/releasing.md)).
+- `make site` builds the website with the live demo. Signing and notarization: [docs/developers/signing.md](docs/developers/signing.md).
 
 | Path | What |
 |---|---|
 | `engine/` | Transliteration rules in Swift (keys in `Tokenizer.swift`, word lists in `Content.swift`) |
 | `mac/QalamInput/` | macOS input method (InputMethodKit) |
 | `mac/QalamApp/` | macOS guide and practice app (SwiftUI) |
-| `windows/` | Windows tray app in Go, with `windows/engine/` (the same rules ported to Go) |
+| `windows/` | Windows tray app in Go, with `windows/engine/` (the same rules ported to Go), `windows/installer/` (Inno Setup) and `windows/wasm/` (the engine for the website demo) |
 | `cli/` | `qalam` command: convert text, run tests, generate the Windows guide page |
 | `tests/cases.tsv` | Input ⇥ expected Arabic ⇥ options; both engines must pass |
 | `Casks/qalam.rb` | Homebrew cask |
+| `website/`, `docs/` | The website (GitHub Pages) and the docs it shows as the wiki |

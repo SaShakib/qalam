@@ -3,30 +3,56 @@
 #   make install     build and install on this Mac (for development)
 #   make release     build everything for a GitHub release into dist/
 #   make uninstall   remove the development install
+#   make site        build the website (with the live typing demo) into build/site
+#
+# Trusted Mac builds (no "Open Anyway" for users, ever): see docs/developers/signing.md.
+#   make release SIGN_ID="Developer ID Application: …" INSTALLER_ID="Developer ID Installer: …" NOTARY_PROFILE=qalam
 
-VERSION  := 1.2.1
+VERSION  := 1.3.0
 # Builds run at low priority on 2 cores so the Mac stays responsive.
 SWIFT    := nice -n 15 swift build -c release -j 2
 GO       := nice -n 15 go
 RELEASE  := .build/release
 BUILD    := build
 DIST     := dist
+BIN      := $(BUILD)/bin
 IME_APP  := $(BUILD)/QalamInput.app
 APP      := $(BUILD)/Qalam.app
 IME_DEST := $(HOME)/Library/Input Methods
 APP_DEST := $(HOME)/Applications
 
-.PHONY: all build test icons bundle install uninstall clean guide windows mac-release release
+# The Mac apps are universal (Apple Silicon and Intel). `make ARCHS=arm64` builds one for speed.
+ARCHS    ?= arm64 x86_64
+MACOS_MIN := 13.0
+
+# Signing. "-" is ad-hoc (works on the Mac that built it; downloads need "Open Anyway").
+# A Developer ID identity adds the hardened runtime and a secure timestamp, as notarization requires.
+SIGN_ID        ?= -
+INSTALLER_ID   ?=
+NOTARY_PROFILE ?=
+ifeq ($(SIGN_ID),-)
+SIGN_FLAGS :=
+else
+SIGN_FLAGS := --options runtime --timestamp
+endif
+
+.PHONY: all build test icons bundle install uninstall clean guide windows windows-installer mac-release release site wasm
 
 all: bundle
 
+# One build per processor, joined with lipo into $(BIN).
 build:
-	$(SWIFT)
+	mkdir -p $(BIN)
+	for arch in $(ARCHS); do $(SWIFT) --triple $$arch-apple-macosx$(MACOS_MIN); done
+	for p in QalamInput QalamApp; do \
+	  lipo -create $$(for arch in $(ARCHS); do echo "$$($(SWIFT) --triple $$arch-apple-macosx$(MACOS_MIN) --show-bin-path)/$$p"; done) -output $(BIN)/$$p; \
+	done
+	lipo -info $(BIN)/QalamInput $(BIN)/QalamApp
 
 test:
 	$(SWIFT) --product qalam
 	$(RELEASE)/qalam --test tests/cases.tsv
-	cd windows && $(GO) test ./engine
+	cd windows && $(GO) test ./...
 
 icons: $(BUILD)/icons/AppIcon.icns
 
@@ -37,12 +63,12 @@ $(BUILD)/icons/AppIcon.icns: tools/make_icons.swift
 bundle: build icons
 	rm -rf "$(IME_APP)" "$(APP)"
 	mkdir -p "$(IME_APP)/Contents/MacOS" "$(IME_APP)/Contents/Resources/en.lproj"
-	cp $(RELEASE)/QalamInput "$(IME_APP)/Contents/MacOS/QalamInput"
+	cp $(BIN)/QalamInput "$(IME_APP)/Contents/MacOS/QalamInput"
 	cp mac/bundle/QalamInput-Info.plist "$(IME_APP)/Contents/Info.plist"
 	cp mac/bundle/InfoPlist.strings "$(IME_APP)/Contents/Resources/en.lproj/InfoPlist.strings"
 	cp $(BUILD)/icons/icon.tiff "$(IME_APP)/Contents/Resources/icon.tiff"
 	mkdir -p "$(APP)/Contents/MacOS" "$(APP)/Contents/Resources/Fonts"
-	cp $(RELEASE)/QalamApp "$(APP)/Contents/MacOS/Qalam"
+	cp $(BIN)/QalamApp "$(APP)/Contents/MacOS/Qalam"
 	cp mac/bundle/Qalam-Info.plist "$(APP)/Contents/Info.plist"
 	cp $(BUILD)/icons/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
 	cp fonts/*.ttf fonts/OFL-*.txt "$(APP)/Contents/Resources/Fonts/"
@@ -50,8 +76,9 @@ bundle: build icons
 	  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" "$$p/Contents/Info.plist"; \
 	  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" "$$p/Contents/Info.plist"; \
 	done
-	codesign --force --sign - "$(IME_APP)"
-	codesign --force --sign - "$(APP)"
+	codesign --force $(SIGN_FLAGS) --sign "$(SIGN_ID)" "$(IME_APP)"
+	codesign --force $(SIGN_FLAGS) --entitlements mac/bundle/Qalam.entitlements --sign "$(SIGN_ID)" "$(APP)"
+	codesign --verify --strict --verbose=1 "$(IME_APP)" "$(APP)"
 
 install: test bundle
 	mkdir -p "$(IME_DEST)" "$(APP_DEST)"
@@ -83,6 +110,11 @@ windows: guide
 	cd windows && GOOS=windows GOARCH=amd64 $(GO) build -p 2 -trimpath -ldflags "-H windowsgui -s -w -X main.version=$(VERSION)" -o ../$(DIST)/Qalam-Windows-x64.exe .
 	cd windows && GOOS=windows GOARCH=arm64 $(GO) build -p 2 -trimpath -ldflags "-H windowsgui -s -w -X main.version=$(VERSION)" -o ../$(DIST)/Qalam-Windows-arm64.exe .
 
+# Qalam-Setup-x64.exe / -arm64.exe. Needs Inno Setup 6 (iscc), so it runs on Windows (CI does it).
+windows-installer:
+	cd windows/installer && iscc /DAppVersion=$(VERSION) /DArch=x64 /DExe=..\..\$(DIST)\Qalam-Windows-x64.exe qalam.iss
+	cd windows/installer && iscc /DAppVersion=$(VERSION) /DArch=arm64 /DExe=..\..\$(DIST)\Qalam-Windows-arm64.exe qalam.iss
+
 # ---------- Mac release: zip (Homebrew + install.sh) and .pkg (double-click) ----------
 
 mac-release: test bundle
@@ -92,19 +124,54 @@ mac-release: test bundle
 	ditto --norsrc --noextattr "$(APP)" "$(BUILD)/zip/Qalam.app"
 	ditto --norsrc --noextattr "$(IME_APP)" "$(BUILD)/zip/QalamInput.app"
 	cd $(BUILD)/zip && ditto -c -k --norsrc --noextattr . ../../$(DIST)/Qalam-mac.zip
+ifneq ($(NOTARY_PROFILE),)
+	xcrun notarytool submit $(DIST)/Qalam-mac.zip --keychain-profile "$(NOTARY_PROFILE)" --wait
+	xcrun stapler staple "$(BUILD)/zip/Qalam.app"
+	xcrun stapler staple "$(BUILD)/zip/QalamInput.app"
+	rm -f $(DIST)/Qalam-mac.zip
+	cd $(BUILD)/zip && ditto -c -k --norsrc --noextattr . ../../$(DIST)/Qalam-mac.zip
+endif
 	mkdir -p "$(BUILD)/pkgroot/Applications" "$(BUILD)/pkgroot/Library/Input Methods"
-	ditto --norsrc --noextattr "$(APP)" "$(BUILD)/pkgroot/Applications/Qalam.app"
-	ditto --norsrc --noextattr "$(IME_APP)" "$(BUILD)/pkgroot/Library/Input Methods/QalamInput.app"
+	ditto --norsrc --noextattr "$(BUILD)/zip/Qalam.app" "$(BUILD)/pkgroot/Applications/Qalam.app"
+	ditto --norsrc --noextattr "$(BUILD)/zip/QalamInput.app" "$(BUILD)/pkgroot/Library/Input Methods/QalamInput.app"
 	pkgbuild --analyze --root $(BUILD)/pkgroot $(BUILD)/components.plist
 	for i in 0 1; do /usr/libexec/PlistBuddy -c "Set :$$i:BundleIsRelocatable false" $(BUILD)/components.plist; done
 	xattr -cr $(BUILD)/pkgroot
 	pkgbuild --root $(BUILD)/pkgroot --component-plist $(BUILD)/components.plist --scripts mac/pkg/scripts \
-	  --identifier com.qalam.pkg --version $(VERSION) --install-location / $(DIST)/Qalam-$(VERSION).pkg
+	  --identifier com.qalam.pkg --version $(VERSION) --install-location / $(BUILD)/Qalam-unsigned.pkg
+ifneq ($(INSTALLER_ID),)
+	productsign --timestamp --sign "$(INSTALLER_ID)" $(BUILD)/Qalam-unsigned.pkg $(DIST)/Qalam-$(VERSION).pkg
+else
+	cp $(BUILD)/Qalam-unsigned.pkg $(DIST)/Qalam-$(VERSION).pkg
+endif
+ifneq ($(NOTARY_PROFILE),)
+	xcrun notarytool submit $(DIST)/Qalam-$(VERSION).pkg --keychain-profile "$(NOTARY_PROFILE)" --wait
+	xcrun stapler staple $(DIST)/Qalam-$(VERSION).pkg
+endif
+	# The same package under a name that never changes, for the website's download button.
+	cp $(DIST)/Qalam-$(VERSION).pkg $(DIST)/Qalam-mac.pkg
 	sed -i '' -E "s/^  version \".*\"/  version \"$(VERSION)\"/; s/^  sha256 \".*\"/  sha256 \"$$(shasum -a 256 $(DIST)/Qalam-mac.zip | cut -d' ' -f1)\"/" Casks/qalam.rb
 
 release: mac-release windows
 	cd $(DIST) && shasum -a 256 * > SHA256SUMS.txt
 	@ls -la $(DIST)
+
+# ---------- Website ----------
+
+# The live demo on the website runs the Windows engine (Go) compiled to WebAssembly.
+wasm:
+	mkdir -p website/demo
+	cd windows && GOOS=js GOARCH=wasm $(GO) build -trimpath -ldflags "-s -w" -o ../website/demo/qalam.wasm ./wasm
+	cp "$$($(GO) env GOROOT)/lib/wasm/wasm_exec.js" website/demo/wasm_exec.js
+
+# build/site is what GitHub Pages serves: the website, the docs (the wiki) and the key chart.
+site: wasm
+	rm -rf $(BUILD)/site
+	mkdir -p $(BUILD)/site
+	cp -R website/. $(BUILD)/site/
+	cp -R docs $(BUILD)/site/docs
+	cp LAYOUT.md $(BUILD)/site/docs/LAYOUT.md
+	@echo "Preview: python3 -m http.server -d $(BUILD)/site 8000"
 
 clean:
 	rm -rf .build $(BUILD) $(DIST)

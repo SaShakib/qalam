@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qalam Arabic Keyboard</title>
+<meta name="description" content="Qalam is a free phonetic Arabic keyboard for Mac and Windows. Type Arabic the way you spell it, with full harakat and Qur'anic marks.">
+<meta property="og:title" content="Qalam: phonetic Arabic keyboard">
+<meta property="og:description" content="Type Arabic the way you spell it: kitaAbuN → كِتَابٌ. Free for Mac and Windows.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f7b5f'/%3E%3Ctext x='32' y='46' font-size='40' text-anchor='middle' fill='white' font-family='serif'%3E%D9%82%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-page="download">
+<main>
+  <section class="hero" id="download">
+    <div class="wrap">
+      <div>
+        <div class="detected" id="dl-detected">Finding the right download…</div>
+        <h1>Type Arabic the way you spell it.</h1>
+        <p class="lead">Each letter, then its haraka. Sukūn, shadda, hamza seats and tanwīn are handled for you, in every app on your <b>Mac</b> or <b>Windows</b> PC. Everyday or Qur'anic (Uthmani) spelling.</p>
+        <div class="cta">
+          <a class="btn primary big" id="dl-main" href="https://github.com/SaShakib/qalam/releases/latest">
+            <span class="t">Download</span><span class="sub">Free · no account · no tracking</span>
+          </a>
+          <a class="btn big" href="docs.html?p=install">
+            <span class="t">How to install</span><span class="sub">Step by step, for every prompt you may see</span>
+          </a>
+        </div>
+        <div class="cta-note" id="dl-note"></div>
+        <div class="cta-note" id="dl-others"></div>
+      </div>
+      <div class="hero-art" aria-label="Examples">
+        <div class="row"><kbd>kitaAbuN</kbd><div class="ar" lang="ar">كِتَابٌ</div></div>
+        <div class="row"><kbd>saAala</kbd><div class="ar" lang="ar">سَأَلَ</div></div>
+        <div class="row"><kbd>madrasat'uN</kbd><div class="ar" lang="ar">مَدْرَسَةٌ</div></div>
+        <div class="row"><kbd>alshamsu</kbd><div class="ar" lang="ar">الشَّمْسُ</div></div>
+        <div class="row"><kbd>eilmuN</kbd><div class="ar" lang="ar">عِلْمٌ</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="video">
+    <div class="wrap">
+      <h2 class="title">See it in action</h2>
+      <p class="intro">A two-minute walkthrough: installing, switching the keyboard on, and typing your first words.</p>
+      <div class="video" id="video-box">
+        <div class="soon">
+          <div>
+            <div class="play" aria-hidden="true">▶</div>
+            <div class="ar" lang="ar">قَلَم</div>
+            <p><b>The demo video is coming soon.</b><br><span class="muted">Until then, try the live typing pad below.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block alt" id="demo">
+    <div class="wrap">
+      <h2 class="title">Try it here</h2>
+      <p class="intro">This pad runs the same engine as the apps. Click it and type: <kbd>kataba</kbd> then <kbd>Space</kbd>. Or click a word below.</p>
+      <div class="demo">
+        <div>
+          <div class="pad" id="pad" tabindex="0" role="textbox" aria-label="Typing pad: type English letters, get Arabic" aria-multiline="true">
+            <div class="text" lang="ar"></div>
+            <div class="hint">Click here and type…</div>
+          </div>
+          <div class="options" id="options" aria-live="polite"></div>
+          <div id="mobile-demo" class="mobile-demo" hidden>
+            <textarea rows="3" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Type English letters: kitaAbuN"></textarea>
+            <div class="out" lang="ar"></div>
+          </div>
+          <p class="muted" id="demo-loading">Loading the engine…</p>
+        </div>
+        <div class="panel">
+          <div><b>You typed:</b> <span class="latin" id="pad-latin"></span></div>
+          <label>Style
+            <select id="o-style"><option value="everyday">Everyday</option><option value="quran">Qur'an (Uthmani)</option></select>
+          </label>
+          <label>Harakat
+            <select id="o-harakat"><option value="full">Full</option><option value="astyped">Only what I type</option><option value="none">None</option></select>
+          </label>
+          <label>Sukūn
+            <select id="o-sukun"><option value="smart">Smart</option><option value="full">Full</option><option value="off">Off</option></select>
+          </label>
+          <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="o-panel" checked> Show options while typing</label>
+          <div>
+            <div class="muted" style="font-size:14px;margin-bottom:6px">Type for me:</div>
+            <div class="chips">
+              <button class="chip" data-type="kitaAbuN">kitaAbuN</button>
+              <button class="chip" data-type="saAala">saAala</button>
+              <button class="chip" data-type="alshamsu">alshamsu</button>
+              <button class="chip" data-type="madrasat'uN">madrasat'uN</button>
+              <button class="chip" data-type="qaraA">qaraA</button>
+              <button class="chip" data-type="lillaAhi">lillaAhi</button>
+              <button class="chip" data-type="ktb">ktb</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn small" id="pad-copy">Copy Arabic</button>
+            <button class="btn small" id="pad-clear">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2 class="title">Why Qalam</h2>
+      <p class="intro">Built for students of Arabic and the Qur'an who know the letters but not the Arabic keyboard layout.</p>
+      <div class="grid">
+        <div class="card"><div class="ar" lang="ar">مَكْتَب</div><h3>Spell it, get it</h3><p>Letter, then haraka. Sukūn and shadda appear by themselves. No layout to memorise.</p></div>
+        <div class="card"><div class="ar" lang="ar">ٱلْعَٰلَمِينَ</div><h3>Qur'an style</h3><p>Alif waṣla, dagger alif, maddah, waqf signs and āyah numbers, as in the mushaf.</p></div>
+        <div class="card"><div class="ar" lang="ar">أ إ ؤ ئ</div><h3>Hamza done right</h3><p>Type <kbd>A</kbd> or <kbd>'</kbd>: Qalam picks the seat. Options while typing let you choose another.</p></div>
+        <div class="card"><div class="ar" lang="ar">كتب</div><h3>Harakat your way</h3><p>Full, only what you type, or none at all. Switch with a shortcut while you type.</p></div>
+        <div class="card"><div class="ar" lang="ar">⌨︎</div><h3>Every app</h3><p>Word, Pages, Chrome, WhatsApp, VS Code… It's a real keyboard, not a website.</p></div>
+        <div class="card"><div class="ar" lang="ar">١٢٣</div><h3>Private and offline</h3><p>No internet, no account, no tracking. It only checks GitHub for updates.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block alt">
+    <div class="wrap">
+      <h2 class="title">Getting started in three steps</h2>
+      <div class="steps">
+        <div class="card"><h3>Download and install</h3><p>Use the button above. The <a href="docs.html?p=install">install guide</a> shows every prompt your Mac or PC may ask.</p></div>
+        <div class="card"><h3>Follow the setup</h3><p>Qalam opens a short setup: turn the keyboard on, pick your style, harakat, sukūn, shortcuts and fonts.</p></div>
+        <div class="card"><h3>Practise 20 words</h3><p>Optional, about five minutes, and covers every special key. Then type Arabic anywhere.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2 class="title">The keys in short</h2>
+      <p class="intro">The <a href="docs.html?p=LAYOUT">full key chart</a> has every letter and rule.</p>
+      <table class="keys">
+        <tr><th>Type</th><th>Get</th><th>Type</th><th>Get</th></tr>
+        <tr><td><kbd>a</kbd> <kbd>i</kbd> <kbd>u</kbd></td><td class="ar" lang="ar">ـَ ـِ ـُ</td><td><kbd>aN</kbd> <kbd>iN</kbd> <kbd>uN</kbd></td><td class="ar" lang="ar">ـً ـٍ ـٌ</td></tr>
+        <tr><td><kbd>A</kbd></td><td class="ar" lang="ar">ا</td><td><kbd>A</kbd> + haraka</td><td>hamza (seat chosen for you)</td></tr>
+        <tr><td><kbd>e</kbd></td><td class="ar" lang="ar">ع</td><td><kbd>t'</kbd></td><td class="ar" lang="ar">ة</td></tr>
+        <tr><td><kbd>th</kbd> <kbd>dh</kbd> <kbd>kh</kbd> <kbd>sh</kbd></td><td class="ar" lang="ar">ث ذ خ ش</td><td><kbd>H</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>T</kbd> <kbd>Z</kbd></td><td class="ar" lang="ar">ح ص ض ط ظ</td></tr>
+        <tr><td>doubled letter</td><td>shadda</td><td><kbd>aa</kbd> <kbd>ii</kbd> <kbd>uu</kbd></td><td>long ā ī ū</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block alt">
+    <div class="wrap">
+      <h2 class="title">Stuck? Ask.</h2>
+      <p class="intro">Read the <a href="docs.html?p=faq">common questions</a>, browse what others asked on the <a href="questions.html">questions board</a>, or ask your own. Every answer helps the next person.</p>
+      <a class="btn primary" href="questions.html">Go to the questions board</a>
+    </div>
+  </section>
+</main>
+
+<script src="config.js"></script>
+<script src="assets/site.js"></script>
+<script src="assets/download.js"></script>
+<script>
+  // The demo video, once there is one (config.js → videoEmbed).
+  (() => {
+    const url = (window.QALAM_SITE || {}).videoEmbed;
+    if (!url) return;
+    const box = document.getElementById("video-box");
+    box.innerHTML = "";
+    const f = document.createElement("iframe");
+    f.src = url;
+    f.title = "Qalam demo video";
+    f.allow = "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen";
+    f.loading = "lazy";
+    box.append(f);
+  })();
+</script>
+<script src="demo/wasm_exec.js"></script>
+<script src="assets/demo.js"></script>
+</body>
+</html>
