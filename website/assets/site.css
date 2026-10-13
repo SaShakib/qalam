@@ -1,3 +1,13 @@
+/* The Madinah mushaf font (KFGQPC Hafs, from the King Fahd Complex; licence in fonts/LICENSE-KFGQPC.txt). */
+@font-face {
+  font-family: "KFGQPC Hafs";
+  src: url("../fonts/KFGQPC-HAFS-Uthmanic-Script.ttf") format("truetype");
+  size-adjust: 120%;
+  font-display: swap;
+  /* Arabic letters only, so it can lead every font list and English stays in the normal font. */
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200D;
+}
+
 :root {
   --bg: #f7f5ef;
   --bg-2: #efebe1;
@@ -14,7 +24,7 @@
   --warn-ink: #7a4b00;
   --shadow: 0 1px 2px rgba(20, 30, 25, .06), 0 8px 24px rgba(20, 30, 25, .06);
   --radius: 14px;
-  --arabic: "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", serif;
+  --arabic: "KFGQPC Hafs", "Noto Naskh Arabic", "Geeza Pro", "Segoe UI", serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: light;
 }
@@ -37,7 +47,7 @@
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
-  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.6 "KFGQPC Hafs", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
 }
 a { color: var(--accent); }
@@ -45,7 +55,7 @@ a:hover { color: var(--accent-2); }
 img, video, iframe { max-width: 100%; }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
 .ar { font-family: var(--arabic); direction: rtl; }
-kbd, code { font-family: var(--mono); font-size: .9em; }
+kbd, code { font-family: "KFGQPC Hafs", var(--mono); font-size: .9em; }
 kbd {
   background: var(--accent-soft); border: 1px solid var(--line); border-bottom-width: 2px;
   border-radius: 6px; padding: 1px 7px; white-space: nowrap;
