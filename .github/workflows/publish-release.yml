@@ -1,0 +1,24 @@
+name: Publish release
+
+# Publishes the draft release for the Makefile's version (Actions → Publish release → Run workflow).
+# The draft comes from the Release workflow; publishing it creates the v<version> tag.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/^VERSION *:= *//p' Makefile)
+          gh release view "v$version" --json isDraft,assets --jq '"draft: \(.isDraft), files: \(.assets | length)"'
+          gh release edit "v$version" --draft=false --latest
+          gh release view "v$version" --json url,isDraft,tagName --jq '"published \(.tagName): \(.url) (draft: \(.isDraft))"'
