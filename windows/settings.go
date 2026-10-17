@@ -25,6 +25,7 @@ type Settings struct {
 	// translation (Tanzil id). Empty = "both" and "en.sahih", as on the Mac.
 	QuranInsert      string `json:"quranInsert,omitempty"`
 	QuranTranslation string `json:"quranTranslation,omitempty"`
+	QuranLast        string `json:"quranLast,omitempty"` // the passage picked last time ("2:255-257"); the box opens there
 	// Shortcuts the user changed: "toggle", "sukun", "harakat", "quran". A missing name uses the default;
 	// null means the user removed it.
 	Keys map[string]*Hotkey `json:"keys,omitempty"`

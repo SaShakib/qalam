@@ -42,7 +42,9 @@ The shortcut can be changed in **Qalam → Settings → Shortcuts** on the Mac (
 **Windows notes**
 
 - Keys are read on the US layout, like Qalam's typing. To search in Arabic letters, copy them and press
-  **Ctrl+V** in the box; or type the Latin (`rahmaan`).
+  **Ctrl+V** in the Search tab; or type the Latin (`rahmaan`).
+- A click on a dropdown opens a Windows menu (long lists in columns). The menu has the focus while it is
+  open; your app gets it back as soon as you pick.
 - Lines are separated with **Shift+Enter**, so in chat apps (WhatsApp, Teams, Slack) the āyah and its
   translation stay in one message instead of sending it.
 - Clicking another window or pressing another Ctrl/Alt shortcut closes the box.

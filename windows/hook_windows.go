@@ -56,8 +56,10 @@ var (
 )
 
 const (
-	vkUp   = 0x26
-	vkDown = 0x28
+	vkLeft  = 0x25
+	vkUp    = 0x26
+	vkRight = 0x27
+	vkDown  = 0x28
 )
 
 // onKeyDown returns true when Qalam handled the key.
