@@ -9,21 +9,28 @@ On the Mac more can be downloaded in the app. Windows has the insert box with th
 1. **Mac:** with the Qalam keyboard on, press **⌃⇧Q** (Control-Shift-Q) in any app.
    **Windows:** with Qalam running (the ق in the tray), press **Ctrl+Alt+Q** in any app. It works even
    while Arabic typing is off. A box opens at the cursor.
-2. Type what you want. The dropdown follows as you type:
+2. Pick with the three dropdowns, by mouse or keyboard:
 
-   | You type | You get |
+   **Sūrah ▾**  **From āyah ▾**  **To āyah ▾**
+
+   The preview underneath shows the āyāt in the Qur'an font. Click **Insert** (or press Return).
+   The box opens on your last choice next time.
+
+   | Key | Does |
    |---|---|
-   | `2:255` | Āyat al-Kursī |
-   | `2:255-257` | three āyāt |
-   | `baqarah 255`, `al imran 3-5`, `yaseen:1` | the sūrah by name (spelling is loose) |
-   | `baq`, `cow`, `36` | the sūrah; pick it, then type the āyah number |
-   | `112` + Return (Enter) | the whole sūrah |
-   | `rahmaan`, `qul huwa allaah` | search: Latin is read the Qalam way (`H` = ح), similar letters count too |
-   | `الرحمن` or `ٱلرَّحْمَٰنِ` | search, harakat optional |
+   | ↑ / ↓ | change the highlighted dropdown |
+   | ← / → or Tab | go to the next dropdown |
+   | type `36` or `yasin` | jump to that sūrah (spelling is loose: `baqarah`, `cow`) |
+   | type `2:255-257` | fill all three at once |
+   | Return | insert |
+   | `/` | open **Search** |
+   | Esc | close (the shortcut again closes it too) |
 
-3. **↑ / ↓** choose, **Return** (Enter) inserts, **Esc** closes. Pressing the shortcut again closes it too.
-4. **Tab** changes what goes in: **Arabic only**, **Arabic + translation** or **Translation only**.
-   **⇧Tab** (Shift+Tab) switches the translation. Qalam remembers both. The two buttons in the box do the same.
+3. **Search** (the tab at the top, or `/`): type a word and pick an āyah. Harakat are optional
+   (`الرحمن` = `ٱلرَّحْمَٰنِ`), and Latin is read the Qalam way (`rahmaan`, with similar letters counting too).
+   ↑ / ↓ choose, Return inserts, Tab goes back to **Choose**.
+4. At the bottom choose what goes in: **Arabic only**, **Arabic + translation** or **Translation only**, and
+   which translation. Qalam remembers both.
 
 Each āyah ends with its reference, like `(2:255)`. With a translation, the Arabic line comes first and the
 translation under it.

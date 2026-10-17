@@ -66,7 +66,7 @@ Qalam checks GitHub for a new version when it starts and once a day.
 
 ## Qur'an (Mac; the insert box on Windows too)
 
-- **⌃⇧Q** (Windows: **Ctrl+Alt+Q**) opens a box at the cursor: type `2:255`, `2:255-257`, `baqarah 255` or search (`الرحمن`, `rahmaan`, harakat optional), pick, Return. Tab: Arabic only / Arabic + translation / translation only.
+- **⌃⇧Q** (Windows: **Ctrl+Alt+Q**) opens a box at the cursor with three dropdowns: **Sūrah**, **From āyah**, **To āyah**, a preview, and **Insert**. Keys work too (↑↓, Tab, type `36` or `yasin`, or `2:255-257`). A **Search** tab finds words in the whole Qur'an, harakat optional. Choose Arabic only / Arabic + translation / translation only.
 - **Qalam → Qur'an** shows every sūrah with a translation, searches the whole Qur'an, copies āyāt (rich text in the Qur'an font) and downloads more translations.
 - Bundled: Tanzil Uthmani text, Saheeh International, Muhiuddin Khan (Bangla), Zohurul Hoque (Bangla). Command line: `qalam ayah 2:255 --trans bn.bengali`, `qalam search …`. Details: [docs/quran.md](docs/quran.md).
 

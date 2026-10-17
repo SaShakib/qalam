@@ -445,6 +445,12 @@ extension SharedSettings {
         set { defaults.set(newValue.rawValue, forKey: "quran.insert"); defaults.synchronize() }
     }
 
+    /// The passage chosen last time in the keyboard's Qur'an box ("2:255-257"); it opens there again.
+    public static var quranLast: String? {
+        get { defaults.string(forKey: "quran.last") }
+        set { defaults.set(newValue, forKey: "quran.last"); defaults.synchronize() }
+    }
+
     /// Tanzil id of the translation to insert (default Saheeh International).
     public static var quranTranslation: String {
         get { defaults.string(forKey: "quran.translation") ?? "en.sahih" }

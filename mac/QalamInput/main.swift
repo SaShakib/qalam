@@ -20,16 +20,25 @@ if let i = CommandLine.arguments.firstIndex(of: "--panel-snapshot"), i + 2 < Com
     exit(0)
 }
 
-// `QalamInput --quran-snapshot out.png "query"`: draw the Qur'an box to an image and quit (layout check).
+// `QalamInput --quran-snapshot out.png "2:255-257"` (or "search:rahmaan"): draw the Qur'an box and quit (layout check).
 if let i = CommandLine.arguments.firstIndex(of: "--quran-snapshot"), i + 2 < CommandLine.arguments.count {
     _ = NSApplication.shared
     let q = CommandLine.arguments[i + 2]
     let found: QuranLibrary? = QuranStore.shared ?? QuranLibrary(folders: [URL(fileURLWithPath: "quran")])
     guard let lib = found else { print("no Qur'an data"); exit(1) }
-    var plain = Options(); plain.harakat = .none
-    let rows = lib.suggestions(for: q, arabic: q.contains(where: { $0.isLetter && $0.isASCII }) ? Qalam.text(q, plain) : nil, limit: 6)
-    QuranPanel.shared.show(query: q, rows: rows, selected: 0, total: nil, library: lib, mode: SharedSettings.quranInsert,
-                           translation: lib.translation(SharedSettings.quranTranslation),
+    var p = QuranPick()
+    if q.hasPrefix("search:") {
+        p.tab = .search
+        p.query = String(q.dropFirst(7))
+        var plain = Options(); plain.harakat = .none
+        let r = lib.searchArabic(Qalam.text(p.query, plain), phonetic: true, limit: 6)
+        p.results = r.hits.map { .hit($0, arabic: true) }
+        p.total = r.total
+    } else if let r = lib.resolve(q) {
+        p.surah = r.surah; p.from = r.from; p.to = r.to
+        p.field = .from
+    }
+    QuranPanel.shared.show(p, library: lib, mode: SharedSettings.quranInsert, translation: SharedSettings.quranTranslation,
                            near: NSRect(x: 300, y: 700, width: 1, height: 20), key: "⌃⇧Q")
     RunLoop.current.run(until: Date().addingTimeInterval(0.5))
     if let view = QuranPanel.shared.snapshotView, let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
