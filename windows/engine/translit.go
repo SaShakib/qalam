@@ -496,7 +496,8 @@ func seat(i int, units []unit) []unit {
 	if i > 0 {
 		prev = &units[i-1]
 	}
-	initial := u.chunkStart || prev == nil || prev.kind == kArticleLam || prev.kind == kWasl
+	// after a voweled hamzat al-waṣl the hamza is medial: اِئْتَمَّ، اؤْتُمِنَ
+	initial := u.chunkStart || prev == nil || prev.kind == kArticleLam || (prev.kind == kWasl && prev.vowel == vNone)
 	final := i == len(units)-1
 	var s string
 

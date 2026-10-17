@@ -1,0 +1,9 @@
+- Need Documentation 
+- Need an website, where demo will be shown 
+- How to install instruction
+- After installation journey through different settings and etc like sukoon, shortcuts, fonts, and other settings 
+- Making a Video 
+- windows installation and make trusting automatic 
+- Proper testing on windows 
+- a wiki and question asking board for people that are confused can ask questions. 
+- all explaination video using AI 30sec video 

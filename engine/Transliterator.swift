@@ -347,7 +347,8 @@ public enum Qalam {
 
         let own = u.vowel ?? u.tanween
         let prev: Unit? = i > 0 ? units[i - 1] : nil
-        let initial = u.chunkStart || prev == nil || prev?.kind == .articleLam || prev?.kind == .wasl
+        // after a voweled hamzat al-waṣl the hamza is medial: اِئْتَمَّ، اؤْتُمِنَ
+        let initial = u.chunkStart || prev == nil || prev?.kind == .articleLam || (prev?.kind == .wasl && prev?.vowel == nil)
         let final = i == units.count - 1
         var seat: String
 
