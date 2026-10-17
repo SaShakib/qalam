@@ -30,7 +30,15 @@ final class QalamInputController: IMKInputController {
             $0?.matches(keyCode: code, control: flags.contains(.control), option: flags.contains(.option),
                         shift: flags.contains(.shift), command: flags.contains(.command)) ?? false
         }
+        // The Qur'an box (⌃⇧Q) gets every key while it's open.
+        if quranQuery != nil { return handleQuran(event, flags: flags, client: client, hit: hit) }
+
         if flags.contains(.control) || flags.contains(.option) {
+            if hit(SharedSettings.shortcut(for: .quran)) {
+                commitSelection(client)
+                openQuran(client)
+                return true
+            }
             if hit(SharedSettings.shortcut(for: .sukun)) {
                 toggleSukun(client)
                 return true
@@ -239,8 +247,137 @@ final class QalamInputController: IMKInputController {
     }
 
     override func deactivateServer(_ sender: Any!) {
+        closeQuran()
         commitComposition(sender)
         super.deactivateServer(sender)
+    }
+
+    // MARK: The Qur'an box
+
+    /// What's typed in the box; nil while it's closed.
+    private var quranQuery: String?
+    private var quranRows: [QuranSuggestion] = []
+    private var quranSelected = 0
+    private var quranTotal: Int?
+
+    private func openQuran(_ client: IMKTextInput) {
+        guard QuranStore.shared != nil else { NSSound.beep(); return }
+        quranQuery = ""
+        quranRows = []
+        quranSelected = 0
+        refreshQuran(client)
+    }
+
+    private func closeQuran() {
+        quranQuery = nil
+        quranRows = []
+        QuranPanel.shared.hide()
+    }
+
+    private func handleQuran(_ event: NSEvent, flags: NSEvent.ModifierFlags, client: IMKTextInput,
+                             hit: (Shortcut?) -> Bool) -> Bool {
+        guard var q = quranQuery else { return false }
+        if hit(SharedSettings.shortcut(for: .quran)) { closeQuran(); return true }     // the shortcut again closes it
+        if flags.contains(.command) { closeQuran(); return false }                       // ⌘ shortcuts go to the app
+        switch event.keyCode {
+        case 53: closeQuran(); return true                                               // Esc
+        case 36, 76: pickQuran(quranSelected, client); return true                       // Return
+        case 125, 126:                                                                   // ↓ ↑
+            if !quranRows.isEmpty {
+                quranSelected = (quranSelected + (event.keyCode == 125 ? 1 : -1) + quranRows.count) % quranRows.count
+                showQuran(client)
+            }
+            return true
+        case 48:                                                                         // Tab, ⇧Tab
+            flags.contains(.shift) ? cycleTranslation() : cycleQuranMode()
+            showQuran(client)
+            return true
+        case 51:                                                                         // ⌫
+            if q.isEmpty { closeQuran(); return true }
+            q.removeLast()
+        default:
+            guard let typed = event.characters, !typed.isEmpty,
+                  typed.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) && $0.value < 0xF700 })
+            else { return true }
+            q += typed
+        }
+        quranQuery = q
+        refreshQuran(client)
+        return true
+    }
+
+    /// New dropdown for the typed text. Latin that isn't a reference is also read as Arabic (rahmaan → رحمان).
+    private func refreshQuran(_ client: IMKTextInput) {
+        guard let lib = QuranStore.shared, let q = quranQuery else { return }
+        var plain = Options()
+        plain.harakat = .none
+        let phonetic = q.contains(where: { $0.isLetter && $0.isASCII }) ? Qalam.text(q, plain) : nil
+        quranRows = lib.suggestions(for: q, arabic: phonetic, limit: 6)
+        quranTotal = nil
+        if quranRows.contains(where: { if case .hit = $0 { return true }; return false }) {
+            let ar = q.unicodeScalars.contains { (0x0600...0x06FF).contains($0.value) } ? q : (phonetic ?? q)
+            quranTotal = lib.searchArabic(ar, phonetic: phonetic != nil, limit: 0).total
+        }
+        quranSelected = 0
+        showQuran(client)
+    }
+
+    private func showQuran(_ client: IMKTextInput) {
+        guard let lib = QuranStore.shared, let q = quranQuery else { return }
+        var caret = NSRect.zero
+        _ = client.attributes(forCharacterIndex: 0, lineHeightRectangle: &caret)
+        let panel = QuranPanel.shared
+        panel.onPick = { [weak self] i in
+            guard let self, let c = self.client() else { return }
+            self.pickQuran(i, c)
+        }
+        panel.onCycleMode = { [weak self] in
+            guard let self, let c = self.client() else { return }
+            self.cycleQuranMode(); self.showQuran(c)
+        }
+        panel.onCycleTranslation = { [weak self] in
+            guard let self, let c = self.client() else { return }
+            self.cycleTranslation(); self.showQuran(c)
+        }
+        panel.show(query: q, rows: quranRows, selected: quranSelected, total: quranTotal, library: lib,
+                   mode: SharedSettings.quranInsert, translation: lib.translation(SharedSettings.quranTranslation),
+                   near: caret, key: SharedSettings.shortcut(for: .quran)?.display)
+    }
+
+    /// A sūrah row fills in "2:" for the āyah number; a passage or search result is inserted.
+    private func pickQuran(_ i: Int, _ client: IMKTextInput) {
+        guard let lib = QuranStore.shared, i < quranRows.count else {
+            if let lib = QuranStore.shared, let q = quranQuery, let p = lib.resolve(q) { insertQuran(p, lib, client) }
+            return
+        }
+        switch quranRows[i] {
+        case .surah(let s):
+            quranQuery = "\(s.number):"
+            refreshQuran(client)
+        case .passage(let p), .hit(let p, _):
+            insertQuran(p, lib, client)
+        case .problem:
+            NSSound.beep()
+        }
+    }
+
+    private func insertQuran(_ p: Passage, _ lib: QuranLibrary, _ client: IMKTextInput) {
+        let text = lib.text(p, SharedSettings.quranInsert, translation: SharedSettings.quranTranslation)
+        closeQuran()
+        client.insertText(text, replacementRange: notFound)
+    }
+
+    private func cycleQuranMode() {
+        let all = QuranInsert.allCases
+        SharedSettings.quranInsert = all[(all.firstIndex(of: SharedSettings.quranInsert)! + 1) % all.count]
+    }
+
+    /// The next translation on this Mac (bundled ones and those downloaded in the app).
+    private func cycleTranslation() {
+        guard let have = QuranStore.shared?.available().map(\.id), !have.isEmpty else { return }
+        let i = have.firstIndex(of: SharedSettings.quranTranslation) ?? -1
+        SharedSettings.quranTranslation = have[(i + 1) % have.count]
+        if SharedSettings.quranInsert == .arabic { SharedSettings.quranInsert = .both }
     }
 
     // MARK: Input menu (the ق icon in the menu bar)
@@ -249,6 +386,8 @@ final class QalamInputController: IMKInputController {
         let o = SharedSettings.load()
         let m = NSMenu(title: "Qalam")
         m.addItem(item("Open Qalam (letters, words, practice)…", #selector(openApp(_:))))
+        m.addItem(item("Insert from the Qur'an…" + Self.keyHint(.quran), #selector(quranFromMenu(_:))))
+        m.addItem(item("Qur'an page (read, search, translations)…", #selector(openQuranPage(_:))))
         m.addItem(.separator())
         m.addItem(item("Everyday style", #selector(styleEveryday(_:)), on: o.style == .everyday))
         m.addItem(item("Qur'an style (ٱ ـٰ ـٓ)", #selector(styleQuran(_:)), on: o.style == .quran))
@@ -296,6 +435,15 @@ final class QalamInputController: IMKInputController {
     @objc func sukunOff(_ sender: Any?) { change { $0.sukun = .off } }
     @objc func toggleOptions(_ sender: Any?) { SharedSettings.showOptions.toggle() }
     @objc func toggleSpelling(_ sender: Any?) { change { $0.spellingWords.toggle() } }
+
+    @objc func quranFromMenu(_ sender: Any?) {
+        if let c = client() { openQuran(c) }
+    }
+
+    @objc func openQuranPage(_ sender: Any?) {
+        SharedSettings.requestPage("quran")
+        openApp(sender)
+    }
 
     @objc func openShortcuts(_ sender: Any?) {
         SharedSettings.requestPage("settings")

@@ -1,0 +1,23 @@
+# id	language	name	translator	bundled (yes = ships inside Qalam; no = the app downloads it from tanzil.net)
+en.sahih	English	Saheeh International	Saheeh International	yes
+bn.bengali	Bangla	মুহিউদ্দীন খান	Muhiuddin Khan	yes
+bn.hoque	Bangla	জহুরুল হক	Zohurul Hoque	yes
+en.pickthall	English	Pickthall	Mohammed Marmaduke William Pickthall	no
+en.yusufali	English	Yusuf Ali	Abdullah Yusuf Ali	no
+en.hilali	English	Hilali & Khan	Muhammad Taqi-ud-Din al-Hilali and Muhammad Muhsin Khan	no
+en.wahiduddin	English	Wahiduddin Khan	Wahiduddin Khan	no
+en.itani	English	Itani	Talal Itani	no
+en.mubarakpuri	English	Mubarakpuri	Safi-ur-Rahman al-Mubarakpuri	no
+en.maududi	English	Maududi	Abul Ala Maududi	no
+en.daryabadi	English	Daryabadi	Abdul Majid Daryabadi	no
+en.arberry	English	Arberry	A. J. Arberry	no
+en.shakir	English	Shakir	Mohammad Habib Shakir	no
+en.qarai	English	Qarai	Ali Quli Qarai	no
+en.transliteration	English	Transliteration	English transliteration	no
+ur.jalandhry	Urdu	جالندہری	Fateh Muhammad Jalandhry	no
+ur.maududi	Urdu	ابوالاعلی مودودی	Abul A'ala Maududi	no
+hi.hindi	Hindi	फ़ारूक़ ख़ान & नदवी	Suhel Farooq Khan and Saifur Rahman Nadwi	no
+id.indonesian	Indonesian	Bahasa Indonesia	Indonesian Ministry of Religious Affairs	no
+ms.basmeih	Malay	Basmeih	Abdullah Muhammad Basmeih	no
+tr.diyanet	Turkish	Diyanet İşleri	Diyanet Isleri	no
+fr.hamidullah	French	Hamidullah	Muhammad Hamidullah	no

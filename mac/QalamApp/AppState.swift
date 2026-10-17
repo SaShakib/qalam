@@ -3,7 +3,7 @@ import AppKit
 import QalamEngine
 
 enum Page: String, CaseIterable, Identifiable, Hashable {
-    case welcome, letters, words, practice, write, settings
+    case welcome, letters, words, practice, write, quran, settings
     var id: String { rawValue }
 
     var title: String {
@@ -13,6 +13,7 @@ enum Page: String, CaseIterable, Identifiable, Hashable {
         case .words: return "Word list"
         case .practice: return "Practice"
         case .write: return "Write"
+        case .quran: return "Qur'an"
         case .settings: return "Settings"
         }
     }
@@ -24,6 +25,7 @@ enum Page: String, CaseIterable, Identifiable, Hashable {
         case .words: return "list.bullet.rectangle"
         case .practice: return "keyboard"
         case .write: return "square.and.pencil"
+        case .quran: return "book"
         case .settings: return "gearshape"
         }
     }

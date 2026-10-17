@@ -7,6 +7,7 @@
 | Switch Arabic on / off | 🌐 Globe or Control-Space (the Mac's own keyboard switch) | **Ctrl + Alt + A** |
 | Sukūn off ↔ Smart | **Control-Shift-O** (⌃⇧O) | **Ctrl + Alt + O** |
 | Harakat off ↔ on | none (add one if you like) | none (add one if you like) |
+| Insert from the Qur'an ([more](quran.md)) | **Control-Shift-Q** (⌃⇧Q) | not yet |
 | Choose an option while typing | ↑ / ↓ | ↑ / ↓ |
 | Put in the word | Space, Enter or punctuation | Space, Enter or punctuation |
 | Remove the last English key | Backspace | Backspace |

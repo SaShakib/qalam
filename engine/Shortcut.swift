@@ -34,19 +34,21 @@ public struct Shortcut: Equatable, Codable {
     }
 
     public enum Action: String, CaseIterable, Identifiable {
-        case sukun, harakat
+        case sukun, harakat, quran
         public var id: String { rawValue }
         public var title: String {
             switch self {
             case .sukun: return "Sukūn off / on"
             case .harakat: return "Harakat off / on"
+            case .quran: return "Insert from the Qur'an"
             }
         }
-        /// Control-Shift-O for sukūn; harakat has none until the user sets one.
+        /// Control-Shift-O for sukūn, Control-Shift-Q for the Qur'an box; harakat has none until the user sets one.
         public var defaultShortcut: Shortcut? {
             switch self {
             case .sukun: return Shortcut(keyCode: 31, key: "O", control: true, shift: true)
             case .harakat: return nil
+            case .quran: return Shortcut(keyCode: 12, key: "Q", control: true, shift: true)
             }
         }
     }

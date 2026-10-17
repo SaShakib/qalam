@@ -40,12 +40,12 @@ endif
 
 all: bundle
 
-# One build per processor, joined with lipo into $(BIN).
+# One build per processor, joined with lipo into $(BIN). (Relative paths: the folder name may have spaces.)
 build:
 	mkdir -p $(BIN)
 	for arch in $(ARCHS); do $(SWIFT) --triple $$arch-apple-macosx$(MACOS_MIN); done
 	for p in QalamInput QalamApp; do \
-	  lipo -create $$(for arch in $(ARCHS); do echo "$$($(SWIFT) --triple $$arch-apple-macosx$(MACOS_MIN) --show-bin-path)/$$p"; done) -output $(BIN)/$$p; \
+	  lipo -create $(foreach arch,$(ARCHS),.build/$(arch)-apple-macosx/release/$$p) -output $(BIN)/$$p; \
 	done
 	lipo -info $(BIN)/QalamInput $(BIN)/QalamApp
 
@@ -73,6 +73,9 @@ bundle: build icons
 	cp $(BUILD)/icons/AppIcon.icns "$(APP)/Contents/Resources/AppIcon.icns"
 	cp fonts/*.ttf "$(APP)/Contents/Resources/Fonts/"
 	cp fonts/*.txt "$(APP)/Contents/Resources/Fonts/"
+	# The Qur'an (Tanzil Uthmani) and the bundled translations, for the ⌃⇧Q box and the Qur'an page.
+	mkdir -p "$(APP)/Contents/Resources/Quran"
+	cp quran/*.txt quran/*.tsv quran/README.md "$(APP)/Contents/Resources/Quran/"
 	for p in "$(IME_APP)" "$(APP)"; do \
 	  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" "$$p/Contents/Info.plist"; \
 	  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" "$$p/Contents/Info.plist"; \

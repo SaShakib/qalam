@@ -61,6 +61,7 @@ struct ContentView: View {
             case .words: WordsView()
             case .practice: PracticeView()
             case .write: WriteView()
+            case .quran: QuranView()
             case .settings: SettingsView()
             }
         }

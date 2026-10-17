@@ -5,6 +5,7 @@ import QalamEngine
 // qalam --quran allaAhu     → ٱللَّهُ
 // qalam --test tests/cases.tsv
 // qalam --words             (every word in the app, for review)
+// qalam ayah 2:255-257 [--trans bn.bengali]   · qalam search rahma   (see QuranCLI.swift)
 
 var args = Array(CommandLine.arguments.dropFirst())
 var o = Options()
@@ -55,6 +56,10 @@ func runTests(_ path: String) -> Int32 {
     }
     print("\(pass) passed, \(fail) failed")
     return fail == 0 ? 0 : 1
+}
+
+if let first = args.first, ["ayah", "search", "surahs", "translations"].contains(first) {
+    exit(QuranCLI.run(args))
 }
 
 if args.first == "--test", args.count >= 2 {

@@ -25,7 +25,7 @@ final class OptionsPanel {
 
     func show(_ candidates: [Candidate], selected: Int, sukunOff: Bool, plain: Bool, near caret: NSRect,
               sukunKey: String?, harakatKey: String?) {
-        let panel = self.panel ?? makePanel()
+        let panel = self.panel ?? Self.makePanel()
         self.panel = panel
 
         let rows = NSStackView()
@@ -72,13 +72,13 @@ final class OptionsPanel {
         let width = max(size.width, 220)
         panel.contentView = background
         panel.setContentSize(NSSize(width: width, height: size.height))
-        panel.setFrameOrigin(origin(for: NSSize(width: width, height: size.height), near: caret))
+        panel.setFrameOrigin(Self.origin(for: NSSize(width: width, height: size.height), near: caret))
         panel.orderFrontRegardless()
     }
 
     // MARK: Layout
 
-    private func makePanel() -> NSPanel {
+    static func makePanel() -> NSPanel {
         let p = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 240, height: 120),
                         styleMask: [.nonactivatingPanel, .borderless], backing: .buffered, defer: true)
         p.level = .popUpMenu
@@ -93,7 +93,7 @@ final class OptionsPanel {
     }
 
     /// Just under the word; above it if there's no room below. Near the mouse if the app gives no caret.
-    private func origin(for size: NSSize, near caret: NSRect) -> NSPoint {
+    static func origin(for size: NSSize, near caret: NSRect) -> NSPoint {
         var anchor = caret
         if anchor.origin == .zero && anchor.size == .zero {
             let m = NSEvent.mouseLocation
