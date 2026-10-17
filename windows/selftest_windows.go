@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"qalam/engine"
+	"qalam/quran"
 )
 
 // selfTest checks a built Qalam.exe without touching the keyboard or settings:
@@ -41,6 +42,14 @@ func selfTest(args []string) int {
 	check(len(guideHTML) > 1000 && len(setupHTML) > 1000, "embedded guide and setup pages")
 	check(len(iconOn) > 0 && len(iconOff) > 0 && len(previewFont) > 100000, "embedded icons and font")
 	check(typingFont(fonts) != nil && typingFont(fonts).Name == "Scheherazade New", "the typing box uses Scheherazade New (SIL)")
+	if lib := quranLibrary(); lib == nil {
+		check(false, "embedded Qur'an data")
+	} else {
+		p, ok := lib.Resolve("baqarah 255")
+		check(ok && p.Reference() == "2:255" && strings.HasSuffix(lib.Text(p, quran.Arabic, ""), "(2:255)"), "Qur'an: baqarah 255")
+		_, total := lib.SearchArabic("الرحمن", false, 0)
+		check(total == 50 && len(lib.Available()) == 3, "Qur'an: search and the bundled translations")
+	}
 	check(!isChromiumExe(exePath()), "Qalam.exe itself is not a Chrome app")
 	check(isChromiumExe(`C:\Program Files\WindowsApps\x\msedgewebview2.exe`), "WebView2 apps are Chrome apps")
 	check(strings.HasPrefix(assetName(), "Qalam-Windows-"), "update file name")

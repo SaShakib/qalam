@@ -7,7 +7,7 @@
 | Switch Arabic on / off | 🌐 Globe or Control-Space (the Mac's own keyboard switch) | **Ctrl + Alt + A** |
 | Sukūn off ↔ Smart | **Control-Shift-O** (⌃⇧O) | **Ctrl + Alt + O** |
 | Harakat off ↔ on | none (add one if you like) | none (add one if you like) |
-| Insert from the Qur'an ([more](quran.md)) | **Control-Shift-Q** (⌃⇧Q) | not yet |
+| Insert from the Qur'an ([more](quran.md)) | **Control-Shift-Q** (⌃⇧Q) | **Ctrl + Alt + Q** |
 | Choose an option while typing | ↑ / ↓ | ↑ / ↓ |
 | Put in the word | Space, Enter or punctuation | Space, Enter or punctuation |
 | Remove the last English key | Backspace | Backspace |
@@ -30,7 +30,7 @@ Change one when it clashes with a shortcut you use in another app.
 1. Right-click **ق** in the tray → **Shortcuts** → click the one to change (or use **Setup & settings…** → Shortcuts → **Change**).
 2. A message asks you to press the new shortcut. Hold **Ctrl** or the **left Alt** key with a key.
    - **Backspace** removes the shortcut. **Esc** cancels.
-3. **Reset to Ctrl+Alt+A / Ctrl+Alt+O** puts the defaults back.
+3. **Reset to Ctrl+Alt+A / O / Q** puts the defaults back (Ctrl+Alt+A, Ctrl+Alt+O, Ctrl+Alt+Q).
 
 Qalam won't let you give two actions the same shortcut. On Windows, the **right Alt** key (AltGr) is left alone because it types letters on many keyboard layouts.
 

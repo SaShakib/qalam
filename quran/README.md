@@ -1,6 +1,6 @@
 # Qur'an data
 
-Used by the keyboard's **Insert from the Qur'an** box (⌃⇧Q), the app's **Qur'an** page and
+Used by the keyboard's **Insert from the Qur'an** box (Mac ⌃⇧Q, Windows Ctrl+Alt+Q; Windows embeds a gzipped copy, `windows/assets/quran`, made by `make guide`), the app's **Qur'an** page and
 `qalam ayah 2:255` / `qalam search …` on the command line.
 
 | File | What | Source |

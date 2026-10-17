@@ -73,9 +73,13 @@ func onKeyDown(kb *kbdllHook) bool {
 	if recording != "" {
 		return recordKey(vk, ctrl, alt, leftAlt, shift, win)
 	}
+	// The Qur'an box (Ctrl+Alt+Q) gets every key while it's open.
+	if quranOpen {
+		return quranKey(vk, ctrl, leftAlt, alt, shift, win)
+	}
 
 	// The user's shortcuts (tray menu → Shortcuts). Defaults: Ctrl+Alt+A Arabic on/off,
-	// Ctrl+Alt+O sukūn Off ↔ Smart. Alt means Left Alt only, so AltGr letters on other layouts still work.
+	// Ctrl+Alt+O sukūn Off ↔ Smart, Ctrl+Alt+Q insert from the Qur'an. Alt means Left Alt only, so AltGr letters on other layouts still work.
 	if (ctrl || leftAlt) && !win && !isModifier(vk) {
 		hit := func(name string) bool {
 			h := settings.hotkey(name)
@@ -91,6 +95,10 @@ func onKeyDown(kb *kbdllHook) bool {
 			return true
 		case hit("harakat"):
 			toggleHarakat()
+			return true
+		case hit("quran"):
+			commitSelected()
+			openQuran()
 			return true
 		}
 	}

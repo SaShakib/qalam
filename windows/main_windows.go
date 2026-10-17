@@ -94,6 +94,7 @@ func main() {
 	hInstance, _, _ = pGetModuleHandleW.Call(0)
 	loadPreviewFont()
 	createPreviewWindow()
+	createQuranWindow()
 	createTray()
 
 	hook, _, _ := pSetWindowsHookExW.Call(whKeyboardLL, hookProc, hInstance, 0)

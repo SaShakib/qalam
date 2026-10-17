@@ -1,0 +1,115 @@
+# number	ayahs	arabic	name	english	type   (from Tanzil quran-data.js, CC BY 3.0, tanzil.net)
+1	7	الفاتحة	Al-Faatiha	The Opening	Meccan
+2	286	البقرة	Al-Baqara	The Cow	Medinan
+3	200	آل عمران	Aal-i-Imraan	The Family of Imraan	Medinan
+4	176	النساء	An-Nisaa	The Women	Medinan
+5	120	المائدة	Al-Maaida	The Table	Medinan
+6	165	الأنعام	Al-An'aam	The Cattle	Meccan
+7	206	الأعراف	Al-A'raaf	The Heights	Meccan
+8	75	الأنفال	Al-Anfaal	The Spoils of War	Medinan
+9	129	التوبة	At-Tawba	The Repentance	Medinan
+10	109	يونس	Yunus	Jonas	Meccan
+11	123	هود	Hud	Hud	Meccan
+12	111	يوسف	Yusuf	Joseph	Meccan
+13	43	الرعد	Ar-Ra'd	The Thunder	Medinan
+14	52	ابراهيم	Ibrahim	Abraham	Meccan
+15	99	الحجر	Al-Hijr	The Rock	Meccan
+16	128	النحل	An-Nahl	The Bee	Meccan
+17	111	الإسراء	Al-Israa	The Night Journey	Meccan
+18	110	الكهف	Al-Kahf	The Cave	Meccan
+19	98	مريم	Maryam	Mary	Meccan
+20	135	طه	Taa-Haa	Taa-Haa	Meccan
+21	112	الأنبياء	Al-Anbiyaa	The Prophets	Meccan
+22	78	الحج	Al-Hajj	The Pilgrimage	Medinan
+23	118	المؤمنون	Al-Muminoon	The Believers	Meccan
+24	64	النور	An-Noor	The Light	Medinan
+25	77	الفرقان	Al-Furqaan	The Criterion	Meccan
+26	227	الشعراء	Ash-Shu'araa	The Poets	Meccan
+27	93	النمل	An-Naml	The Ant	Meccan
+28	88	القصص	Al-Qasas	The Stories	Meccan
+29	69	العنكبوت	Al-Ankaboot	The Spider	Meccan
+30	60	الروم	Ar-Room	The Romans	Meccan
+31	34	لقمان	Luqman	Luqman	Meccan
+32	30	السجدة	As-Sajda	The Prostration	Meccan
+33	73	الأحزاب	Al-Ahzaab	The Clans	Medinan
+34	54	سبإ	Saba	Sheba	Meccan
+35	45	فاطر	Faatir	The Originator	Meccan
+36	83	يس	Yaseen	Yaseen	Meccan
+37	182	الصافات	As-Saaffaat	Those drawn up in Ranks	Meccan
+38	88	ص	Saad	The letter Saad	Meccan
+39	75	الزمر	Az-Zumar	The Groups	Meccan
+40	85	غافر	Al-Ghaafir	The Forgiver	Meccan
+41	54	فصلت	Fussilat	Explained in detail	Meccan
+42	53	الشورى	Ash-Shura	Consultation	Meccan
+43	89	الزخرف	Az-Zukhruf	Ornaments of gold	Meccan
+44	59	الدخان	Ad-Dukhaan	The Smoke	Meccan
+45	37	الجاثية	Al-Jaathiya	Crouching	Meccan
+46	35	الأحقاف	Al-Ahqaf	The Dunes	Meccan
+47	38	محمد	Muhammad	Muhammad	Medinan
+48	29	الفتح	Al-Fath	The Victory	Medinan
+49	18	الحجرات	Al-Hujuraat	The Inner Apartments	Medinan
+50	45	ق	Qaaf	The letter Qaaf	Meccan
+51	60	الذاريات	Adh-Dhaariyat	The Winnowing Winds	Meccan
+52	49	الطور	At-Tur	The Mount	Meccan
+53	62	النجم	An-Najm	The Star	Meccan
+54	55	القمر	Al-Qamar	The Moon	Meccan
+55	78	الرحمن	Ar-Rahmaan	The Beneficent	Medinan
+56	96	الواقعة	Al-Waaqia	The Inevitable	Meccan
+57	29	الحديد	Al-Hadid	The Iron	Medinan
+58	22	المجادلة	Al-Mujaadila	The Pleading Woman	Medinan
+59	24	الحشر	Al-Hashr	The Exile	Medinan
+60	13	الممتحنة	Al-Mumtahana	She that is to be examined	Medinan
+61	14	الصف	As-Saff	The Ranks	Medinan
+62	11	الجمعة	Al-Jumu'a	Friday	Medinan
+63	11	المنافقون	Al-Munaafiqoon	The Hypocrites	Medinan
+64	18	التغابن	At-Taghaabun	Mutual Disillusion	Medinan
+65	12	الطلاق	At-Talaaq	Divorce	Medinan
+66	12	التحريم	At-Tahrim	The Prohibition	Medinan
+67	30	الملك	Al-Mulk	The Sovereignty	Meccan
+68	52	القلم	Al-Qalam	The Pen	Meccan
+69	52	الحاقة	Al-Haaqqa	The Reality	Meccan
+70	44	المعارج	Al-Ma'aarij	The Ascending Stairways	Meccan
+71	28	نوح	Nooh	Noah	Meccan
+72	28	الجن	Al-Jinn	The Jinn	Meccan
+73	20	المزمل	Al-Muzzammil	The Enshrouded One	Meccan
+74	56	المدثر	Al-Muddaththir	The Cloaked One	Meccan
+75	40	القيامة	Al-Qiyaama	The Resurrection	Meccan
+76	31	الانسان	Al-Insaan	Man	Medinan
+77	50	المرسلات	Al-Mursalaat	The Emissaries	Meccan
+78	40	النبإ	An-Naba	The Announcement	Meccan
+79	46	النازعات	An-Naazi'aat	Those who drag forth	Meccan
+80	42	عبس	Abasa	He frowned	Meccan
+81	29	التكوير	At-Takwir	The Overthrowing	Meccan
+82	19	الإنفطار	Al-Infitaar	The Cleaving	Meccan
+83	36	المطففين	Al-Mutaffifin	Defrauding	Meccan
+84	25	الإنشقاق	Al-Inshiqaaq	The Splitting Open	Meccan
+85	22	البروج	Al-Burooj	The Constellations	Meccan
+86	17	الطارق	At-Taariq	The Morning Star	Meccan
+87	19	الأعلى	Al-A'laa	The Most High	Meccan
+88	26	الغاشية	Al-Ghaashiya	The Overwhelming	Meccan
+89	30	الفجر	Al-Fajr	The Dawn	Meccan
+90	20	البلد	Al-Balad	The City	Meccan
+91	15	الشمس	Ash-Shams	The Sun	Meccan
+92	21	الليل	Al-Lail	The Night	Meccan
+93	11	الضحى	Ad-Dhuhaa	The Morning Hours	Meccan
+94	8	الشرح	Ash-Sharh	The Consolation	Meccan
+95	8	التين	At-Tin	The Fig	Meccan
+96	19	العلق	Al-Alaq	The Clot	Meccan
+97	5	القدر	Al-Qadr	The Power, Fate	Meccan
+98	8	البينة	Al-Bayyina	The Evidence	Medinan
+99	8	الزلزلة	Az-Zalzala	The Earthquake	Medinan
+100	11	العاديات	Al-Aadiyaat	The Chargers	Meccan
+101	11	القارعة	Al-Qaari'a	The Calamity	Meccan
+102	8	التكاثر	At-Takaathur	Competition	Meccan
+103	3	العصر	Al-Asr	The Declining Day, Epoch	Meccan
+104	9	الهمزة	Al-Humaza	The Traducer	Meccan
+105	5	الفيل	Al-Fil	The Elephant	Meccan
+106	4	قريش	Quraish	Quraysh	Meccan
+107	7	الماعون	Al-Maa'un	Almsgiving	Meccan
+108	3	الكوثر	Al-Kawthar	Abundance	Meccan
+109	6	الكافرون	Al-Kaafiroon	The Disbelievers	Meccan
+110	3	النصر	An-Nasr	Divine Support	Medinan
+111	5	المسد	Al-Masad	The Palm Fibre	Meccan
+112	4	الإخلاص	Al-Ikhlaas	Sincerity	Meccan
+113	5	الفلق	Al-Falaq	The Dawn	Meccan
+114	6	الناس	An-Naas	Mankind	Meccan

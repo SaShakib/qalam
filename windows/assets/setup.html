@@ -129,7 +129,7 @@
     <p class="lead">Change any that clash with shortcuts you already use. Click <b>Change</b>, then press the new keys anywhere (hold Ctrl or the left Alt). The buttons in the typing box always work too.</p>
     <div id="keys"></div>
     <div class="note" id="recordNote" hidden>Press the new shortcut now… <kbd>Esc</kbd> cancels, <kbd>Backspace</kbd> means no shortcut.</div>
-    <p><button class="btn" data-action="resetKeys">Reset to Ctrl+Alt+A / Ctrl+Alt+O</button></p>
+    <p><button class="btn" data-action="resetKeys">Reset to Ctrl+Alt+A / O / Q</button></p>
   </section>
 
   <section class="step" data-title="Fonts">
@@ -192,7 +192,7 @@
     $("#toggleKey").textContent = state.keys.toggle;
     $("#enabledText").textContent = state.enabled ? "on" : "off";
     $("#enabledBtn").textContent = state.enabled ? "Turn off" : "Turn on";
-    const titles = { toggle: "Arabic on / off", sukun: "Sukūn off / on", harakat: "Harakat off / on" };
+    const titles = { toggle: "Arabic on / off", sukun: "Sukūn off / on", harakat: "Harakat off / on", quran: "Insert from the Qur’an" };
     $("#keys").innerHTML = "";
     for (const [name, title] of Object.entries(titles)) {
       const row = document.createElement("div");

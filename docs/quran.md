@@ -2,11 +2,13 @@
 
 Qalam carries the whole Qur'an (Uthmani script, full harakat, from the [Tanzil Project](https://tanzil.net)) with
 three translations: **English: Saheeh International**, **Bangla: Muhiuddin Khan** and **Bangla: Zohurul Hoque**.
-More can be downloaded in the app. Mac only for now.
+On the Mac more can be downloaded in the app. Windows has the insert box with the three bundled translations.
 
-## Insert āyāt while typing (Control-Shift-Q)
+## Insert āyāt while typing (Mac: Control-Shift-Q · Windows: Ctrl+Alt+Q)
 
-1. With the Qalam keyboard on, press **⌃⇧Q** (Control-Shift-Q) in any app. A box opens at the cursor.
+1. **Mac:** with the Qalam keyboard on, press **⌃⇧Q** (Control-Shift-Q) in any app.
+   **Windows:** with Qalam running (the ق in the tray), press **Ctrl+Alt+Q** in any app. It works even
+   while Arabic typing is off. A box opens at the cursor.
 2. Type what you want. The dropdown follows as you type:
 
    | You type | You get |
@@ -15,23 +17,36 @@ More can be downloaded in the app. Mac only for now.
    | `2:255-257` | three āyāt |
    | `baqarah 255`, `al imran 3-5`, `yaseen:1` | the sūrah by name (spelling is loose) |
    | `baq`, `cow`, `36` | the sūrah; pick it, then type the āyah number |
-   | `112` + Return | the whole sūrah |
+   | `112` + Return (Enter) | the whole sūrah |
    | `rahmaan`, `qul huwa allaah` | search: Latin is read the Qalam way (`H` = ح), similar letters count too |
    | `الرحمن` or `ٱلرَّحْمَٰنِ` | search, harakat optional |
 
-3. **↑ / ↓** choose, **Return** inserts, **Esc** closes.
+3. **↑ / ↓** choose, **Return** (Enter) inserts, **Esc** closes. Pressing the shortcut again closes it too.
 4. **Tab** changes what goes in: **Arabic only**, **Arabic + translation** or **Translation only**.
-   **⇧Tab** switches the translation. Qalam remembers both.
+   **⇧Tab** (Shift+Tab) switches the translation. Qalam remembers both. The two buttons in the box do the same.
 
 Each āyah ends with its reference, like `(2:255)`. With a translation, the Arabic line comes first and the
 translation under it.
 
-The shortcut can be changed in **Qalam → Settings → Shortcuts**. The ق menu has **Insert from the Qur'an…** too.
+The shortcut can be changed in **Qalam → Settings → Shortcuts** on the Mac (the ق menu has
+**Insert from the Qur'an…** too), and on Windows in the tray menu → **Shortcuts** → **Insert from the Qur'an**
+(or **Setup & settings… → Shortcuts**).
 
-The box shows the Arabic in the Qur'an font; what goes into your app takes that app's font. For the
-Qur'an font in Pages, Word or Notes, use **Copy** on the app's Qur'an page (it copies rich text).
+**Windows notes**
 
-## The Qur'an page in the app
+- Keys are read on the US layout, like Qalam's typing. To search in Arabic letters, copy them and press
+  **Ctrl+V** in the box; or type the Latin (`rahmaan`).
+- Lines are separated with **Shift+Enter**, so in chat apps (WhatsApp, Teams, Slack) the āyah and its
+  translation stay in one message instead of sending it.
+- Clicking another window or pressing another Ctrl/Alt shortcut closes the box.
+- In Chrome-based apps the same invisible fix as for typing keeps اللَّه from turning into the font's ligature.
+- Searching inside the translations is Mac only.
+
+The box shows the Arabic in the Qur'an font (KFGQPC Hafs); what goes into your app takes that app's font.
+For the Qur'an font in Pages, Word or Notes on the Mac, use **Copy** on the app's Qur'an page (it copies
+rich text). On Windows, install the fonts (**Setup & settings… → Fonts**) and pick KFGQPC HAFS Uthmanic Script.
+
+## The Qur'an page in the app (Mac)
 
 **Qalam → Qur'an**:
 
@@ -42,7 +57,7 @@ Qur'an font in Pages, Word or Notes, use **Copy** on the app's Qur'an page (it c
   (Pickthall, Yusuf Ali, Hilali & Khan, Wahiduddin Khan, Urdu, Hindi, Indonesian, Turkish, French…).
 - **⌃⇧Q inserts**: the same choice as Tab in the box.
 
-## From the command line (for scripts and AI tools)
+## From the command line (Mac; for scripts and AI tools)
 
 ```
 qalam ayah 2:255 "baqarah 1-5" --trans en.sahih,bn.bengali

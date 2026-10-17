@@ -109,6 +109,8 @@ guide: icons
 	mkdir -p windows/assets/fonts
 	cp fonts/ScheherazadeNew.ttf fonts/OFL-ScheherazadeNew.txt windows/assets/fonts/
 	for f in fonts/*KFGQPC* fonts/*Hafs* fonts/*HAFS*; do [ -f "$$f" ] && cp "$$f" windows/assets/fonts/ || true; done
+	# The Qur'an data for the Ctrl+Alt+Q box, texts gzipped (windows/quran/quran_test.go checks they match quran/).
+	cd windows && $(GO) run ./tools/packquran ../quran assets/quran
 
 windows: guide
 	mkdir -p $(DIST)

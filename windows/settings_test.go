@@ -10,6 +10,9 @@ func TestHotkeys(t *testing.T) {
 	if got := s.hotkeyText("toggle"); got != "Ctrl+Alt+A" {
 		t.Errorf("default toggle = %q", got)
 	}
+	if got := s.hotkeyText("quran"); got != "Ctrl+Alt+Q" {
+		t.Errorf("default quran = %q", got)
+	}
 	if got := s.hotkeyText("harakat"); got != "none" {
 		t.Errorf("default harakat = %q", got)
 	}

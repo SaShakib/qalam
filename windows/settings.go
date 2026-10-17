@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"qalam/engine"
+	"qalam/quran"
 )
 
 // Settings are stored in %APPDATA%\Qalam\settings.json.
@@ -20,7 +21,11 @@ type Settings struct {
 	NoOptions    bool              `json:"noOptions"`    // hide the options panel (show only the word)
 	PrefersPlain bool              `json:"prefersPlain"` // last pick was a version without harakat
 	Learned      map[string]string `json:"learned"`      // typed word → the option picked for it
-	// Shortcuts the user changed: "toggle", "sukun", "harakat". A missing name uses the default;
+	// The Qur'an box (Ctrl+Alt+Q): what to insert ("arabic", "both", "translation") and which
+	// translation (Tanzil id). Empty = "both" and "en.sahih", as on the Mac.
+	QuranInsert      string `json:"quranInsert,omitempty"`
+	QuranTranslation string `json:"quranTranslation,omitempty"`
+	// Shortcuts the user changed: "toggle", "sukun", "harakat", "quran". A missing name uses the default;
 	// null means the user removed it.
 	Keys map[string]*Hotkey `json:"keys,omitempty"`
 }
@@ -38,12 +43,32 @@ var hotkeyNames = []struct{ Name, Title string }{
 	{"toggle", "Arabic on / off"},
 	{"sukun", "Sukūn off / on"},
 	{"harakat", "Harakat off / on"},
+	{"quran", "Insert from the Qur'an"},
 }
 
 var hotkeyDefaults = map[string]*Hotkey{
 	"toggle":  {VK: 'A', Ctrl: true, Alt: true},
 	"sukun":   {VK: 'O', Ctrl: true, Alt: true},
 	"harakat": nil,
+	"quran":   {VK: 'Q', Ctrl: true, Alt: true},
+}
+
+// quranMode is what the Qur'an box inserts (default: Arabic + translation).
+func (s Settings) quranMode() quran.Insert {
+	for _, m := range quran.InsertModes {
+		if string(m) == s.QuranInsert {
+			return m
+		}
+	}
+	return quran.Both
+}
+
+// quranTranslation is the Tanzil id of the translation to insert (default Saheeh International).
+func (s Settings) quranTranslation() string {
+	if s.QuranTranslation == "" {
+		return "en.sahih"
+	}
+	return s.QuranTranslation
 }
 
 // hotkey is the shortcut in use for name, or nil if there is none.

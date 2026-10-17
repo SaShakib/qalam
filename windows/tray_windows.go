@@ -176,7 +176,7 @@ func showMenu() {
 			uintptr(unsafe.Pointer(utf16Ptr(n.Title+": "+settings.hotkeyText(n.Name)+"   (change…)"))))
 	}
 	pAppendMenuW.Call(keys, mfSeparator, 0, 0)
-	pAppendMenuW.Call(keys, mfString, cmdKeysReset, uintptr(unsafe.Pointer(utf16Ptr("Reset to Ctrl+Alt+A / Ctrl+Alt+O"))))
+	pAppendMenuW.Call(keys, mfString, cmdKeysReset, uintptr(unsafe.Pointer(utf16Ptr("Reset to Ctrl+Alt+A / O / Q"))))
 	pAppendMenuW.Call(menu, mfPopup, keys, uintptr(unsafe.Pointer(utf16Ptr("Shortcuts"))))
 	sep()
 	item(cmdDigits, "Arabic digits ١٢٣", o.ArabicDigits)
