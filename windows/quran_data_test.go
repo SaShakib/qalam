@@ -11,7 +11,7 @@ func TestEmbeddedQuran(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(l.Available()) != 3 {
+	if len(l.Available()) != 9 {
 		t.Errorf("bundled translations: %v", l.Available())
 	}
 	p, ok := l.Resolve("2:255")
