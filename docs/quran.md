@@ -17,8 +17,7 @@ login for this; switch it off in **Settings → Qur'an box**). A box opens:
    - `2:255` or `baqarah 255-257` → that passage.
 2. Choose a result with **↑ / ↓** or a **click** (double-click inserts). It fills **Sūrah**, **From āyah** and
    **To āyah**.
-3. Widen the range with **+ āyah before** / **+ āyah after**, or the From / To dropdowns. The preview shows
-   exactly what goes in.
+3. Set the range with the **From āyah** / **To āyah** dropdowns. The preview shows exactly what goes in.
 4. Choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation.
 5. **Insert** (Return). **Esc** clears the search, then closes the box.
 

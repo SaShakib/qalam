@@ -13,7 +13,7 @@ enum Snapshot {
             guard let lib = QuranData.library else { print("no Qur'an data"); exit(1) }
             let model = QuranBoxModel(lib: lib)
             model.query = args[i + 2]
-            if args.count > i + 3, let n = Int(args[i + 3]) { model.move(n); model.addAfter(); model.addAfter() }
+            if args.count > i + 3, let n = Int(args[i + 3]) { model.move(n); model.to = model.from + 2 }
             let host = NSHostingView(rootView: QuranBoxView(model: model, insert: {}, cancel: {})
                 .background(Color(nsColor: .windowBackgroundColor)))
             let size = host.fittingSize

@@ -339,8 +339,6 @@ final class QuranBoxModel: ObservableObject {
         }
     }
 
-    func addBefore() { if from > 1 { from -= 1 } }
-    func addAfter() { if to < ayahCount { to += 1 } }
 }
 
 // MARK: - The box's look
@@ -466,8 +464,6 @@ struct QuranBoxView: View {
                 }
                 .labelsHidden().frame(width: 72)
             }
-            Button("+ Before") { model.addBefore() }.disabled(model.from <= 1).help("Add the āyah before")
-            Button("+ After") { model.addAfter() }.disabled(model.to >= model.ayahCount).help("Add the āyah after")
             Spacer(minLength: 0)
         }
     }
