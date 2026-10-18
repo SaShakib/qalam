@@ -84,6 +84,7 @@ final class AppState: ObservableObject {
     /// End of the setup steps: on to the 20-word practice, or straight into the app.
     func finishSetup(practice: Bool) {
         UserDefaults.standard.set(true, forKey: "setupDone")
+        UserDefaults.standard.set(true, forKey: "quranAccessShown")   // the setup had the Qur'an box step
         setupDone = true
         if practice {
             restartFirstPractice()

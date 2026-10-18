@@ -15,9 +15,10 @@ Right after you install it, Qalam walks you through a short setup, one step at a
 | 4 | **Harakat & sukūn** | Harakat: **Full**, **Only what I type**, or **None**. Sukūn: **Smart** (only at a stop inside a word), **Full** (every stop) or **Off**. Each choice shows a preview. |
 | 5 | **While typing** | **Show options while typing** (the panel of up to 4 versions), **Smart spelling** (اللَّه، هَٰذَا), **Arabic digits** (١٢٣). |
 | 6 | **Shortcuts** | Change the shortcuts if they clash with ones you use. See [Shortcuts](shortcuts.md). |
-| 7 | **Fonts** | Mac: the fonts the app shows Arabic in. Windows: where to get good Arabic fonts for your other apps. See [Fonts](fonts.md). |
-| 8 | **Updates** (Mac) / **Windows** | Automatic update checks and installs. On Windows also **Start with Windows**. |
-| 9 | **Practice** | Start the optional **20-word practice** (about 5 minutes, covers every special key), or finish. |
+| 7 | **Qur'an box** (Mac) | Two permissions for ⌃⇧Q: **Start Qalam at login** (it waits in the menu bar so the shortcut works in every app) and **Allow pasting (Accessibility)**, needed only when another keyboard than Qalam is on. Each shows ✓ when done. See [Qur'an](quran.md). People who set Qalam up earlier see this once as a sheet. |
+| 8 | **Fonts** | Mac: the fonts the app shows Arabic in. Windows: where to get good Arabic fonts for your other apps. See [Fonts](fonts.md). |
+| 9 | **Updates** (Mac) / **Windows** | Automatic update checks and installs. On Windows also **Start with Windows**. |
+| 10 | **Practice** | Start the optional **20-word practice** (about 5 minutes, covers every special key), or finish. |
 
 Not sure what to pick? The defaults (Everyday, Full harakat, Smart sukūn, options on) suit most people.
 

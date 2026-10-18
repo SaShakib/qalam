@@ -49,6 +49,9 @@ struct ContentView: View {
         }
     }
 
+    /// People who set Qalam up before the Qur'an box existed see its permissions once.
+    @AppStorage("quranAccessShown") private var quranAccessShown = false
+
     private var mainView: some View {
         NavigationSplitView {
             List(selection: $app.page) {
@@ -67,6 +70,9 @@ struct ContentView: View {
             case .quran: QuranView()
             case .settings: SettingsView()
             }
+        }
+        .sheet(isPresented: Binding(get: { !quranAccessShown && !Snapshot.running }, set: { if !$0 { quranAccessShown = true } })) {
+            QuranAccessSheet { quranAccessShown = true }
         }
     }
 }

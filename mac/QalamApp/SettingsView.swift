@@ -72,23 +72,10 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            Section("Qur'an box (\(SharedSettings.shortcut(for: .quran)?.display ?? "no shortcut"))") {
-                Toggle("Keep Qalam running in the menu bar (and start it at login), so the shortcut works in every app with any keyboard",
+            Section("Qur'an box") {
+                QuranAccessView()
+                Toggle("Keep Qalam running in the menu bar (and start it at login)",
                        isOn: Binding(get: { AppDelegate.runInBackground }, set: { AppDelegate.runInBackground = $0 }))
-                if AppDelegate.loginAgentNeedsApproval {
-                    HStack {
-                        Text("macOS needs your OK for Qalam to start at login.").font(.caption)
-                        Button("Open Login Items…") { SMAppService.openSystemSettingsLoginItems() }
-                    }
-                }
-                HStack {
-                    Text(QuranInserter.canPaste
-                         ? "Qalam can paste the āyāt into any app ✓"
-                         : "When another keyboard is on, Qalam pastes the āyāt for you once it's allowed in Accessibility. Until then they're copied and you press ⌘V. With the Qalam keyboard on, they're typed in directly.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    if !QuranInserter.canPaste { Button("Allow…") { QuranInserter.askForAccessibility() } }
-                }
-                Button("Open the Qur'an box now") { QuranBox.shared.open() }
             }
 
             Section("Updates") {

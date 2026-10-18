@@ -2,12 +2,12 @@ import SwiftUI
 import QalamEngine
 
 /// First launch: a few short steps (keyboard, style, harakat and sukūn, typing helpers, shortcuts,
-/// fonts, updates), then the optional 20-word practice. Everything here is also in Settings.
+/// the Qur'an box's permissions, fonts, updates), then the optional 20-word practice. Everything here is also in Settings.
 struct SetupView: View {
     @EnvironmentObject var app: AppState
 
     enum Step: Int, CaseIterable, Identifiable {
-        case welcome, keyboard, style, marks, typing, shortcuts, fonts, updates, practice
+        case welcome, keyboard, style, marks, typing, shortcuts, quran, fonts, updates, practice
         var id: Int { rawValue }
         var title: String {
             switch self {
@@ -17,6 +17,7 @@ struct SetupView: View {
             case .marks: return "Harakat & sukūn"
             case .typing: return "While typing"
             case .shortcuts: return "Shortcuts"
+            case .quran: return "Qur'an box"
             case .fonts: return "Fonts"
             case .updates: return "Updates"
             case .practice: return "Practice"
@@ -99,6 +100,7 @@ struct SetupView: View {
         case .marks: MarksStep()
         case .typing: TypingStep()
         case .shortcuts: ShortcutsStep()
+        case .quran: QuranAccessView()
         case .fonts: FontsStep()
         case .updates: UpdatesStep()
         case .practice: PracticeStep()

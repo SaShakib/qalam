@@ -24,6 +24,9 @@ login for this; switch it off in **Settings → Qur'an box**). A box opens:
 The text goes back into the app you were in. With the Qalam keyboard on there, it is typed in directly.
 With another keyboard, Qalam pastes it (⌘V) once you allow it in **System Settings → Privacy & Security →
 Accessibility** (the box has an **Allow…** button); until then it is copied and you press ⌘V.
+The setup's **Qur'an box** step (also in **Settings → Qur'an box**) shows both permissions with a ✓ when
+they're on. After a Qalam update macOS forgets the Accessibility permission (it belongs to the exact build);
+**Allow…** clears the old entry so you can switch it on again.
 
 **Windows.** Press **Ctrl+Alt+Q** (Qalam running in the tray, Arabic on or off):
 
