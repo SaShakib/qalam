@@ -14,9 +14,9 @@ enum Snapshot {
             let model = QuranBoxModel(lib: lib)
             model.query = args[i + 2]
             if args.count > i + 3, let n = Int(args[i + 3]) { model.move(n); model.addAfter(); model.addAfter() }
-            let size = NSSize(width: 760, height: 620)
             let host = NSHostingView(rootView: QuranBoxView(model: model, insert: {}, cancel: {})
-                .frame(width: size.width, height: size.height).background(Color(nsColor: .windowBackgroundColor)))
+                .background(Color(nsColor: .windowBackgroundColor)))
+            let size = host.fittingSize
             host.appearance = NSAppearance(named: .aqua)
             host.frame = NSRect(origin: .zero, size: size)
             let window = NSWindow(contentRect: host.frame, styleMask: [.titled], backing: .buffered, defer: false)

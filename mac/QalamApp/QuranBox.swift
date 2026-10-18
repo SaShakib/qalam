@@ -48,6 +48,15 @@ final class QuranHotKey {
 
 final class QuranBoxPanel: NSPanel {
     override var canBecomeKey: Bool { true }
+    /// When the content gets taller or shorter, keep the top edge where it is.
+    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+        var r = frameRect
+        if isVisible && r.height != frame.height {
+            r.origin.y = frame.maxY - r.height
+            if let v = screen?.visibleFrame, r.minY < v.minY { r.origin.y = v.minY }
+        }
+        super.setFrame(r, display: flag)
+    }
     override func cancelOperation(_ sender: Any?) { QuranBox.shared.close(restore: true) }
 }
 
@@ -79,10 +88,12 @@ final class QuranBox: NSObject, NSWindowDelegate {
         self.model = model
         let view = QuranBoxView(model: model, insert: { [weak self] in self?.insert() },
                                 cancel: { [weak self] in self?.close(restore: true) })
-        let host = NSHostingView(rootView: view)
-        let size = NSSize(width: 760, height: 620)
+        // The window takes the content's size: short at first, taller when results or more āyāt show.
+        let host = NSHostingController(rootView: view)
+        host.sizingOptions = [.preferredContentSize]
+        let size = host.view.fittingSize
         let p = panel ?? QuranBoxPanel(contentRect: NSRect(origin: .zero, size: size),
-                                       styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+                                       styleMask: [.titled, .closable, .fullSizeContentView],
                                        backing: .buffered, defer: false)
         p.title = "Insert from the Qur'an"
         p.titlebarAppearsTransparent = true
@@ -92,13 +103,12 @@ final class QuranBox: NSObject, NSWindowDelegate {
         p.isReleasedWhenClosed = false
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         p.delegate = self
-        p.contentView = host
+        p.contentViewController = host
         p.setContentSize(size)
-        p.minSize = NSSize(width: 620, height: 460)
-        // On the screen with the mouse, a little above the middle.
+        // On the screen with the mouse, its top a third of the way down (it grows downward).
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         if let f = screen?.visibleFrame {
-            p.setFrameOrigin(NSPoint(x: f.midX - size.width / 2, y: f.midY - size.height / 2 + 60))
+            p.setFrameTopLeftPoint(NSPoint(x: f.midX - p.frame.width / 2, y: f.maxY - f.height / 4))
         }
         panel = p
         NSApp.activate(ignoringOtherApps: true)
@@ -343,13 +353,13 @@ struct QuranBoxView: View {
     @State private var canPaste = QuranInserter.canPaste
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             BoxSearchField(text: $model.query,
-                           placeholder: "Search: a word in English or Arabic (switch to Qalam to type Arabic), a sūrah name, or 2:255",
+                           placeholder: "Search a word (English, or Arabic with Qalam), a sūrah, or 2:255",
                            onMove: { model.move($0) }, onReturn: insert, onEscape: {
                                if model.query.isEmpty { cancel() } else { model.query = "" }
                            })
-                .frame(height: 30)
+                .frame(height: 28)
 
             if !model.query.trimmingCharacters(in: .whitespaces).isEmpty { resultsList }
 
@@ -358,10 +368,11 @@ struct QuranBoxView: View {
             Divider()
             bottom
         }
-        .padding(.horizontal, 18)
-        .padding(.bottom, 16)
-        .padding(.top, 34)
-        .frame(minWidth: 620, minHeight: 460)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 14)
+        .padding(.top, 30)
+        .frame(width: 640)
+        .fixedSize(horizontal: false, vertical: true)
         .onAppear { ArabicFonts.registerBundled() }
     }
 
@@ -373,7 +384,7 @@ struct QuranBoxView: View {
                  + (model.total > 200 ? " (first 200)" : "") + ". ↑↓ or click to choose.")
                 .font(.caption).foregroundStyle(.secondary)
             ScrollViewReader { proxy in
-                ScrollView {
+                ScrollView(showsIndicators: model.results.count > 5) {
                     LazyVStack(alignment: .leading, spacing: 2) {
                         ForEach(Array(model.results.enumerated()), id: \.offset) { i, r in
                             resultRow(r, selected: model.selected == i)
@@ -386,9 +397,19 @@ struct QuranBoxView: View {
                 }
                 .onChange(of: model.selected) { i in if let i { withAnimation(nil) { proxy.scrollTo(i) } } }
             }
-            .frame(maxHeight: 200)
+            .frame(height: resultsHeight)
             .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.06)))
         }
+    }
+
+    /// Rows are ~32 pt (Arabic ~40); up to five show before the list scrolls.
+    private var resultsHeight: CGFloat {
+        let rows = model.results.prefix(5).map { r -> CGFloat in
+            if case .hit(_, true) = r { return 42 }
+            if case .surah = r { return 36 }
+            return 30
+        }
+        return max(30, rows.reduce(0, +) + 4)
     }
 
     @ViewBuilder
@@ -397,16 +418,16 @@ struct QuranBoxView: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             switch r {
             case .surah(let s):
-                Text("Sūrah").font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 70, alignment: .leading)
+                Text("Sūrah").font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 54, alignment: .leading)
                 Text("\(s.number). \(s.name)  ·  \(s.ayahs) āyāt")
                 Spacer()
                 Text(s.arabic).font(.custom(quranFontName, size: 18))
             case .passage(let p):
-                Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 70, alignment: .leading)
+                Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 54, alignment: .leading)
                 Text("\(lib.surah(p.surah)?.name ?? "") \(p.reference)")
                 Spacer()
             case .hit(let p, let arabic):
-                Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 70, alignment: .leading)
+                Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 54, alignment: .leading)
                 if arabic {
                     Spacer(minLength: 0)
                     Text(shown(lib.arabic(p.surah, p.from) ?? "")).font(.custom(quranFontName, size: 19)).lineLimit(1)
@@ -431,22 +452,22 @@ struct QuranBoxView: View {
                     ForEach(model.lib.surahs) { s in Text("\(s.number). \(s.name)  ·  \(s.arabic)").tag(s.number) }
                 }
                 .labelsHidden()
-                .frame(width: 280)
+                .frame(width: 230)
             }
             labelled("From āyah") {
                 Picker("", selection: $model.from) {
                     ForEach(1...model.ayahCount, id: \.self) { Text("\($0)").tag($0) }
                 }
-                .labelsHidden().frame(width: 90)
+                .labelsHidden().frame(width: 72)
             }
             labelled("To āyah") {
                 Picker("", selection: $model.to) {
                     ForEach(model.from...model.ayahCount, id: \.self) { Text("\($0)").tag($0) }
                 }
-                .labelsHidden().frame(width: 90)
+                .labelsHidden().frame(width: 72)
             }
-            Button("+ āyah before") { model.addBefore() }.disabled(model.from <= 1)
-            Button("+ āyah after") { model.addAfter() }.disabled(model.to >= model.ayahCount)
+            Button("+ Before") { model.addBefore() }.disabled(model.from <= 1).help("Add the āyah before")
+            Button("+ After") { model.addAfter() }.disabled(model.to >= model.ayahCount).help("Add the āyah after")
             Spacer(minLength: 0)
         }
     }
@@ -467,55 +488,64 @@ struct QuranBoxView: View {
         return VStack(alignment: .leading, spacing: 6) {
             Text("\(lib.surah(p.surah)?.name ?? "") \(p.reference)" + (p.to > p.from ? "  ·  \(p.to - p.from + 1) āyāt" : ""))
                 .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
+            ViewThatFits(in: .vertical) {
+                previewAyat(p, shownAyat)
+                ScrollView { previewAyat(p, shownAyat) }
+            }
+            .frame(maxHeight: 240)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.06)))
+        }
+    }
+
+    private func previewAyat(_ p: Passage, _ shownAyat: [Int]) -> some View {
+        let lib = model.lib
+        return VStack(alignment: .leading, spacing: 8) {
                     ForEach(shownAyat, id: \.self) { a in
                         VStack(alignment: .leading, spacing: 4) {
                             if model.mode != .translation {
                                 Text(shown(lib.arabic(p.surah, a) ?? "") + " " + number(a))
-                                    .font(.custom(quranFontName, size: 24))
-                                    .lineSpacing(8)
+                                    .font(.custom(quranFontName, size: 22))
+                                    .lineSpacing(6)
+                                    .fixedSize(horizontal: false, vertical: true)
                                     .multilineTextAlignment(.trailing)
                                     .frame(maxWidth: .infinity, alignment: .trailing)
                             }
                             if model.mode != .arabic, let t = lib.translation(model.translation, p.surah, a) {
                                 Text(t + " (\(p.surah):\(a))").font(.callout).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                     }
                     if p.to > shownAyat.last! {
                         Text("… and \(p.to - shownAyat.last!) more āyāt").font(.caption).foregroundStyle(.secondary)
                     }
-                }
-                .padding(12)
-            }
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.06)))
         }
-        .frame(maxHeight: .infinity)
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: What to insert, and Insert
 
     private var bottom: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Picker("", selection: $model.mode) {
                     ForEach(QuranInsert.allCases) { Text($0.title).tag($0) }
                 }
-                .pickerStyle(.segmented).labelsHidden().frame(width: 380)
-                if model.mode != .arabic {
-                    Picker("", selection: $model.translation) {
-                        ForEach(model.lib.available()) { Text($0.title).tag($0.id) }
-                    }
-                    .labelsHidden().frame(maxWidth: 300)
-                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: 360)
                 Spacer()
                 Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
                 Button("Insert", action: insert).keyboardShortcut(.defaultAction)
             }
+            if model.mode != .arabic {
+                Picker("Translation", selection: $model.translation) {
+                    ForEach(model.lib.available()) { Text($0.title).tag($0.id) }
+                }
+                .frame(width: 420)
+            }
             if !canPaste {
                 HStack(spacing: 6) {
-                    Text("With another keyboard on, Qalam pastes the text for you once it's allowed in Accessibility (until then it's copied, and you press ⌘V).")
+                    Text("Other keyboards: allow Qalam in Accessibility to paste for you (until then, press ⌘V).")
                         .font(.caption).foregroundStyle(.secondary)
                     Button("Allow…") { QuranInserter.askForAccessibility() }.controlSize(.small)
                 }
