@@ -119,9 +119,14 @@ public final class QuranLibrary {
     /// The Arabic of one āyah, with full harakat (the basmala Tanzil puts before āyah 1 is left out).
     public func arabic(_ surah: Int, _ ayah: Int) -> String? {
         guard let t = lines("quran-uthmani"), let i = index(surah, ayah) else { return nil }
-        let s = t[i]
-        if ayah == 1 && surah != 1 && s.hasPrefix(Self.basmala) { return String(s.dropFirst(Self.basmala.count)) }
-        return s
+        return ayah == 1 && surah != 1 ? Self.dropBasmala(t[i]) : t[i]
+    }
+
+    /// Tanzil writes the basmala in front of āyah 1 (sometimes spelled بِّسْمِ, with idghām): left out.
+    static func dropBasmala(_ s: String) -> String {
+        let words = s.split(separator: " ", omittingEmptySubsequences: true)
+        guard words.count > 4, bare(words.prefix(4).joined(separator: " ")) == "بسم الله الرحمن الرحيم" else { return s }
+        return words.dropFirst(4).joined(separator: " ")
     }
 
     public func translation(_ id: String, _ surah: Int, _ ayah: Int) -> String? {
@@ -288,7 +293,7 @@ public final class QuranLibrary {
     /// رحمن and رحمان, صلوة and صلاة both find ٱلرَّحْمَٰنِ / ٱلصَّلَوٰةَ.
     private lazy var bareArabic: [(String, String)] = (lines("quran-uthmani") ?? []).enumerated().map { i, s in
         var t = s
-        if let (su, a) = position(i), a == 1, su != 1, t.hasPrefix(Self.basmala) { t = String(t.dropFirst(Self.basmala.count)) }
+        if let (su, a) = position(i), a == 1, su != 1 { t = Self.dropBasmala(t) }
         return (Self.bare(t, daggerAlif: false), Self.bare(t, daggerAlif: true))
     }
     private lazy var lightArabic: [String] = (lines("quran-uthmani") ?? []).map(Self.light)
@@ -309,7 +314,8 @@ public final class QuranLibrary {
             default: out.append(u)
             }
         }
-        return String(out).replacingOccurrences(of: "اا", with: "ا")
+        // ءا (the mushaf's ءَامَنُوا۟) = آ = ا; a doubled alif counts once.
+        return String(out).replacingOccurrences(of: "ءا", with: "ا").replacingOccurrences(of: "اا", with: "ا")
     }
 
     /// For Latin typed phonetically: letters an English typist mixes up count as one (ح = ه, ص = س, ط = ت,
@@ -322,6 +328,12 @@ public final class QuranLibrary {
         return out
     }
     private lazy var looseArabic: [(String, String)] = bareArabic.map { (Self.loose($0.0), Self.loose($0.1)) }
+    /// Without spaces: the mushaf joins some words (يَٰٓأَيُّهَا, يَٰبَنِىٓ), people type them apart (يا أيها).
+    private lazy var joinedArabic: [(String, String)] = bareArabic.map { (Self.joined($0.0), Self.joined($0.1)) }
+    private lazy var joinedLoose: [String] = looseArabic.map { Self.joined($0.1) }
+    static func joined(_ s: String) -> String {
+        s.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "اا", with: "ا")
+    }
 
     /// Harakat kept, only spelling variants evened out (ۡ = ْ, ٱ = ا, no small marks), for ranking typed harakat.
     static func light(_ s: String) -> String {
@@ -374,16 +386,21 @@ public final class QuranLibrary {
         let qa = Self.bare(query, daggerAlif: true)
         let ql = Self.loose(qa)
         let typed = Self.hasHarakat(query) ? Self.light(query) : nil
-        // Order: your harakat too → the same letters → (typed in Latin) similar letters, e.g. rahmaan → ٱلرَّحْمَٰنِ.
-        var exact: [Int] = [], letters: [Int] = [], similar: [Int] = []
+        let qj = Self.joined(q), qja = Self.joined(qa), qlj = Self.joined(ql)
+        // Order: your harakat too → the same letters → the same letters with the mushaf's spacing →
+        // (typed in Latin) similar letters, e.g. rahmaan → ٱلرَّحْمَٰنِ.
+        var exact: [Int] = [], letters: [Int] = [], spacing: [Int] = [], similar: [Int] = []
         for (i, t) in bareArabic.enumerated() {
             if Self.has(t.0, q) || Self.has(t.1, q) || Self.has(t.1, qa) {
                 if let typed, Self.has(lightArabic[i], typed) { exact.append(i) } else { letters.append(i) }
-            } else if phonetic && ql.count >= 3 && (Self.has(looseArabic[i].0, ql) || Self.has(looseArabic[i].1, ql)) {
+            } else if qj.count >= 4 && (Self.has(joinedArabic[i].0, qj) || Self.has(joinedArabic[i].1, qja)) {
+                spacing.append(i)
+            } else if phonetic && ql.count >= 3 && (Self.has(looseArabic[i].0, ql) || Self.has(looseArabic[i].1, ql)
+                                                    || (qlj.count >= 4 && Self.has(joinedLoose[i], qlj))) {
                 similar.append(i)
             }
         }
-        let all = exact + letters + similar
+        let all = exact + letters + spacing + similar
         return (all.prefix(limit).compactMap { position($0).map { Passage(surah: $0.0, from: $0.1, to: $0.1) } }, all.count)
     }
 

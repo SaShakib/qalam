@@ -263,6 +263,13 @@ final class QuranBoxModel: ObservableObject {
     let lib: QuranLibrary
 
     @Published var query = "" { didSet { if query != oldValue { search() } } }
+    /// Where Latin letters are searched. Arabic when the Qalam keyboard is on: the box converts what you
+    /// type with Qalam itself (macOS doesn't hand a Spotlight-style panel to the keyboard), so a remembered
+    /// piece of an āyah, typed phonetically, finds it. Arabic letters always search the Arabic.
+    enum SearchIn: String, CaseIterable { case arabic = "Arabic", translation = "Translation" }
+    @Published var searchIn: SearchIn = InputSource.isCurrent ? .arabic : .translation { didSet { if searchIn != oldValue { search() } } }
+    /// The Arabic searched for when Latin was typed in Arabic mode (shown under the field).
+    @Published private(set) var arabicQuery = ""
     @Published private(set) var results: [QuranSuggestion] = []
     @Published private(set) var total = 0
     @Published private(set) var searchedIn = ""
@@ -307,6 +314,7 @@ final class QuranBoxModel: ObservableObject {
 
     func search() {
         let q = query.trimmingCharacters(in: .whitespaces)
+        arabicQuery = ""
         guard !q.isEmpty else { results = []; total = 0; selected = nil; searchedIn = ""; return }
         var rows: [QuranSuggestion] = []
         // "2:255", "baqarah 255-257"
@@ -325,6 +333,14 @@ final class QuranBoxModel: ObservableObject {
             rows += r.hits.map { .hit($0, arabic: true) }
             found = r.total
             searchedIn = "the Arabic (harakat optional)"
+            searchedTranslation = nil
+        case "latin" where searchIn == .arabic && !q.allSatisfy({ $0.isNumber || $0 == ":" || $0 == "-" || $0 == " " }):
+            let ar = Qalam.text(q, Options())
+            arabicQuery = ar
+            let r = lib.searchArabic(ar, phonetic: true, limit: 200)
+            rows += r.hits.map { .hit($0, arabic: true) }
+            found = r.total
+            searchedIn = "the Arabic"
             searchedTranslation = nil
         default:
             let id = translationToSearch(script)
@@ -372,12 +388,28 @@ struct QuranBoxView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            BoxSearchField(text: $model.query,
-                           placeholder: "Search a word (English, or Arabic with Qalam), a sūrah, or 2:255",
-                           onMove: { model.move($0) }, onReturn: insert, onEscape: {
-                               if model.query.isEmpty { cancel() } else { model.query = "" }
-                           })
-                .frame(height: 28)
+            HStack(spacing: 8) {
+                BoxSearchField(text: $model.query,
+                               placeholder: model.searchIn == .arabic
+                                   ? "Part of an āyah, typed the Qalam way (qul huwa allaahu), a sūrah, or 2:255"
+                                   : "A word in the translation, a sūrah name, or 2:255",
+                               onMove: { model.move($0) }, onReturn: insert, onEscape: {
+                                   if model.query.isEmpty { cancel() } else { model.query = "" }
+                               })
+                    .frame(height: 28)
+                Picker("", selection: $model.searchIn) {
+                    ForEach(QuranBoxModel.SearchIn.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: 170)
+                .help("Search the Arabic text or the translation. Arabic is chosen when the Qalam keyboard is on.")
+            }
+            if !model.arabicQuery.isEmpty {
+                HStack(spacing: 6) {
+                    Text("Searching the Arabic for").font(.caption).foregroundStyle(.secondary)
+                    Text(model.arabicQuery).font(.custom(quranFontName, size: 18))
+                    Spacer()
+                }
+            }
 
             if !model.query.trimmingCharacters(in: .whitespaces).isEmpty { resultsList }
 
@@ -573,6 +605,7 @@ struct QuranBoxView: View {
         .onReceive(DistributedNotificationCenter.default().publisher(
             for: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String))) { _ in
             qalamKeyboard = InputSource.isCurrent
+            model.searchIn = qalamKeyboard ? .arabic : .translation
         }
     }
 

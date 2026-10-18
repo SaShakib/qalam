@@ -12,7 +12,9 @@ login for this; switch it off in **Settings → Qur'an box**). A box opens:
 
 1. **Search** at the top. What you type is searched in the language you type it in:
    - English letters → the English translation (and sūrah names: `baqarah`, `cow`).
-   - Switch the keyboard to **Qalam** and type Arabic → the Arabic text, harakat optional.
+   - Switch the keyboard to **Qalam** (or click **Arabic** next to the field) and type part of an āyah the
+     Qalam way, e.g. `qul huwa allaahu` → the Arabic text. The box shows the Arabic it searched for.
+     Harakat are optional, and words the mushaf joins (يَٰٓأَيُّهَا) match when typed apart (يا أيها).
    - Bangla letters → the Bangla translation.
    - `2:255` or `baqarah 255-257` → that passage.
 2. Choose a result with **↑ / ↓** or a **click** (double-click inserts). It fills **Sūrah**, **From āyah** and
