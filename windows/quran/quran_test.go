@@ -32,7 +32,7 @@ func TestLoad(t *testing.T) {
 	for _, tr := range l.Available() {
 		have = append(have, tr.ID)
 	}
-	if strings.Join(have, ",") != "en.sahih,bn.bengali,bn.hoque" {
+	if strings.Join(have, ",") != "en.sahih,en.usmani,bn.bengali,bn.bayaan,bn.mujibur,bn.taisirul,bn.zakaria,bn.hoque,ur.usmani" {
 		t.Errorf("available translations: %v", have)
 	}
 	if got := l.Translation("bn.bengali").Title(); got != "Bangla: Muhiuddin Khan (মুহিউদ্দীন খান)" {
