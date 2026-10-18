@@ -162,6 +162,7 @@ enum QuranInserter {
                                     deliverImmediately: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             center.removeObserver(observer)
+            QalamLog.note("Qur'an insert into \(app?.bundleIdentifier ?? "?"): keyboard typed it \(done), can paste \(canPaste)")
             if !done { paste(text) }
         }
     }

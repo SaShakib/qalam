@@ -11,7 +11,7 @@ final class QalamInputController: IMKInputController {
 
     override func activateServer(_ sender: Any!) {
         super.activateServer(sender)
-        Self.current = self
+        noteActive(sender)
         if !SharedSettings.keyboardWasEnabled { SharedSettings.keyboardWasEnabled = true }
     }
 
@@ -21,6 +21,7 @@ final class QalamInputController: IMKInputController {
 
     override func handle(_ event: NSEvent!, client sender: Any!) -> Bool {
         guard let event = event, event.type == .keyDown, let client = sender as? IMKTextInput else { return false }
+        if Self.current !== self { noteActive(client) }
         let options = self.options(for: client)
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         let busy = !composer.buffer.isEmpty
@@ -254,17 +255,33 @@ final class QalamInputController: IMKInputController {
 
     /// The controller of the app being typed in, for "type these āyāt" from the Qur'an box.
     static weak var current: QalamInputController?
+    /// The last controller per app. While the box is open the keyboard serves the box; when it closes,
+    /// macOS doesn't always tell us the old text field is back, so the request names the app instead.
+    private static var byApp: [String: Weak] = [:]
+    private final class Weak { weak var c: QalamInputController?; init(_ c: QalamInputController) { self.c = c } }
+
+    private func noteActive(_ sender: Any? = nil) {
+        Self.current = self
+        let c = (sender as? IMKTextInput) ?? client()
+        if let id = c?.bundleIdentifier(), id != "com.qalam.app" { Self.byApp[id] = Weak(self) }
+    }
 
     /// Qalam.app's box sends the āyāt here when the Qalam keyboard is on in the app you came from:
     /// typed straight in, no clipboard or permission needed.
     static func listenForQuran() {
         let center = DistributedNotificationCenter.default()
         center.addObserver(forName: .init("com.qalam.quran.insert"), object: nil, queue: .main) { n in
-            guard let info = n.userInfo, let text = info["text"] as? String, let token = info["token"] as? String,
-                  let me = current, let client = me.client(),
-                  let app = client.bundleIdentifier(), app != "com.qalam.app",
-                  (info["bundle"] as? String).map({ $0.isEmpty || $0 == app }) ?? true else { return }
+            guard let info = n.userInfo, let text = info["text"] as? String, let token = info["token"] as? String else { return }
+            let wanted = info["bundle"] as? String ?? ""
+            var target: QalamInputController? = wanted.isEmpty ? nil : byApp[wanted]?.c
+            if target == nil, let c = current, let id = c.client()?.bundleIdentifier(), id != "com.qalam.app",
+               wanted.isEmpty || id == wanted { target = c }
+            guard let me = target, let client = me.client() else {
+                QalamLog.note("Qur'an insert for \(wanted): the Qalam keyboard hasn't typed in that app yet")
+                return
+            }
             client.insertText(text, replacementRange: NSRange(location: NSNotFound, length: NSNotFound))
+            QalamLog.note("Qur'an insert for \(wanted): typed by the keyboard")
             center.postNotificationName(.init("com.qalam.quran.inserted"), object: token, userInfo: nil, deliverImmediately: true)
         }
     }
