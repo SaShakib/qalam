@@ -169,7 +169,16 @@ enum QuranInserter {
     static var canPaste: Bool { AXIsProcessTrusted() }
 
     /// Asks macOS to let Qalam paste for you (System Settings → Privacy & Security → Accessibility).
+    /// macOS ties the permission to the app's signature, so after an update an old "Qalam" entry can sit
+    /// there switched on but no longer count; it's cleared first so the new copy can be allowed.
     static func askForAccessibility() {
+        if !canPaste {
+            let reset = Process()
+            reset.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+            reset.arguments = ["reset", "Accessibility", Bundle.main.bundleIdentifier ?? "com.qalam.app"]
+            try? reset.run()
+            reset.waitUntilExit()
+        }
         let key = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         _ = AXIsProcessTrustedWithOptions([key: true] as CFDictionary)
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
