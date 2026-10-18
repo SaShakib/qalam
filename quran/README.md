@@ -9,6 +9,12 @@ Used by the keyboard's **Insert from the Qur'an** box (Mac ⌃⇧Q, Windows Ctrl
 | `en.sahih.txt` | English: Saheeh International | Tanzil translations |
 | `bn.bengali.txt` | Bangla: Muhiuddin Khan | Tanzil translations |
 | `bn.hoque.txt` | Bangla: Zohurul Hoque | Tanzil translations |
+| `bn.bayaan.txt` | Bangla: Bayaan Foundation (Rawai Al-bayan) | quran.com API (translation 162), footnotes left out |
+| `bn.mujibur.txt` | Bangla: Sheikh Mujibur Rahman (Darussalaam) | quran.com API (163) |
+| `bn.taisirul.txt` | Bangla: Taisirul Quran (Tawheed Publication) | quran.com API (161) |
+| `bn.zakaria.txt` | Bangla: Dr. Abu Bakr Muhammad Zakaria | quran.com API (213), footnote numbers left out |
+| `en.usmani.txt` | English: Mufti Taqi Usmani | quran.com API (84) |
+| `ur.usmani.txt` | Urdu: Mufti Muhammad Taqi Usmani | github.com/fawazahmed0/quran-api |
 | `surahs.tsv` | Sūrah names and āyah counts | Tanzil metadata (CC BY 3.0) |
 | `translations.tsv` | Translations the app can show; `no` = downloaded from tanzil.net on request | |
 

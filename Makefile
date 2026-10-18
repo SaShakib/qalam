@@ -74,7 +74,8 @@ bundle: build icons
 	cp fonts/*.ttf "$(APP)/Contents/Resources/Fonts/"
 	cp fonts/*.txt "$(APP)/Contents/Resources/Fonts/"
 	# The Qur'an (Tanzil Uthmani) and the bundled translations, for the ⌃⇧Q box and the Qur'an page.
-	mkdir -p "$(APP)/Contents/Resources/Quran"
+	mkdir -p "$(APP)/Contents/Library/LaunchAgents" "$(APP)/Contents/Resources/Quran"
+	cp mac/bundle/com.qalam.background.plist "$(APP)/Contents/Library/LaunchAgents/"
 	cp quran/*.txt quran/*.tsv quran/README.md "$(APP)/Contents/Resources/Quran/"
 	for p in "$(IME_APP)" "$(APP)"; do \
 	  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" "$$p/Contents/Info.plist"; \

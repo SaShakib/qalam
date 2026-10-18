@@ -1,7 +1,13 @@
 # id	language	name	translator	bundled (yes = ships inside Qalam; no = the app downloads it from tanzil.net)
 en.sahih	English	Saheeh International	Saheeh International	yes
+en.usmani	English	Mufti Taqi Usmani	Mufti Taqi Usmani	yes
 bn.bengali	Bangla	মুহিউদ্দীন খান	Muhiuddin Khan	yes
+bn.bayaan	Bangla	বায়ান ফাউন্ডেশন	Bayaan Foundation	yes
+bn.mujibur	Bangla	শাইখ মুজিবুর রহমান	Sheikh Mujibur Rahman	yes
+bn.taisirul	Bangla	তাইসীরুল কুরআন	Taisirul Quran (Tawheed Publication)	yes
+bn.zakaria	Bangla	ড. আবু বকর মুহাম্মাদ যাকারিয়া	Dr. Abu Bakr Muhammad Zakaria	yes
 bn.hoque	Bangla	জহুরুল হক	Zohurul Hoque	yes
+ur.usmani	Urdu	مفتی محمد تقی عثمانی	Mufti Muhammad Taqi Usmani	yes
 en.pickthall	English	Pickthall	Mohammed Marmaduke William Pickthall	no
 en.yusufali	English	Yusuf Ali	Abdullah Yusuf Ali	no
 en.hilali	English	Hilali & Khan	Muhammad Taqi-ud-Din al-Hilali and Muhammad Muhsin Khan	no

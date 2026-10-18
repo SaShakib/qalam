@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 import QalamEngine
 
 struct SettingsView: View {
@@ -69,6 +70,25 @@ struct SettingsView: View {
                 InstallFontsRow()
                 Text("Fonts here apply to this app. In other apps, choose the font in that app once it's installed for all apps.")
                     .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section("Qur'an box (\(SharedSettings.shortcut(for: .quran)?.display ?? "no shortcut"))") {
+                Toggle("Keep Qalam running in the menu bar (and start it at login), so the shortcut works in every app with any keyboard",
+                       isOn: Binding(get: { AppDelegate.runInBackground }, set: { AppDelegate.runInBackground = $0 }))
+                if AppDelegate.loginAgentNeedsApproval {
+                    HStack {
+                        Text("macOS needs your OK for Qalam to start at login.").font(.caption)
+                        Button("Open Login Items…") { SMAppService.openSystemSettingsLoginItems() }
+                    }
+                }
+                HStack {
+                    Text(QuranInserter.canPaste
+                         ? "Qalam can paste the āyāt into any app ✓"
+                         : "When another keyboard is on, Qalam pastes the āyāt for you once it's allowed in Accessibility. Until then they're copied and you press ⌘V. With the Qalam keyboard on, they're typed in directly.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    if !QuranInserter.canPaste { Button("Allow…") { QuranInserter.askForAccessibility() } }
+                }
+                Button("Open the Qur'an box now") { QuranBox.shared.open() }
             }
 
             Section("Updates") {

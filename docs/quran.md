@@ -1,36 +1,46 @@
 # Qur'an: insert, read and search
 
 Qalam carries the whole Qur'an (Uthmani script, full harakat, from the [Tanzil Project](https://tanzil.net)) with
-three translations: **English: Saheeh International**, **Bangla: Muhiuddin Khan** and **Bangla: Zohurul Hoque**.
+translations: **English**: Saheeh International, Mufti Taqi Usmani; **Bangla**: Muhiuddin Khan, Bayaan Foundation,
+Sheikh Mujibur Rahman, Taisirul Quran (Tawheed Publication), Dr. Abu Bakr Zakaria, Zohurul Hoque; **Urdu**: Mufti Taqi Usmani.
 On the Mac more can be downloaded in the app. Windows has the insert box with the three bundled translations.
 
 ## Insert āyāt while typing (Mac: Control-Shift-Q · Windows: Ctrl+Alt+Q)
 
-1. **Mac:** with the Qalam keyboard on, press **⌃⇧Q** (Control-Shift-Q) in any app.
-   **Windows:** with Qalam running (the ق in the tray), press **Ctrl+Alt+Q** in any app. It works even
-   while Arabic typing is off. A box opens at the cursor.
-2. Pick with the three dropdowns, by mouse or keyboard:
+**Mac.** Press **⌃⇧Q** in any app, with any keyboard on (Qalam stays in the menu bar as ق and starts at
+login for this; switch it off in **Settings → Qur'an box**). A box opens:
 
-   **Sūrah ▾**  **From āyah ▾**  **To āyah ▾**
+1. **Search** at the top. What you type is searched in the language you type it in:
+   - English letters → the English translation (and sūrah names: `baqarah`, `cow`).
+   - Switch the keyboard to **Qalam** and type Arabic → the Arabic text, harakat optional.
+   - Bangla letters → the Bangla translation.
+   - `2:255` or `baqarah 255-257` → that passage.
+2. Choose a result with **↑ / ↓** or a **click** (double-click inserts). It fills **Sūrah**, **From āyah** and
+   **To āyah**.
+3. Widen the range with **+ āyah before** / **+ āyah after**, or the From / To dropdowns. The preview shows
+   exactly what goes in.
+4. Choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation.
+5. **Insert** (Return). **Esc** clears the search, then closes the box.
 
-   The preview underneath shows the āyāt in the Qur'an font. Click **Insert** (or press Return).
-   The box opens on your last choice next time.
+The text goes back into the app you were in. With the Qalam keyboard on there, it is typed in directly.
+With another keyboard, Qalam pastes it (⌘V) once you allow it in **System Settings → Privacy & Security →
+Accessibility** (the box has an **Allow…** button); until then it is copied and you press ⌘V.
+
+**Windows.** Press **Ctrl+Alt+Q** (Qalam running in the tray, Arabic on or off):
+
+1. Pick with the three dropdowns, by mouse or keyboard: **Sūrah ▾**  **From āyah ▾**  **To āyah ▾**.
+   The preview underneath shows the āyāt in the Qur'an font. Click **Insert** (or press Enter).
 
    | Key | Does |
    |---|---|
    | ↑ / ↓ | change the highlighted dropdown |
    | ← / → or Tab | go to the next dropdown |
-   | type `36` or `yasin` | jump to that sūrah (spelling is loose: `baqarah`, `cow`) |
+   | type `36` or `yasin` | jump to that sūrah |
    | type `2:255-257` | fill all three at once |
-   | Return | insert |
-   | `/` | open **Search** |
-   | Esc | close (the shortcut again closes it too) |
+   | `/` | open **Search** (a word, harakat optional) |
+   | Esc | close |
 
-3. **Search** (the tab at the top, or `/`): type a word and pick an āyah. Harakat are optional
-   (`الرحمن` = `ٱلرَّحْمَٰنِ`), and Latin is read the Qalam way (`rahmaan`, with similar letters counting too).
-   ↑ / ↓ choose, Return inserts, Tab goes back to **Choose**.
-4. At the bottom choose what goes in: **Arabic only**, **Arabic + translation** or **Translation only**, and
-   which translation. Qalam remembers both.
+2. At the bottom choose what goes in and which translation.
 
 Each āyah ends with its reference, like `(2:255)`. With a translation, the Arabic line comes first and the
 translation under it.

@@ -3,6 +3,7 @@ import QalamEngine
 
 @main
 struct QalamMain: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var app = AppState()
     @StateObject private var updater = Updater()
 
@@ -42,7 +43,9 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             // "Change shortcuts…" in the keyboard's menu opens Settings.
-            if let p = SharedSettings.takeRequestedPage().flatMap(Page.init(rawValue:)) { app.page = p }
+            if let p = SharedSettings.takeRequestedPage() {
+                if p == "quranbox" { QuranBox.shared.open() } else if let page = Page(rawValue: p) { app.page = page }
+            }
         }
     }
 

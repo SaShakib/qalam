@@ -160,11 +160,12 @@ public final class QuranLibrary {
     public static func parse(_ s: String) -> [String]? {
         var out: [String] = []
         out.reserveCapacity(total)
-        for line in s.split(separator: "\n", omittingEmptySubsequences: true) {
-            guard let c = line.first, c.isNumber else { continue }
-            let parts = line.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false)
-            guard parts.count == 3 else { continue }
-            out.append(parts[2].trimmingCharacters(in: .whitespacesAndNewlines))
+        // Split on bytes, not Characters: a text that starts with a mark would join it to the "|".
+        for line in s.utf8.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: true) {
+            guard let c = line.first, (UInt8(ascii: "0")...UInt8(ascii: "9")).contains(c) else { continue }
+            let parts = line.split(separator: UInt8(ascii: "|"), maxSplits: 2, omittingEmptySubsequences: false)
+            guard parts.count == 3, let text = String(parts[2]) else { continue }
+            out.append(text.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         return out.count == total ? out : nil
     }
