@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let background = CommandLine.arguments.contains("--background")
+        NSLog("Qalam: launched\(background ? " in the background" : "")")
         // One Qalam at a time: the login agent's copy steps aside, and a normal launch hands over to the
         // copy already in the menu bar (it shows its window).
         let others = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")

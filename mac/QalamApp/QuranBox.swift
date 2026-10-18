@@ -39,8 +39,9 @@ final class QuranHotKey {
         if s.option { mods |= UInt32(optionKey) }
         if s.shift { mods |= UInt32(shiftKey) }
         if s.command { mods |= UInt32(cmdKey) }
-        RegisterEventHotKey(UInt32(s.keyCode), mods, EventHotKeyID(signature: OSType(0x514C_4D51), id: 1),
-                            GetApplicationEventTarget(), 0, &ref)
+        let status = RegisterEventHotKey(UInt32(s.keyCode), mods, EventHotKeyID(signature: OSType(0x514C_4D51), id: 1),
+                                         GetApplicationEventTarget(), 0, &ref)
+        NSLog("Qalam: Qur'an shortcut \(s.display) → \(status == noErr ? "registered" : "failed (\(status))")")
     }
 }
 
@@ -93,11 +94,12 @@ final class QuranBox: NSObject, NSWindowDelegate {
         host.sizingOptions = [.preferredContentSize]
         let size = host.view.fittingSize
         let p = panel ?? QuranBoxPanel(contentRect: NSRect(origin: .zero, size: size),
-                                       styleMask: [.titled, .closable, .fullSizeContentView],
+                                       styleMask: [.titled, .closable, .fullSizeContentView, .nonactivatingPanel],
                                        backing: .buffered, defer: false)
         p.title = "Insert from the Qur'an"
         p.titlebarAppearsTransparent = true
         p.isFloatingPanel = true
+        p.becomesKeyOnlyIfNeeded = false
         p.level = .floating
         p.hidesOnDeactivate = false
         p.isReleasedWhenClosed = false
@@ -111,7 +113,8 @@ final class QuranBox: NSObject, NSWindowDelegate {
             p.setFrameTopLeftPoint(NSPoint(x: f.midX - p.frame.width / 2, y: f.maxY - f.height / 4))
         }
         panel = p
-        NSApp.activate(ignoringOtherApps: true)
+        // A non-activating panel takes the keys while the app you were typing in stays in front
+        // (macOS no longer lets a background app bring itself forward), so the text can go straight back.
         p.makeKeyAndOrderFront(nil)
     }
 
@@ -120,13 +123,18 @@ final class QuranBox: NSObject, NSWindowDelegate {
         guard let p = panel, p.isVisible else { return }
         p.orderOut(nil)
         model = nil
-        if restore { previous?.activate() }
+        if restore, let prev = previous, !prev.isActive { prev.activate() }
     }
 
     func windowDidResignKey(_ notification: Notification) {
         // Clicked somewhere else: close, and leave the focus where you clicked.
-        if NSApp.isActive { return }   // our own menus/pickers
-        close(restore: false)
+        // (Not while one of the box's own dropdown menus is open.)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let p = self.panel, !p.isKeyWindow, NSApp.keyWindow !== p else { return }
+            if NSApp.modalWindow == nil && !(NSApp.currentEvent?.type == .leftMouseDown && NSApp.isActive) {
+                self.close(restore: false)
+            }
+        }
     }
 
     private func insert() {
@@ -349,6 +357,8 @@ struct QuranBoxView: View {
     let cancel: () -> Void
     @AppStorage("quranFont2") private var quranFontName = ArabicFonts.defaultQuran()
     @State private var canPaste = QuranInserter.canPaste
+    /// With the Qalam keyboard on, the āyāt are typed in by it: no permission needed, so no note.
+    @State private var qalamKeyboard = InputSource.isCurrent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -539,7 +549,7 @@ struct QuranBoxView: View {
                 }
                 .frame(width: 420)
             }
-            if !canPaste {
+            if !canPaste && !qalamKeyboard {
                 HStack(spacing: 6) {
                     Text("Other keyboards: allow Qalam in Accessibility to paste for you (until then, press ⌘V).")
                         .font(.caption).foregroundStyle(.secondary)
@@ -549,6 +559,10 @@ struct QuranBoxView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             canPaste = QuranInserter.canPaste
+        }
+        .onReceive(DistributedNotificationCenter.default().publisher(
+            for: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String))) { _ in
+            qalamKeyboard = InputSource.isCurrent
         }
     }
 

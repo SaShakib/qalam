@@ -27,6 +27,14 @@ enum InputSource {
         return on
     }
 
+    /// True while Qalam is the keyboard being typed with right now.
+    static var isCurrent: Bool {
+        guard let src = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
+              let raw = TISGetInputSourceProperty(src, kTISPropertyBundleID) else { return false }
+        let id = Unmanaged<CFString>.fromOpaque(raw).takeUnretainedValue() as String
+        return id.hasPrefix(bundleID)
+    }
+
     static var rememberedEnabled: Bool { SharedSettings.keyboardWasEnabled }
 
     /// macOS drops an input source from the menu when its files are replaced (reinstall, update,
