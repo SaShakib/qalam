@@ -262,14 +262,32 @@ enum QuranToast {
 final class QuranBoxModel: ObservableObject {
     let lib: QuranLibrary
 
+    /// What the search field shows: Arabic (typed Latin converted by Qalam, or Arabic letters), or in
+    /// Translation mode the words as typed.
     @Published var query = "" { didSet { if query != oldValue { search() } } }
-    /// Where Latin letters are searched. Arabic when the Qalam keyboard is on: the box converts what you
-    /// type with Qalam itself (macOS doesn't hand a Spotlight-style panel to the keyboard), so a remembered
-    /// piece of an āyah, typed phonetically, finds it. Arabic letters always search the Arabic.
+    /// The Latin keys behind `query` in Arabic mode ("" when the field holds Arabic letters as they are).
+    @Published var latin = ""
+    /// Arabic is the default: a remembered piece of an āyah, typed the Qalam way, finds it. The box converts
+    /// the keys itself (macOS doesn't hand a Spotlight-style panel to the keyboard).
     enum SearchIn: String, CaseIterable { case arabic = "Arabic", translation = "Translation" }
-    @Published var searchIn: SearchIn = InputSource.isCurrent ? .arabic : .translation { didSet { if searchIn != oldValue { search() } } }
-    /// The Arabic searched for when Latin was typed in Arabic mode (shown under the field).
-    @Published private(set) var arabicQuery = ""
+    @Published var searchIn: SearchIn = .arabic {
+        didSet {
+            guard searchIn != oldValue else { return }
+            if searchIn == .translation, !latin.isEmpty {
+                let typed = latin
+                latin = ""
+                query = typed                       // back to the letters as typed
+            } else if searchIn == .arabic, Self.script(query) == "latin", query.contains(where: \.isLetter) {
+                latin = query
+                query = Self.arabic(latin)
+            } else {
+                search()
+            }
+        }
+    }
+
+    /// Typed Latin as Arabic, the way the Qalam keyboard writes it (full harakat).
+    static func arabic(_ latin: String) -> String { Qalam.text(latin, Options()) }
     @Published private(set) var results: [QuranSuggestion] = []
     @Published private(set) var total = 0
     @Published private(set) var searchedIn = ""
@@ -299,7 +317,7 @@ final class QuranBoxModel: ObservableObject {
 
     // MARK: Search
 
-    private static func script(_ s: String) -> String {
+    static func script(_ s: String) -> String {
         if s.unicodeScalars.contains(where: { (0x0600...0x06FF).contains($0.value) || (0x0750...0x077F).contains($0.value) }) { return "arabic" }
         if s.unicodeScalars.contains(where: { (0x0980...0x09FF).contains($0.value) }) { return "bangla" }
         return "latin"
@@ -314,34 +332,30 @@ final class QuranBoxModel: ObservableObject {
 
     func search() {
         let q = query.trimmingCharacters(in: .whitespaces)
-        arabicQuery = ""
         guard !q.isEmpty else { results = []; total = 0; selected = nil; searchedIn = ""; return }
+        // References and sūrah names read best from the keys as typed ("baqarah 255").
+        let typed = latin.isEmpty ? q : latin.trimmingCharacters(in: .whitespaces)
         var rows: [QuranSuggestion] = []
         // "2:255", "baqarah 255-257"
-        if q.contains(where: \.isNumber), let p = lib.resolve(q), lib.parse(query: q).from != nil || Int(q) != nil {
+        if typed.contains(where: \.isNumber), let p = lib.resolve(typed), lib.parse(query: typed).from != nil || Int(typed) != nil {
             rows.append(.passage(p))
         }
         let script = Self.script(q)
         // Sūrah names (Latin or Arabic letters)
-        if !q.contains(where: \.isNumber) {
-            rows += lib.parse(query: q).surahs.prefix(4).map { .surah($0) }
+        if !typed.contains(where: \.isNumber) {
+            rows += lib.parse(query: typed).surahs.prefix(3).map { .surah($0) }
         }
         var found = 0
         switch script {
         case "arabic":
-            let r = lib.searchArabic(q, limit: 200)
-            rows += r.hits.map { .hit($0, arabic: true) }
-            found = r.total
-            searchedIn = "the Arabic (harakat optional)"
-            searchedTranslation = nil
-        case "latin" where searchIn == .arabic && !q.allSatisfy({ $0.isNumber || $0 == ":" || $0 == "-" || $0 == " " }):
-            let ar = Qalam.text(q, Options())
-            arabicQuery = ar
-            let r = lib.searchArabic(ar, phonetic: true, limit: 200)
+            // From typed Latin, similar letters count too (h/H, s/S…); harakat are optional either way.
+            let r = lib.searchArabic(q, phonetic: !latin.isEmpty, limit: 200)
             rows += r.hits.map { .hit($0, arabic: true) }
             found = r.total
             searchedIn = "the Arabic"
             searchedTranslation = nil
+        case "latin" where searchIn == .arabic:
+            break   // only digits and signs: a reference, handled above
         default:
             let id = translationToSearch(script)
             let r = lib.searchTranslation(id, q, limit: 200)
@@ -389,26 +403,20 @@ struct QuranBoxView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                BoxSearchField(text: $model.query,
+                BoxSearchField(text: $model.query, latin: $model.latin, transliterate: model.searchIn == .arabic,
+                               arabicFont: quranFontName,
                                placeholder: model.searchIn == .arabic
                                    ? "Part of an āyah, typed the Qalam way (qul huwa allaahu), a sūrah, or 2:255"
                                    : "A word in the translation, a sūrah name, or 2:255",
                                onMove: { model.move($0) }, onReturn: insert, onEscape: {
-                                   if model.query.isEmpty { cancel() } else { model.query = "" }
+                                   if model.query.isEmpty { cancel() } else { model.latin = ""; model.query = "" }
                                })
-                    .frame(height: 28)
+                    .frame(height: 32)
                 Picker("", selection: $model.searchIn) {
                     ForEach(QuranBoxModel.SearchIn.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 170)
-                .help("Search the Arabic text or the translation. Arabic is chosen when the Qalam keyboard is on.")
-            }
-            if !model.arabicQuery.isEmpty {
-                HStack(spacing: 6) {
-                    Text("Searching the Arabic for").font(.caption).foregroundStyle(.secondary)
-                    Text(model.arabicQuery).font(.custom(quranFontName, size: 18))
-                    Spacer()
-                }
+                .help("Arabic: type part of an āyah the Qalam way (it turns into Arabic). Translation: search the translation's words.")
             }
 
             if !model.query.trimmingCharacters(in: .whitespaces).isEmpty { resultsList }
@@ -430,25 +438,28 @@ struct QuranBoxView: View {
 
     private var resultsList: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(model.results.isEmpty ? "Nothing found." : "\(model.total) āyāt in \(model.searchedIn)"
-                 + (model.total > 200 ? " (first 200)" : "") + ". ↑↓ or click to choose.")
+            Text(model.results.isEmpty ? "Nothing found. Try fewer words, or the other spelling of a letter (h/H, s/S, t/T)."
+                 : "\(model.total) \(model.total == 1 ? "āyah" : "āyāt") in \(model.searchedIn)"
+                 + (model.total > 200 ? " (first 200)" : "") + ". ↑↓ or click to choose, double-click to insert.")
                 .font(.caption).foregroundStyle(.secondary)
-            ScrollViewReader { proxy in
-                ScrollView(showsIndicators: model.results.count > 5) {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(Array(model.results.enumerated()), id: \.offset) { i, r in
-                            resultRow(r, selected: model.selected == i)
-                                .id(i)
-                                .contentShape(Rectangle())
-                                .onTapGesture { model.selected = i }
-                                .onTapGesture(count: 2) { model.selected = i; insert() }
+            if !model.results.isEmpty {
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: model.results.count > 5) {
+                        LazyVStack(alignment: .leading, spacing: 2) {
+                            ForEach(Array(model.results.enumerated()), id: \.offset) { i, r in
+                                resultRow(r, selected: model.selected == i)
+                                    .id(i)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { model.selected = i }
+                                    .onTapGesture(count: 2) { model.selected = i; insert() }
+                            }
                         }
                     }
+                    .onChange(of: model.selected) { i in if let i { withAnimation(nil) { proxy.scrollTo(i) } } }
                 }
-                .onChange(of: model.selected) { i in if let i { withAnimation(nil) { proxy.scrollTo(i) } } }
+                .frame(height: resultsHeight)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.06)))
             }
-            .frame(height: resultsHeight)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.06)))
         }
     }
 
@@ -468,21 +479,25 @@ struct QuranBoxView: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             switch r {
             case .surah(let s):
-                Text("Sūrah").font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 54, alignment: .leading)
+                Text("Sūrah").font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 70, alignment: .leading)
                 Text("\(s.number). \(s.name)  ·  \(s.ayahs) āyāt")
                 Spacer()
                 Text(s.arabic).font(.custom(quranFontName, size: 18))
             case .passage(let p):
-                Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 54, alignment: .leading)
+                Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 70, alignment: .leading)
                 Text("\(lib.surah(p.surah)?.name ?? "") \(p.reference)")
                 Spacer()
             case .hit(let p, let arabic):
-                Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary).frame(width: 54, alignment: .leading)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(p.reference).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Text(lib.surah(p.surah)?.name ?? "").font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                }
+                .frame(width: 70, alignment: .leading)
                 if arabic {
                     Spacer(minLength: 0)
-                    Text(shown(lib.arabic(p.surah, p.from) ?? "")).font(.custom(quranFontName, size: 19)).lineLimit(1)
+                    highlighted(lib.arabic(p.surah, p.from) ?? "").font(.custom(quranFontName, size: 19)).lineLimit(1)
                 } else {
-                    Text(lib.translation(model.translationShown(for: p), p.surah, p.from) ?? "").lineLimit(1)
+                    highlightedTranslation(lib.translation(model.translationShown(for: p), p.surah, p.from) ?? "").lineLimit(1)
                     Spacer(minLength: 0)
                 }
             case .problem(let t):
@@ -583,7 +598,7 @@ struct QuranBoxView: View {
                 .pickerStyle(.segmented).labelsHidden().frame(width: 360)
                 Spacer()
                 Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
-                Button("Insert", action: insert).keyboardShortcut(.defaultAction)
+                Button("Insert", action: insert).keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
             }
             if model.mode != .arabic {
                 Picker("Translation", selection: $model.translation) {
@@ -605,12 +620,44 @@ struct QuranBoxView: View {
         .onReceive(DistributedNotificationCenter.default().publisher(
             for: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String))) { _ in
             qalamKeyboard = InputSource.isCurrent
-            model.searchIn = qalamKeyboard ? .arabic : .translation
         }
     }
 
     private func shown(_ s: String) -> String {
         quranFontName.uppercased().contains("KFGQPC") ? QuranLibrary.forKFGQPC(s) : s
+    }
+
+    /// The translation with the searched words in the accent colour, starting a few words before the first.
+    private func highlightedTranslation(_ text: String) -> Text {
+        let wanted = model.query.lowercased().split(whereSeparator: { $0.isWhitespace || $0.isPunctuation }).map(String.init)
+        let words = text.split(separator: " ").map(String.init)
+        let hit: (String) -> Bool = { w in
+            let lw = w.lowercased()
+            return wanted.contains { !$0.isEmpty && lw.contains($0) }
+        }
+        guard let first = words.firstIndex(where: hit) else { return Text(text) }
+        let start = first > 6 ? first - 4 : 0
+        var t = Text(start > 0 ? "… " : "")
+        for i in start..<words.count {
+            let w = Text(words[i] + (i < words.count - 1 ? " " : ""))
+            t = t + (hit(words[i]) ? w.foregroundColor(.accentColor).bold() : w)
+        }
+        return t
+    }
+
+    /// The āyah with the words that matched in the accent colour; a long āyah starts a few words before
+    /// the match, so it's always in view.
+    private func highlighted(_ ayah: String) -> Text {
+        let words = ayah.split(separator: " ").map(String.init)
+        guard model.searchIn == .arabic || QuranBoxModel.script(model.query) == "arabic",
+              let m = QuranLibrary.matchedWords(in: ayah, query: model.query) else { return Text(shown(ayah)) }
+        let start = m.lowerBound > 4 ? m.lowerBound - 3 : 0
+        var t = Text(start > 0 ? "… " : "")
+        for i in start..<words.count {
+            let w = Text(shown(words[i]) + (i < words.count - 1 ? " " : ""))
+            t = t + (m.contains(i) ? w.foregroundColor(.accentColor).bold() : w)
+        }
+        return t
     }
 
     /// The āyah-end mark: KFGQPC Hafs circles plain Arabic digits itself; other fonts need ۝ before them.
@@ -629,6 +676,11 @@ extension QuranBoxModel {
 
 struct BoxSearchField: NSViewRepresentable {
     @Binding var text: String
+    /// Arabic mode: the Latin keys behind the Arabic shown (see `transliterate`).
+    @Binding var latin: String
+    /// Typed Latin turns into Arabic in the field, the way the Qalam keyboard writes it.
+    let transliterate: Bool
+    let arabicFont: String
     let placeholder: String
     let onMove: (Int) -> Void
     let onReturn: () -> Void
@@ -647,7 +699,11 @@ struct BoxSearchField: NSViewRepresentable {
 
     func updateNSView(_ f: NSSearchField, context: Context) {
         context.coordinator.parent = self
-        if f.stringValue != text && (f.currentEditor() as? NSTextView)?.hasMarkedText() != true { f.stringValue = text }
+        f.placeholderString = placeholder
+        if f.stringValue != text && (f.currentEditor() as? NSTextView)?.hasMarkedText() != true {
+            f.stringValue = text
+        }
+        context.coordinator.style(f)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -656,9 +712,48 @@ struct BoxSearchField: NSViewRepresentable {
         var parent: BoxSearchField
         init(_ p: BoxSearchField) { parent = p }
 
+        /// Arabic right to left in the Qur'an font; Latin and the placeholder as usual.
+        func style(_ f: NSSearchField) {
+            let arabic = QuranBoxModel.script(f.stringValue) == "arabic"
+            // The Qur'an font is too tall for a one-line field; the system Arabic font fits and keeps harakat clear.
+            let font: NSFont = arabic ? .systemFont(ofSize: 17) : .systemFont(ofSize: 15)
+            if f.font != font { f.font = font }
+            let alignment: NSTextAlignment = arabic ? .right : .natural
+            if f.alignment != alignment {
+                f.alignment = alignment
+                f.baseWritingDirection = arabic ? .rightToLeft : .natural
+            }
+        }
+
         func controlTextDidChange(_ n: Notification) {
             guard let f = n.object as? NSSearchField else { return }
-            parent.text = f.stringValue
+            let s = f.stringValue
+            let editor = f.currentEditor() as? NSTextView
+            guard parent.transliterate, editor?.hasMarkedText() != true else {
+                parent.latin = ""
+                parent.text = s
+                style(f)
+                return
+            }
+            let shown = parent.text
+            var latin = parent.latin
+            if s.hasPrefix(shown), case let added = String(s.dropFirst(shown.count)), !added.isEmpty,
+               added.allSatisfy({ $0.isASCII }), latin.isEmpty == shown.isEmpty || shown.isEmpty {
+                latin += added                           // typed at the end
+            } else if !latin.isEmpty, shown.hasPrefix(s), s.count < shown.count {
+                latin.removeLast()                       // Backspace: the last Latin key goes
+            } else {
+                parent.latin = ""                        // pasted, Arabic letters, or an edit in the middle
+                parent.text = s
+                style(f)
+                return
+            }
+            let arabic = latin.isEmpty ? "" : QuranBoxModel.arabic(latin)
+            parent.latin = latin
+            parent.text = arabic
+            f.stringValue = arabic
+            style(f)
+            editor?.setSelectedRange(NSRange(location: (arabic as NSString).length, length: 0))
         }
 
         func control(_ control: NSControl, textView: NSTextView, doCommandBy sel: Selector) -> Bool {

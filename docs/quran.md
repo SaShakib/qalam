@@ -10,13 +10,12 @@ On the Mac more can be downloaded in the app. Windows has the insert box with th
 **Mac.** Press **⌃⇧Q** in any app, with any keyboard on (Qalam stays in the menu bar as ق and starts at
 login for this; switch it off in **Settings → Qur'an box**). A box opens:
 
-1. **Search** at the top. What you type is searched in the language you type it in:
-   - English letters → the English translation (and sūrah names: `baqarah`, `cow`).
-   - Switch the keyboard to **Qalam** (or click **Arabic** next to the field) and type part of an āyah the
-     Qalam way, e.g. `qul huwa allaahu` → the Arabic text. The box shows the Arabic it searched for.
-     Harakat are optional, and words the mushaf joins (يَٰٓأَيُّهَا) match when typed apart (يا أيها).
-   - Bangla letters → the Bangla translation.
-   - `2:255` or `baqarah 255-257` → that passage.
+1. **Search** at the top. It searches the **Arabic** by default: type part of an āyah the Qalam way
+   (`qul huwa allaahu`, `inna allaaha maea alSSaAbiriyna`) and the field shows it in Arabic as you type
+   (Backspace removes the last key). Harakat are optional, words the mushaf joins (يَٰٓأَيُّهَا) match when
+   typed apart, and pasted Arabic works too. `2:255`, `baqarah 255-257` and sūrah names work as well.
+   Click **Translation** next to the field to search the translation's words instead (English, or Bangla
+   letters for the Bangla one). The matched words are highlighted in each result.
 2. Choose a result with **↑ / ↓** or a **click** (double-click inserts). It fills **Sūrah**, **From āyah** and
    **To āyah**.
 3. Set the range with the **From āyah** / **To āyah** dropdowns. The preview shows exactly what goes in.

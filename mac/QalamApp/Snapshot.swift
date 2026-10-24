@@ -31,8 +31,16 @@ enum Snapshot {
             ArabicFonts.registerBundled()
             guard let lib = QuranData.library else { print("no Qur'an data"); exit(1) }
             let model = QuranBoxModel(lib: lib)
-            if args.contains("--arabic") { model.searchIn = .arabic }
-            model.query = args[i + 2]
+            let typed = args[i + 2]
+            if args.contains("--translation") {
+                model.searchIn = .translation
+                model.query = typed
+            } else if QuranBoxModel.script(typed) == "latin" && typed.contains(where: \.isLetter) {
+                model.latin = typed                       // as if typed: the field shows the Arabic
+                model.query = QuranBoxModel.arabic(typed)
+            } else {
+                model.query = typed
+            }
             if args.count > i + 3, let n = Int(args[i + 3]) { model.move(n); model.to = model.from + 2 }
             let host = NSHostingView(rootView: QuranBoxView(model: model, insert: {}, cancel: {})
                 .background(Color(nsColor: .windowBackgroundColor)))

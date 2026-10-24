@@ -404,6 +404,29 @@ public final class QuranLibrary {
         return (all.prefix(limit).compactMap { position($0).map { Passage(surah: $0.0, from: $0.1, to: $0.1) } }, all.count)
     }
 
+    /// Which words of `text` (an āyah) the Arabic `query` matched, for highlighting: the shortest run of
+    /// words whose letters contain the query's letters (spaces, harakat and spelling evened out as in search).
+    public static func matchedWords(in text: String, query: String) -> ClosedRange<Int>? {
+        let words = text.split(separator: " ").map(String.init)
+        let q = joined(bare(query, daggerAlif: true))
+        guard q.count >= 2, !words.isEmpty else { return nil }
+        let bareWords = words.map { bare($0, daggerAlif: true) }
+        let looseQ = loose(q)
+        var best: ClosedRange<Int>?
+        for i in bareWords.indices {
+            var run = ""
+            for j in i..<bareWords.count {
+                run = joined(run + bareWords[j])
+                if has(run, q) || (looseQ.count >= 3 && has(loose(run), looseQ)) {
+                    if best == nil || j - i < best!.count - 1 { best = i...j }
+                    break
+                }
+                if run.count > q.count + 12 { break }
+            }
+        }
+        return best
+    }
+
     /// Āyāt whose translation contains every word of `query` (case and accents ignored).
     public func searchTranslation(_ id: String, _ query: String, limit: Int = 300) -> (hits: [Passage], total: Int) {
         let words = Self.foldText(query)
