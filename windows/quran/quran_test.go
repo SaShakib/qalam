@@ -104,50 +104,135 @@ func TestFold(t *testing.T) {
 	}
 }
 
-func TestSuggestions(t *testing.T) {
+func TestSearch(t *testing.T) {
 	l := library(t)
 	// A name alone lists sūrahs (exact match first, then names that start with it).
-	rows, _ := l.Lookup("baqar", 6)
-	if len(rows) == 0 || rows[0].Kind != KindSurah || rows[0].Surah.Number != 2 {
-		t.Fatalf("baqar: %+v", rows)
+	r := l.Search("baqar", InTranslation, "en.sahih", 6)
+	if len(r.Rows) == 0 || r.Rows[0].Kind != KindSurah || r.Rows[0].Surah.Number != 2 {
+		t.Fatalf("baqar: %+v", r.Rows)
 	}
-	rows, _ = l.Lookup("al", 6)
 	n := 0
-	for _, r := range rows {
-		if r.Kind == KindSurah {
+	for _, row := range l.Search("al", InTranslation, "en.sahih", 6).Rows {
+		if row.Kind == KindSurah {
 			n++
 		}
 	}
 	if n != 4 {
 		t.Errorf("al: %d sūrah rows, want 4", n)
 	}
-	// A reference gives the passage.
-	rows, _ = l.Lookup("baqarah 255", 6)
-	if len(rows) == 0 || rows[0].Kind != KindPassage || rows[0].Passage.Reference() != "2:255" {
-		t.Errorf("baqarah 255: %+v", rows)
+	// A reference gives the passage first, in either mode.
+	for _, in := range []SearchIn{InArabic, InTranslation} {
+		r = l.Search("baqarah 255-257", in, "en.sahih", 6)
+		if len(r.Rows) == 0 || r.Rows[0].Kind != KindPassage || r.Rows[0].Passage.Reference() != "2:255-257" {
+			t.Errorf("baqarah 255-257 (%d): %+v", in, r.Rows)
+		}
 	}
-	// Too far: a problem row.
-	rows, _ = l.Lookup("2:290", 6)
-	if len(rows) != 1 || rows[0].Kind != KindProblem || rows[0].Text != "Al-Baqara has 286 āyāt" {
-		t.Errorf("2:290: %+v", rows)
+	r = l.Search("2:255", InArabic, "en.sahih", 6)
+	if len(r.Rows) != 1 || r.Rows[0].Passage.Reference() != "2:255" || r.Arabic != "" {
+		t.Errorf("2:255: %+v", r)
 	}
-	// Nothing at all.
-	rows, _ = l.Lookup("xyzzyx", 6)
-	if len(rows) != 1 || rows[0].Kind != KindProblem {
-		t.Errorf("xyzzyx: %+v", rows)
+	r = l.Search("2:290", InArabic, "en.sahih", 6)
+	if len(r.Rows) != 1 || r.Rows[0].Kind != KindProblem || r.Rows[0].Text != "Al-Baqara has 286 āyāt" {
+		t.Errorf("2:290: %+v", r.Rows)
 	}
-	if rows, _ := l.Lookup("   ", 6); rows != nil {
-		t.Errorf("empty: %+v", rows)
+	if r := l.Search("   ", InArabic, "en.sahih", 6); r.Rows != nil {
+		t.Errorf("empty: %+v", r)
 	}
-	// Search: Arabic, and Latin read through Qalam.
-	// "rahmaan" is also the name of sūrah 55, which comes first.
-	rows, total := l.Lookup("rahmaan", 6)
-	if total != 58 || len(rows) != 6 || rows[0].Surah.Number != 55 || rows[1].Kind != KindHit || rows[1].Passage.Reference() != "1:1" {
-		t.Errorf("rahmaan: %d %+v", total, rows)
+	// Latin in Arabic mode is read the Qalam way, with full harakat.
+	r = l.Search("qul huwa allaahu AaHaduN", InArabic, "en.sahih", 6)
+	if r.Arabic != "قُل هُوَ اللَّهُ أَحَدٌ" || r.Total != 1 || len(r.Rows) != 1 || r.Rows[0].Passage.Reference() != "112:1" || r.Rows[0].InTranslation != "" {
+		t.Errorf("qul huwa allaahu AaHaduN: %+v", r)
 	}
-	rows, total = l.Lookup("الرحمن", 6)
-	if total != 50 || rows[0].Surah.Number != 55 || rows[1].Kind != KindHit {
-		t.Errorf("الرحمن: %d %+v", total, rows)
+	// "raHmaan" is also the name of sūrah 55, which comes first.
+	r = l.Search("raHmaan", InArabic, "en.sahih", 6)
+	if r.Rows[0].Kind != KindSurah || r.Rows[0].Surah.Number != 55 || r.Rows[1].Passage.Reference() != "1:1" {
+		t.Errorf("raHmaan: %+v", r.Rows)
+	}
+	// Pasted Arabic with typed Latin after it.
+	if r := l.Search("قُلْ huwa", InArabic, "en.sahih", 6); r.Arabic != "قُلْ هُوَ" || r.Total == 0 {
+		t.Errorf("mixed: %+v", r)
+	}
+	// Arabic letters search the Arabic in either mode.
+	r = l.Search("يا أيها الذين آمنوا", InTranslation, "en.sahih", 6)
+	if r.Total != 89 || r.Rows[0].Passage.Reference() != "2:104" || r.SearchedIn != "the Arabic (harakat optional)" {
+		t.Errorf("يا أيها الذين آمنوا: %d %+v", r.Total, r.Rows)
+	}
+	// Translation mode: the chosen translation if it's English, else Saheeh International.
+	r = l.Search("Mercy of Allah", InTranslation, "en.usmani", 3)
+	if r.Translation != "en.usmani" || r.Total == 0 || r.Rows[0].InTranslation != "en.usmani" {
+		t.Errorf("en.usmani: %+v", r)
+	}
+	r = l.Search("Mercy of Allah", InTranslation, "bn.hoque", 3)
+	if r.Translation != "en.sahih" || r.Total != 41 || r.Rows[0].Passage.Reference() != "2:64" || r.SearchedIn != "English: Saheeh International" {
+		t.Errorf("Mercy of Allah: %+v", r)
+	}
+	// Bangla letters: the chosen Bangla translation, or Muhiuddin Khan.
+	if r := l.Search("আল্লাহর", InArabic, "bn.hoque", 3); r.Translation != "bn.hoque" || r.Total == 0 {
+		t.Errorf("Bangla: %+v", r)
+	}
+	if r := l.Search("আল্লাহর", InArabic, "en.sahih", 3); r.Translation != "bn.bengali" || r.Total == 0 {
+		t.Errorf("Bangla (English chosen): %+v", r)
+	}
+}
+
+func TestSearchTranslation(t *testing.T) {
+	l := library(t)
+	// Case, accents and the order of the words don't matter.
+	a, n := l.SearchTranslation("en.sahih", "MERCY allah", 300)
+	b, m := l.SearchTranslation("en.sahih", "allāh, mercy", 300)
+	if n == 0 || n != m || refs(a) != refs(b) {
+		t.Errorf("folding: %d %d", n, m)
+	}
+	if _, n := l.SearchTranslation("en.sahih", "x", 5); n != 0 {
+		t.Errorf("one letter: %d", n)
+	}
+	if _, n := l.SearchTranslation("xx.none", "mercy", 5); n != 0 {
+		t.Errorf("unknown translation: %d", n)
+	}
+	// Bangla: with or without the hasant and ZWNJ at the end of আল্লাহ্‌.
+	_, x := l.SearchTranslation("bn.bengali", "আল্লাহ্‌র", 5)
+	_, y := l.SearchTranslation("bn.bengali", "আল্লাহর", 5)
+	if x == 0 || x != y {
+		t.Errorf("hasant: %d %d", x, y)
+	}
+	for in, want := range map[string]string{
+		"Ṣalāh": "salah", "ÉCOLE": "ecole",
+		"য়":         "য়", // য় = য + ়
+		"আল্লাহ্‌র": "আল্লাহর",
+		"ক্ষ":       "ক্ষ", // ক্ষ keeps its hasant
+		"ক্য়া":      "ক্য়া",
+	} {
+		if got := FoldText(in); got != want {
+			t.Errorf("FoldText(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestBasmalaAndParse(t *testing.T) {
+	l := library(t)
+	// 95:1 and 97:1 are written بِّسْمِ (with idghām): the basmala still goes.
+	if got := l.Arabic(95, 1); Bare(got, false) != "والتين والزيتون" {
+		t.Errorf("95:1 = %q", got)
+	}
+	if got := l.Arabic(97, 1); strings.Contains(Bare(got, false), "بسم") {
+		t.Errorf("97:1 = %q", got)
+	}
+	if got := l.Arabic(9, 1); !strings.HasPrefix(Bare(got, false), "براءه من الله") {
+		t.Errorf("9:1 = %q", got)
+	}
+	if _, n := l.SearchArabic("بسم الله الرحمن الرحيم", false, 5); n != 2 { // 1:1 and 27:30
+		t.Errorf("basmala found %d times", n)
+	}
+	// A text that starts with a mark keeps it (ur.usmani 4:94).
+	data := []byte("1|1|ّx\n")
+	for i := 1; i < Total; i++ {
+		data = append(data, "1|1|y\n"...)
+	}
+	if got := Parse(data); got == nil || got[0] != "ّx" {
+		t.Errorf("Parse: %v", got == nil)
+	}
+	if l.TranslationText("ur.usmani", 4, 94) == "" {
+		t.Error("ur.usmani 4:94 missing")
 	}
 }
 
@@ -167,33 +252,26 @@ func TestSearchArabic(t *testing.T) {
 		total    int
 		first    string
 	}{
-		{"رهمان", true, 58, "1:1 1:3 2:163 13:30 17:110"}, // "rahmaan" through Qalam: similar letters count
-		{"الرحمن", false, 50, "1:1 1:3 2:163 13:30 17:110"},
-		{"رحمن", false, 66, "1:1 1:3 2:163 2:286 7:23"},
+		{"رهمان", true, 70, "2:20 4:90 5:49 15:25 18:6"}, // the same letters first, then similar ones (ٱلرَّحْمَٰنِ)
+		{"الرحمن", false, 48, "1:1 1:3 2:163 13:30 17:110"},
+		{"رحمن", false, 64, "1:1 1:3 2:163 2:286 7:23"},
 		{"صلاة", false, 65, "2:3 2:43 2:45 2:83 2:110"}, // modern spelling finds ٱلصَّلَوٰةَ
 		{"ٱلصَّلَوٰةَ", false, 61, "2:3 2:43 2:45 2:83 2:110"},
 		{"رَحْمَة", false, 75, "2:157 2:178 3:8 3:107 3:157"}, // with harakat: those matches first
-		{"الهمد", true, 28, "1:2 6:1 6:45 7:43 9:112"},
-		{"قل هو", true, 11, "2:222 3:165 6:65 13:30 38:67"},
-		{"بسم", true, 9, "1:1 2:20 11:41 27:19 27:30"},
+		{"الهمد", true, 30, "8:4 27:82 1:2 6:1 6:45"},
+		{"قل هو", true, 25, "2:222 3:165 6:65 13:30 38:67"},
+		{"بسم", true, 7, "1:1 2:20 11:41 27:19 27:30"},
+		{"بسم", false, 5, "1:1 2:20 11:41 27:19 27:30"},
+		{"يا أيها الذين آمنوا", false, 89, "2:104 2:153 2:172 2:178 2:183"}, // يَٰٓأَيُّهَا is one word in the mushaf
+		{"يا بني", false, 20, "2:40 2:47 2:122 2:132 5:72"},
+		{"آمنوا", false, 268, "2:9 2:13 2:14 2:25 2:26"}, // = ءَامَنُوا۟
+		{"التين والزيتون", false, 1, "95:1"},
 		{"ر", false, 0, ""},
 	}
 	for _, c := range cases {
 		hits, total := l.SearchArabic(c.query, c.phonetic, 5)
 		if total != c.total || refs(hits) != c.first {
 			t.Errorf("SearchArabic(%q) = %d [%s], want %d [%s]", c.query, total, refs(hits), c.total, c.first)
-		}
-	}
-}
-
-func TestPhoneticQuery(t *testing.T) {
-	// The Latin is read without harakat, as the Mac does.
-	for in, want := range map[string]string{"alhamdu": "الهمد", "qul huwa": "قل هو", "bismi": "بسم"} {
-		rows, _ := library(t).Lookup(in, 1)
-		_ = rows
-		hits, _ := library(t).SearchArabic(want, true, 1)
-		if len(rows) == 0 || len(hits) == 0 || rows[0].Passage != hits[0] {
-			t.Errorf("%s: rows %+v, want first hit %+v", in, rows, hits)
 		}
 	}
 }

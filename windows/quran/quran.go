@@ -1,11 +1,10 @@
 // Package quran is the Windows port of engine/Quran.swift: the whole Qur'an (Tanzil Uthmani text,
 // full harakat) and its bundled translations, for the "insert āyah" box (Ctrl+Alt+Q).
-// Reference parsing, sūrah-name folding, Arabic search and the inserted text match the Mac version
-// (quran_test.go checks the same cases). Searching inside translations is left out on Windows.
+// Reference parsing, sūrah-name folding, the Arabic and translation search and the inserted text
+// match the Mac version (quran_test.go checks the same cases).
 package quran
 
 import (
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"fmt"
@@ -92,7 +91,7 @@ type Kind int
 const (
 	KindSurah   Kind = iota // pick → the query becomes "2:" so the āyah number comes next
 	KindPassage             // pick → insert
-	KindHit                 // a search match in the Arabic
+	KindHit                 // a search match (in the Arabic, or in the translation InTranslation)
 	KindProblem             // e.g. "Al-Baqara has 286 āyāt"
 )
 
@@ -102,6 +101,8 @@ type Suggestion struct {
 	Surah   Surah   // KindSurah
 	Passage Passage // KindPassage, KindHit
 	Text    string  // KindProblem
+	// KindHit: the translation the words were found in ("" = found in the Arabic).
+	InTranslation string
 }
 
 type Library struct {
@@ -113,11 +114,14 @@ type Library struct {
 	mu    sync.Mutex
 	texts map[string][]string
 
-	searchOnce  sync.Once
-	bareArabic  [][2]string
-	looseArabic [][2]string
-	lightArabic []string
-	keys        [][]string
+	searchOnce   sync.Once
+	bareArabic   [][2]string
+	looseArabic  [][2]string
+	joinedArabic [][2]string
+	joinedLoose  []string
+	lightArabic  []string
+	keys         [][]string
+	folded       map[string][]string // translation id → its texts folded for searching
 }
 
 // Load reads surahs.tsv, translations.tsv and, when needed, "<id>.txt" or "<id>.txt.gz" from fsys.
@@ -197,9 +201,19 @@ func (l *Library) Arabic(surah, ayah int) string {
 		return ""
 	}
 	if ayah == 1 && surah != 1 {
-		return strings.TrimPrefix(t[i], l.basmala())
+		return dropBasmala(t[i])
 	}
 	return t[i]
+}
+
+// dropBasmala: Tanzil writes the basmala in front of āyah 1 (sometimes spelled بِّسْمِ, with idghām,
+// as in 95:1), so it's matched by its letters.
+func dropBasmala(s string) string {
+	words := strings.Fields(s)
+	if len(words) <= 4 || Bare(strings.Join(words[:4], " "), false) != "بسم الله الرحمن الرحيم" {
+		return s
+	}
+	return strings.Join(words[4:], " ")
 }
 
 func (l *Library) TranslationText(id string, surah, ayah int) string {
@@ -247,29 +261,19 @@ func (l *Library) lines(id string) []string {
 	return t
 }
 
-// basmala is āyah 1:1 and a space: Tanzil puts it before āyah 1 of the other sūrahs (except 9).
-func (l *Library) basmala() string {
-	if t := l.lines("quran-uthmani"); t != nil {
-		return t[0] + " "
-	}
-	return ""
-}
-
 // Parse turns "sura|aya|text" lines in order into the 6236 texts; nil if it isn't a whole Qur'an.
+// It splits on bytes, so a text that starts with a mark (ur.usmani 4:94) keeps it.
 func Parse(data []byte) []string {
 	out := make([]string, 0, Total)
-	sc := bufio.NewScanner(bytes.NewReader(data))
-	sc.Buffer(make([]byte, 64*1024), 1<<20)
-	for sc.Scan() {
-		line := sc.Text()
-		if line == "" || line[0] < '0' || line[0] > '9' {
+	for _, line := range bytes.Split(data, []byte("\n")) {
+		if len(line) == 0 || line[0] < '0' || line[0] > '9' {
 			continue
 		}
-		parts := strings.SplitN(line, "|", 3)
+		parts := bytes.SplitN(line, []byte("|"), 3)
 		if len(parts) != 3 {
 			continue
 		}
-		out = append(out, strings.TrimSpace(parts[2]))
+		out = append(out, strings.TrimSpace(string(parts[2])))
 	}
 	if len(out) != Total {
 		return nil
@@ -301,81 +305,123 @@ func (l *Library) ParseQuery(raw string) Query {
 	return out
 }
 
-// Suggestions is the dropdown for what's typed so far: a reference ("2:255", "baqarah 255"), sūrah
-// names, and Arabic search results. arabic is the query as Arabic when it was typed in Latin ("" if not).
-func (l *Library) Suggestions(raw, arabic string, limit int) []Suggestion {
-	trimmed := strings.Trim(raw, " \t")
-	if trimmed == "" {
-		return nil
-	}
-	q := l.ParseQuery(raw)
-	if len(q.Surahs) == 0 || q.From == 0 {
-		// Not a reference: sūrah names first, then āyāt that contain the words.
-		var rows []Suggestion
-		if q.From == 0 {
-			for i, s := range q.Surahs {
-				if i == 4 {
-					break
-				}
-				rows = append(rows, Suggestion{Kind: KindSurah, Surah: s})
-			}
-		}
-		ar := arabic
-		typedArabic := hasArabic(trimmed)
-		if typedArabic {
-			ar = trimmed
-		}
-		if ar != "" {
-			hits, _ := l.SearchArabic(ar, !typedArabic, limit)
-			for _, p := range hits {
-				rows = append(rows, Suggestion{Kind: KindHit, Passage: p})
-			}
-		}
-		if len(rows) == 0 {
-			rows = []Suggestion{{Kind: KindProblem, Text: "Nothing found for “" + trimmed + "”"}}
-		}
-		if len(rows) > limit {
-			rows = rows[:limit]
-		}
-		return rows
-	}
-	// A clear name or number with an āyah: that passage (other sūrahs with the same start below it).
-	var rows []Suggestion
-	for i, s := range q.Surahs {
-		if i == 4 {
-			break
-		}
-		if p, ok := passage(s, q.From, q.To); ok {
-			rows = append(rows, Suggestion{Kind: KindPassage, Passage: p})
-		} else if i == 0 {
-			rows = append(rows, Suggestion{Kind: KindProblem, Text: fmt.Sprintf("%s has %d āyāt", s.Name, s.Ayahs)})
-		}
-	}
-	return rows
+// SearchIn is where Latin letters are searched: the Arabic (read the Qalam way) or the translation.
+type SearchIn int
+
+const (
+	InArabic SearchIn = iota
+	InTranslation
+)
+
+// Results is what the box lists for a query (like the Mac box's search).
+type Results struct {
+	Rows        []Suggestion
+	Total       int    // āyāt found in all (Rows holds at most the limit)
+	SearchedIn  string // "the Arabic", "English: Saheeh International"…
+	Arabic      string // the Arabic searched for, when Latin was read the Qalam way
+	Translation string // the translation searched ("" = the Arabic)
 }
 
-// Lookup is what the box shows for a query: the rows, and how many āyāt the search found in all
-// (0 when the rows aren't search results). Latin that isn't a reference is also read as Arabic
-// through Qalam (rahmaan → رحمان), with similar letters allowed.
-func (l *Library) Lookup(raw string, limit int) ([]Suggestion, int) {
-	phonetic := ""
-	if hasLatinLetter(raw) {
-		o := engine.DefaultOptions()
-		o.Harakat = engine.NoHarakat
-		phonetic = engine.Text(raw, o)
-	}
-	rows := l.Suggestions(raw, phonetic, limit)
-	for _, r := range rows {
-		if r.Kind == KindHit {
-			ar := phonetic
-			if hasArabic(raw) || ar == "" {
-				ar = raw
-			}
-			_, total := l.SearchArabic(ar, phonetic != "", 0)
-			return rows, total
+// Script: "arabic", "bangla" or "latin".
+func Script(s string) string {
+	for _, r := range s {
+		if r >= 0x0600 && r <= 0x06FF || r >= 0x0750 && r <= 0x077F {
+			return "arabic"
 		}
 	}
-	return rows, 0
+	for _, r := range s {
+		if r >= 0x0980 && r <= 0x09FF {
+			return "bangla"
+		}
+	}
+	return "latin"
+}
+
+// SearchTranslationFor is the translation a Latin or Bangla search looks in: the chosen one if it's
+// in that language, otherwise Saheeh International / Muhiuddin Khan.
+func (l *Library) SearchTranslationFor(script, chosen string) string {
+	t := l.Translation(chosen)
+	if script == "bangla" {
+		if t != nil && t.Language == "Bangla" {
+			return chosen
+		}
+		return "bn.bengali"
+	}
+	if t != nil && t.Language == "English" {
+		return chosen
+	}
+	return "en.sahih"
+}
+
+// PhoneticArabic is Latin read the Qalam way, with full harakat (qul huwa → قُلْ هُوَ); Arabic letters
+// in it stay as they are.
+func PhoneticArabic(latin string) string {
+	return engine.Text(latin, engine.DefaultOptions())
+}
+
+func onlyReference(s string) bool {
+	for _, r := range s {
+		if !(r >= '0' && r <= '9' || r == ':' || r == '-' || r == ' ') {
+			return false
+		}
+	}
+	return true
+}
+
+// Search: a reference ("2:255", "baqarah 255-257") first, then sūrah names, then āyāt. Arabic letters
+// search the Arabic; Latin searches the Arabic (read the Qalam way) or the translation, as in says;
+// Bangla letters search a Bangla translation.
+func (l *Library) Search(raw string, in SearchIn, translation string, limit int) Results {
+	q := strings.Trim(raw, " \t")
+	var res Results
+	if q == "" {
+		return res
+	}
+	digits := strings.ContainsAny(q, "0123456789")
+	if digits {
+		if p, ok := l.Resolve(q); ok {
+			if _, err := strconv.Atoi(q); err == nil || l.ParseQuery(q).From != 0 {
+				res.Rows = append(res.Rows, Suggestion{Kind: KindPassage, Passage: p})
+			}
+		} else if pq := l.ParseQuery(q); len(pq.Surahs) > 0 && pq.From != 0 {
+			s := pq.Surahs[0]
+			res.Rows = append(res.Rows, Suggestion{Kind: KindProblem, Text: fmt.Sprintf("%s has %d āyāt", s.Name, s.Ayahs)})
+		}
+	} else {
+		for i, s := range l.ParseQuery(q).Surahs {
+			if i == 4 {
+				break
+			}
+			res.Rows = append(res.Rows, Suggestion{Kind: KindSurah, Surah: s})
+		}
+	}
+	var hits []Passage
+	script := Script(q)
+	switch {
+	case script == "arabic" && !hasLatinLetter(q):
+		hits, res.Total = l.SearchArabic(q, false, limit)
+		res.SearchedIn = "the Arabic (harakat optional)"
+	case script == "arabic": // pasted Arabic and typed Latin: the Latin read the Qalam way
+		res.Arabic = PhoneticArabic(q)
+		hits, res.Total = l.SearchArabic(res.Arabic, true, limit)
+		res.SearchedIn = "the Arabic"
+	case script == "latin" && in == InArabic && !onlyReference(q):
+		res.Arabic = PhoneticArabic(q)
+		hits, res.Total = l.SearchArabic(res.Arabic, true, limit)
+		res.SearchedIn = "the Arabic"
+	case script == "latin" && onlyReference(q):
+	default:
+		res.Translation = l.SearchTranslationFor(script, translation)
+		hits, res.Total = l.SearchTranslation(res.Translation, q, limit)
+		res.SearchedIn = res.Translation
+		if t := l.Translation(res.Translation); t != nil {
+			res.SearchedIn = t.Title()
+		}
+	}
+	for _, p := range hits {
+		res.Rows = append(res.Rows, Suggestion{Kind: KindHit, Passage: p, InTranslation: res.Translation})
+	}
+	return res
 }
 
 // Resolve is the passage a query means ("112" = the whole sūrah).
@@ -543,7 +589,14 @@ func Bare(s string, daggerAlif bool) string {
 			b.WriteRune(r)
 		}
 	}
-	return strings.ReplaceAll(b.String(), "اا", "ا")
+	// ءا (the mushaf's ءَامَنُوا۟) = آ = ا; a doubled alif counts once.
+	return strings.ReplaceAll(strings.ReplaceAll(b.String(), "ءا", "ا"), "اا", "ا")
+}
+
+// joined is a bare text without spaces: the mushaf joins some words (يَٰٓأَيُّهَا, يَٰبَنِىٓ),
+// people type them apart (يا أيها).
+func joined(s string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(s, " ", ""), "اا", "ا")
 }
 
 // For Latin typed phonetically: letters an English typist mixes up count as one.
@@ -600,14 +653,16 @@ func (l *Library) prepare() {
 			l.keys = append(l.keys, surahKeys(s))
 		}
 		t := l.lines("quran-uthmani")
-		basmala := l.basmala()
 		for i, s := range t {
 			if su, a := l.position(i); a == 1 && su != 1 {
-				s = strings.TrimPrefix(s, basmala)
+				s = dropBasmala(s)
 			}
 			b := [2]string{Bare(s, false), Bare(s, true)}
+			lo := [2]string{Loose(b[0]), Loose(b[1])}
 			l.bareArabic = append(l.bareArabic, b)
-			l.looseArabic = append(l.looseArabic, [2]string{Loose(b[0]), Loose(b[1])})
+			l.looseArabic = append(l.looseArabic, lo)
+			l.joinedArabic = append(l.joinedArabic, [2]string{joined(b[0]), joined(b[1])})
+			l.joinedLoose = append(l.joinedLoose, joined(lo[1]))
 			l.lightArabic = append(l.lightArabic, light(t[i]))
 		}
 	})
@@ -641,20 +696,32 @@ func (l *Library) SearchArabic(query string, phonetic bool, limit int) ([]Passag
 	if hasHarakat(query) {
 		typed = light(query)
 	}
-	// Order: your harakat too → the same letters → (typed in Latin) similar letters.
-	var exact, letters, similar []int
+	qj, qja, qlj := joined(q), joined(qa), joined(ql)
+	byJoined, looseJoined := runeCount(qj) >= 4, runeCount(qlj) >= 4
+	// Order: your harakat too → the same letters → the same letters with the mushaf's spacing →
+	// (typed in Latin) similar letters, e.g. rahmaan → ٱلرَّحْمَٰنِ.
+	// strings.Contains works on bytes, so it matches inside a cluster of marks too.
+	var exact, letters, spacing, similar []int
 	for i, t := range l.bareArabic {
-		if strings.Contains(t[0], q) || strings.Contains(t[1], q) || strings.Contains(t[1], qa) {
+		switch {
+		case strings.Contains(t[0], q) || strings.Contains(t[1], q) || strings.Contains(t[1], qa):
 			if typed != "" && strings.Contains(l.lightArabic[i], typed) {
 				exact = append(exact, i)
 			} else {
 				letters = append(letters, i)
 			}
-		} else if phonetic && runeCount(ql) >= 3 && (strings.Contains(l.looseArabic[i][0], ql) || strings.Contains(l.looseArabic[i][1], ql)) {
+		case byJoined && (strings.Contains(l.joinedArabic[i][0], qj) || strings.Contains(l.joinedArabic[i][1], qja)):
+			spacing = append(spacing, i)
+		case phonetic && runeCount(ql) >= 3 && (strings.Contains(l.looseArabic[i][0], ql) || strings.Contains(l.looseArabic[i][1], ql) ||
+			looseJoined && strings.Contains(l.joinedLoose[i], qlj)):
 			similar = append(similar, i)
 		}
 	}
-	all := append(append(exact, letters...), similar...)
+	return l.passages(append(append(append(exact, letters...), spacing...), similar...), limit)
+}
+
+// passages turns line indexes into one-āyah passages (at most limit), and gives how many there were.
+func (l *Library) passages(all []int, limit int) ([]Passage, int) {
 	var hits []Passage
 	for _, i := range all {
 		if len(hits) >= limit {
@@ -664,6 +731,79 @@ func (l *Library) SearchArabic(query string, phonetic bool, limit int) ([]Passag
 		hits = append(hits, Passage{s, a, a})
 	}
 	return hits, len(all)
+}
+
+// SearchTranslation finds āyāt whose translation contains every word of query (case and accents
+// ignored, Bangla written with or without a hasant at the end of a word).
+func (l *Library) SearchTranslation(id, query string, limit int) ([]Passage, int) {
+	words := strings.FieldsFunc(FoldText(query), func(r rune) bool { return unicode.IsSpace(r) || unicode.IsPunct(r) })
+	if len(words) == 0 || runeCount(strings.Join(words, "")) < 2 {
+		return nil, 0
+	}
+	l.mu.Lock()
+	folded, ok := l.folded[id]
+	l.mu.Unlock()
+	if !ok {
+		t := l.lines(id)
+		if t == nil {
+			return nil, 0
+		}
+		folded = make([]string, len(t))
+		for i, s := range t {
+			folded[i] = FoldText(s)
+		}
+		l.mu.Lock()
+		if l.folded == nil {
+			l.folded = map[string][]string{}
+		}
+		l.folded[id] = folded
+		l.mu.Unlock()
+	}
+	var all []int
+	for i, t := range folded {
+		every := true
+		for _, w := range words {
+			if !strings.Contains(t, w) {
+				every = false
+				break
+			}
+		}
+		if every {
+			all = append(all, i)
+		}
+	}
+	return l.passages(all, limit)
+}
+
+// FoldText evens out case, accents (ā = a, Ṣ = s), joiners and Bangla spellings: the nukta letters
+// and the two-part vowel signs as their parts (য় = য + ়), a hasant not followed by a consonant
+// dropped (আল্লাহ্‌র = আল্লাহর). Like the Mac's decomposed, lowercased text.
+func FoldText(s string) string {
+	in := []rune(strings.ToLower(s))
+	var b strings.Builder
+	for i, r := range in {
+		switch {
+		case r >= 0x0300 && r <= 0x036F, r == 0x200C, r == 0x200D: // accents, joiners
+		case r == 0x09CD && (i+1 == len(in) || !bengaliConsonant(in[i+1])):
+		case r == 0x09DC:
+			b.WriteString("\u09A1\u09BC")
+		case r == 0x09DD:
+			b.WriteString("\u09A2\u09BC")
+		case r == 0x09DF:
+			b.WriteString("\u09AF\u09BC")
+		case r == 0x09CB:
+			b.WriteString("\u09C7\u09BE")
+		case r == 0x09CC:
+			b.WriteString("\u09C7\u09D7")
+		default:
+			if base, ok := accentBase(r); ok {
+				b.WriteByte(base)
+			} else {
+				b.WriteRune(r)
+			}
+		}
+	}
+	return b.String()
 }
 
 // ForKFGQPC: the KFGQPC Hafs font draws three Tanzil marks as a dotted circle, so they're swapped
@@ -706,4 +846,35 @@ func (l *Library) Text(p Passage, mode Insert, translation string) string {
 		sep = "\n\n"
 	}
 	return strings.Join(out, sep)
+}
+
+func bengaliConsonant(r rune) bool {
+	return r >= 0x0995 && r <= 0x09B9 || r == 0x09DC || r == 0x09DD || r == 0x09DF
+}
+
+// The plain letter of each accented Latin letter (À–ɏ, Ḁ–ỿ), "." where there is none; made from
+// Unicode's decompositions, as the Mac's decomposedStringWithCanonicalMapping does.
+const (
+	accentsLatin = "aaaaaa.ceeeeiiii.nooooo..uuuuy..aaaaaa.ceeeeiiii.nooooo..uuuuy.y" +
+		"aaaaaaccccccccdd..eeeeeeeeeegggggggghh..iiiiiiiii...jjkk.llllll." +
+		"...nnnnnn...oooooo..rrrrrrsssssssstttt..uuuuuuuuuuuuwwyyyzzzzzz." +
+		"................................oo.............uu..............." +
+		".............aaiioouuuuuuuuuu.aaaa....ggkkoooo..j...gg..nnaa...." +
+		"aaaaeeeeiiiioooorrrruuuusstt..hh......aaeeooooooooyy............" +
+		"................"
+	accentsExtra = "aabbbbbbccddddddddddeeeeeeeeeeffgghhhhhhhhhhiiiikkkkkkllllllllmm" +
+		"mmmmnnnnnnnnoooooooopppprrrrrrrrssssssssssttttttttuuuuuuuuuuvvvv" +
+		"wwwwwwwwwwxxxxyyzzzzzzhtwy......aaaaaaaaaaaaaaaaaaaaaaaaeeeeeeee" +
+		"eeeeeeeeiiiioooooooooooooooooooooooouuuuuuuuuuuuuuyyyyyyyy......"
+)
+
+func accentBase(r rune) (byte, bool) {
+	var c byte = '.'
+	switch {
+	case r >= 0x00C0 && r <= 0x024F:
+		c = accentsLatin[r-0x00C0]
+	case r >= 0x1E00 && r <= 0x1EFF:
+		c = accentsExtra[r-0x1E00]
+	}
+	return c, c != '.'
 }

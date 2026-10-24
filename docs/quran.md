@@ -3,7 +3,7 @@
 Qalam carries the whole Qur'an (Uthmani script, full harakat, from the [Tanzil Project](https://tanzil.net)) with
 translations: **English**: Saheeh International, Mufti Taqi Usmani; **Bangla**: Muhiuddin Khan, Bayaan Foundation,
 Sheikh Mujibur Rahman, Taisirul Quran (Tawheed Publication), Dr. Abu Bakr Zakaria, Zohurul Hoque; **Urdu**: Mufti Taqi Usmani.
-On the Mac more can be downloaded in the app. Windows has the insert box with the three bundled translations.
+On the Mac more can be downloaded in the app. Windows has the insert box with all nine bundled translations.
 
 ## Insert āyāt while typing (Mac: Control-Shift-Q · Windows: Ctrl+Alt+Q)
 
@@ -29,21 +29,32 @@ The setup's **Qur'an box** step (also in **Settings → Qur'an box**) shows both
 they're on. After a Qalam update macOS forgets the Accessibility permission (it belongs to the exact build);
 **Allow…** clears the old entry so you can switch it on again.
 
-**Windows.** Press **Ctrl+Alt+Q** (Qalam running in the tray, Arabic on or off):
+**Windows.** Press **Ctrl+Alt+Q** (Qalam running in the tray, Arabic on or off). The same box as on the Mac
+opens in the middle of the screen, on the last āyāt you inserted:
 
-1. Pick with the three dropdowns, by mouse or keyboard: **Sūrah ▾**  **From āyah ▾**  **To āyah ▾**.
-   The preview underneath shows the āyāt in the Qur'an font. Click **Insert** (or press Enter).
+1. **Search** at the top, **Arabic** by default: type part of an āyah the Qalam way (`qul huwa allaahu`) and
+   the field shows it in Arabic (Backspace removes the last key, Ctrl+Backspace empties the field). Harakat
+   are optional, and words the mushaf joins (يَٰٓأَيُّهَا) match when typed apart. `2:255`,
+   `baqarah 255-257` and sūrah names work too. Click **Translation** next to the field to search the
+   translation's words instead (the chosen one if it's English, otherwise Saheeh International).
+2. The results show under the field (five rows, then the list scrolls with ↑ / ↓ or the mouse wheel). The
+   chosen one fills **Sūrah**, **From āyah** and **To āyah**; a double-click inserts it.
+3. Set the range with the dropdowns (a click opens a menu; or **Tab** to them, see below). The preview
+   shows the āyāt in the Qur'an font, with the translation under each when it goes in too.
+4. At the bottom choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation.
+5. **Insert** (Enter). **Esc** clears the search, then closes the box.
 
    | Key | Does |
    |---|---|
-   | ↑ / ↓ | change the highlighted dropdown |
-   | ← / → or Tab | go to the next dropdown |
-   | type `36` or `yasin` | jump to that sūrah |
-   | type `2:255-257` | fill all three at once |
-   | `/` | open **Search** (a word, harakat optional) |
-   | Esc | close |
+   | letters, Space | search (Ctrl+V pastes Arabic or Bangla letters, which search the Arabic / a Bangla translation) |
+   | ↑ / ↓ | choose a result |
+   | Tab / Shift+Tab | go to **Sūrah**, **From āyah**, **To āyah** and back to the search |
+   | on a dropdown: ↑ / ↓ | change it; type `36` or `yasin`, or `2:255-257` to fill all three; `/` back to the search |
+   | Enter | insert |
+   | Esc | clear the search; again: close |
 
-2. At the bottom choose what goes in and which translation.
+The box is short at first and grows downward only when results or more āyāt need room. A long passage shows
+its first āyāt and "… and N more" (all of them are inserted).
 
 Each āyah ends with its reference, like `(2:255)`. With a translation, the Arabic line comes first and the
 translation under it.
@@ -54,15 +65,15 @@ The shortcut can be changed in **Qalam → Settings → Shortcuts** on the Mac (
 
 **Windows notes**
 
-- Keys are read on the US layout, like Qalam's typing. To search in Arabic letters, copy them and press
-  **Ctrl+V** in the Search tab; or type the Latin (`rahmaan`).
+- Keys are read on the US layout, like Qalam's typing, and the box never takes the focus from your app.
+  To search in Arabic or Bangla letters, copy them and press **Ctrl+V** in the box.
 - A click on a dropdown opens a Windows menu (long lists in columns). The menu has the focus while it is
   open; your app gets it back as soon as you pick.
 - Lines are separated with **Shift+Enter**, so in chat apps (WhatsApp, Teams, Slack) the āyah and its
   translation stay in one message instead of sending it.
 - Clicking another window or pressing another Ctrl/Alt shortcut closes the box.
 - In Chrome-based apps the same invisible fix as for typing keeps اللَّه from turning into the font's ligature.
-- Searching inside the translations is Mac only.
+- The box is sized for the screen it opens on (its DPI), and Bangla translations show in Nirmala UI.
 
 The box shows the Arabic in the Qur'an font (KFGQPC Hafs); what goes into your app takes that app's font.
 For the Qur'an font in Pages, Word or Notes on the Mac, use **Copy** on the app's Qur'an page (it copies

@@ -2,14 +2,16 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"qalam/quran"
 )
 
-// quranPick is the Qur'an box's Choose tab: three dropdowns (Sūrah, From āyah, To āyah), the same as
-// on the Mac. Keys: ↑↓ change the highlighted one, ←→/Tab move, typing 36 or yasin jumps to a sūrah,
-// 2:255-257 fills all three. Kept apart from the window code so it can be tested anywhere.
+// quranPick is the Qur'an box's three dropdowns (Sūrah, From āyah, To āyah), the same as on the Mac.
+// When Tab has moved to them: ↑↓ change the highlighted one, ←→/Tab move, typing 36 or yasin jumps to
+// a sūrah, 2:255-257 fills all three. Kept apart from the window code so it can be tested anywhere.
 type quranPick struct {
 	Surah, From, To int
 	Field           int    // 0 Sūrah, 1 From, 2 To
@@ -82,7 +84,7 @@ func (p *quranPick) move(d int) {
 	p.Typed = ""
 }
 
-// typeRune handles a typed character; true when it means "open Search" ("/").
+// typeRune handles a typed character; true when it means "back to the search field" ("/").
 func (p *quranPick) typeRune(lib *quran.Library, r rune) bool {
 	switch {
 	case r == '/':
@@ -156,4 +158,118 @@ func clamp(v, lo, hi int) int {
 		return hi
 	}
 	return v
+}
+
+// quranBox is the whole box: the search field on top, the results under it, the dropdowns, and
+// where the keys go (the field, or the dropdowns after Tab).
+type quranBox struct {
+	Pick   quranPick
+	OnPick bool           // Tab moved the keys to the dropdowns (Pick.Field is the one)
+	Keys   string         // what's typed in the field: Latin keys, or pasted text
+	In     quran.SearchIn // where Latin letters are searched
+	Res    quran.Results
+	Sel    int // the chosen result, -1 = none
+	Top    int // the first result row showing (the list scrolls)
+}
+
+const quranVisibleRows = 5 // results shown before the list scrolls
+const quranResultLimit = 200
+
+func newQuranBox(lib *quran.Library, last string) quranBox {
+	return quranBox{Pick: newQuranPick(lib, last), Sel: -1}
+}
+
+func hasLatinLetter(s string) bool {
+	for _, r := range s {
+		if r < 0x80 && unicode.IsLetter(r) {
+			return true
+		}
+	}
+	return false
+}
+
+// shown is what the field shows: in Arabic mode Latin letters as Qalam writes them (qul → قُلْ).
+func (b *quranBox) shown() string {
+	if b.In == quran.InArabic && hasLatinLetter(b.Keys) && quran.Script(b.Keys) != "bangla" {
+		return quran.PhoneticArabic(b.Keys)
+	}
+	return b.Keys
+}
+
+// shownIsArabic: the field's text is drawn right to left in the Qur'an font.
+func (b *quranBox) shownIsArabic() bool { return quran.Script(b.shown()) == "arabic" }
+
+func (b *quranBox) query() string { return strings.Trim(b.Keys, " \t") }
+
+// typeText adds typed or pasted text to the field (the keys go back to it).
+func (b *quranBox) typeText(s string) {
+	b.OnPick = false
+	b.Keys += s
+}
+
+// backspace removes the last key typed (or the last letter pasted).
+func (b *quranBox) backspace() bool {
+	if b.Keys == "" {
+		return false
+	}
+	_, size := utf8.DecodeLastRuneInString(b.Keys)
+	b.Keys = b.Keys[:len(b.Keys)-size]
+	return true
+}
+
+// clear empties the field and the results; the dropdowns keep what they show.
+func (b *quranBox) clear() {
+	b.Keys, b.Res, b.Sel, b.Top = "", quran.Results{}, -1, 0
+}
+
+// setResults shows a search's rows and chooses the first.
+func (b *quranBox) setResults(res quran.Results) {
+	b.Res, b.Sel, b.Top = res, -1, 0
+	if len(res.Rows) > 0 {
+		b.choose(0)
+	}
+}
+
+// move: ↑ (-1) or ↓ (+1) through the results, round at the ends.
+func (b *quranBox) move(d int) {
+	if n := len(b.Res.Rows); n > 0 {
+		b.choose(((b.Sel+d)%n + n) % n)
+	}
+}
+
+// choose a result: it fills Sūrah / From / To, and the list scrolls to show it.
+func (b *quranBox) choose(i int) {
+	if i < 0 || i >= len(b.Res.Rows) {
+		return
+	}
+	b.Sel = i
+	if i < b.Top {
+		b.Top = i
+	} else if i >= b.Top+quranVisibleRows {
+		b.Top = i - quranVisibleRows + 1
+	}
+	r := b.Res.Rows[i]
+	switch r.Kind {
+	case quran.KindSurah:
+		b.Pick.Surah, b.Pick.From, b.Pick.To = r.Surah.Number, 1, 1
+	case quran.KindPassage:
+		b.Pick.Surah, b.Pick.From, b.Pick.To = r.Passage.Surah, r.Passage.From, r.Passage.To
+	case quran.KindHit:
+		b.Pick.Surah, b.Pick.From, b.Pick.To = r.Passage.Surah, r.Passage.From, r.Passage.From
+	}
+	b.Pick.Typed = ""
+}
+
+// tab: Tab (+1) / Shift+Tab (-1) goes field → Sūrah → From → To → field.
+func (b *quranBox) tab(d int) {
+	pos := 0
+	if b.OnPick {
+		pos = 1 + b.Pick.Field
+	}
+	pos = (pos + d + 4) % 4
+	b.OnPick = pos > 0
+	if b.OnPick {
+		b.Pick.Field = pos - 1
+	}
+	b.Pick.Typed = ""
 }
