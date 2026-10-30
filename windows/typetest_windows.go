@@ -36,6 +36,7 @@ var (
 	pBringWindowToTop   = user32.NewProc("BringWindowToTop")
 	pSetFocus           = user32.NewProc("SetFocus")
 	pGetWindowRect      = user32.NewProc("GetWindowRect")
+	pGetClassNameW      = user32.NewProc("GetClassNameW")
 	pAttachThreadInput  = user32.NewProc("AttachThreadInput")
 	pGetCurrentThreadId = kernel32.NewProc("GetCurrentThreadId")
 	pSetCursorPos       = user32.NewProc("SetCursorPos")
@@ -140,7 +141,20 @@ func typeTest(out string) int {
 	}
 	want := func(s string) string { return engine.Text(s, engine.DefaultOptions()) }
 	onUI := func(h uintptr) {
-		tap(0x87) // F24, nothing uses it: a key press lets this process take the foreground
+		fgInfo := func(tag string) {
+			f, _, _ := pGetForegroundWindow.Call()
+			var pid uint32
+			pGetWindowThreadProcessId.Call(f, uintptr(unsafe.Pointer(&pid)))
+			class := make([]uint16, 128)
+			pGetClassNameW.Call(f, uintptr(unsafe.Pointer(&class[0])), 128)
+			log = append(log, fmt.Sprintf("info %s: front %x class=%s title=%q exe=%s", tag, f, syscall.UTF16ToString(class), windowTitle(f), processPath(pid)))
+		}
+		fgInfo("before")
+		pSetCursorPos.Call(100, 60) // the test window's title bar: a real click brings it forward
+		pMouseEvent.Call(0x0002, 0, 0, 0, 0)
+		pMouseEvent.Call(0x0004, 0, 0, 0, 0)
+		time.Sleep(400 * time.Millisecond)
+		fgInfo("after click")
 		runOnUI(func() {
 			fg0, _, _ := pGetForegroundWindow.Call()
 			ft, _, _ := pGetWindowThreadProcessId.Call(fg0, 0)
