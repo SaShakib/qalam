@@ -76,8 +76,8 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "self-test failed ($($p.ExitCode))" }
       - name: Type into real text boxes
         run: |
-          # The ARM image opens a WSL prompt at start, which keeps the focus.
-          Stop-Process -Name WindowsTerminal, wsl, OpenConsole -Force -ErrorAction SilentlyContinue
+          # The ARM image opens a WSL prompt and a Microsoft account sign-in at start; they keep the focus.
+          Stop-Process -Name WindowsTerminal, wsl, OpenConsole, WWAHost -Force -ErrorAction SilentlyContinue
           Start-Sleep -Seconds 2
           Get-Process | Where-Object { $_.MainWindowTitle } | Format-Table Id, ProcessName, MainWindowTitle
           $p = Start-Process -FilePath dist\Qalam-Windows-${{ matrix.arch }}.exe -ArgumentList '--typetest', "$PWD\typetest.txt" -PassThru

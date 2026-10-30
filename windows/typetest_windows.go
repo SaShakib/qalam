@@ -277,7 +277,18 @@ func typeTest(out string) int {
 				pMouseEvent.Call(0x0002, 0, 0, 0, 0) // left button down
 				pMouseEvent.Call(0x0004, 0, 0, 0, 0) // and up
 				time.Sleep(500 * time.Millisecond)
-				read := func() string { time.Sleep(160 * time.Millisecond); return strings.TrimPrefix(windowTitle(eh), "v:") }
+				read := func() string { // the window title follows the page with a delay: wait until it settles
+					last := ""
+					for i := 0; i < 12; i++ {
+						time.Sleep(150 * time.Millisecond)
+						now := windowTitle(eh)
+						if i > 2 && now == last {
+							break
+						}
+						last = now
+					}
+					return strings.TrimPrefix(last, "v:")
+				}
 				noZWJ := func(s string) string { return strings.ReplaceAll(s, "\u200D", "") }
 				for _, k := range "kataba" { // key by key: every step must arrive
 					press(string(k))
