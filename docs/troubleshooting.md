@@ -46,9 +46,13 @@ That window is probably running **as administrator** (for example an admin Comma
 
 Click **More info → Run anyway**. It appears once, for the downloaded installer. See [Install on Windows](install-windows.md).
 
-### The setup page says "Qalam isn't answering"
+### The Qalam window says "Qalam isn't answering"
 
-The page talks to the running Qalam. If you quit Qalam or restarted the PC, open the page again from the tray: right-click **ق** → **Setup & settings…** (each start gives the page a new address).
+The window talks to the running Qalam. If you quit Qalam, start it again from the Start menu.
+
+### Text goes wrong in one app while typing
+
+Qalam writes the word into the app as you type, and changes it with Backspace. If an app deletes more than one mark at a time, switch off **Settings → While typing → Show the word in the app as you type**. The word then waits in Qalam's box until **Space**.
 
 ### اللَّه shows a doubled shadda or alif
 

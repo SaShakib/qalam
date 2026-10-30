@@ -27,7 +27,7 @@ Change one when it clashes with a shortcut you use in another app.
 
 **Windows**
 
-1. Right-click **ق** in the tray → **Shortcuts** → click the one to change (or use **Setup & settings…** → Shortcuts → **Change**).
+1. Right-click **ق** in the tray → **Shortcuts** → click the one to change (or **Qalam window → Settings** → Shortcuts → **Change**).
 2. A message asks you to press the new shortcut. Hold **Ctrl** or the **left Alt** key with a key.
    - **Backspace** removes the shortcut. **Esc** cancels.
 3. **Reset to Ctrl+Alt+A / O / Q** puts the defaults back (Ctrl+Alt+A, Ctrl+Alt+O, Ctrl+Alt+Q).

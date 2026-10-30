@@ -20,12 +20,17 @@ The **Download** button on the [website](https://sashakib.github.io/qalam/) pick
 
 The installer puts Qalam in `%LOCALAPPDATA%\Programs\Qalam`, adds it to the Start menu, and lists it in **Settings → Apps** so you can uninstall it like any app.
 
-## 3. Find Qalam in the tray
+## 3. The Qalam window and the tray
 
-Qalam lives in the **system tray**, bottom right of the taskbar (click **^** if you don't see it). The **ق** icon is green when Arabic typing is on.
+When Qalam starts, its **window** opens, like the Mac app: **Home**, **Letters & keys**, **Word list**, **Practice**, **Write**, **Qur'an** and **Settings**. The first time, it shows the setup steps. Open it any time from the Start menu.
 
-- **Ctrl + Alt + A** switches Arabic on and off (or click the ق icon).
-- **Right-click ق** for every setting, including **Setup & settings…**
+Closing the window keeps Qalam running, so you can type Arabic everywhere. It lives in the **system tray**, bottom right of the taskbar (click **^** if you don't see it). The **ق** icon is green when Arabic typing is on.
+
+- **Ctrl + Alt + A** switches Arabic on and off.
+- **Click ق** to open the window. **Right-click ق** for the menu.
+- At sign-in Qalam starts in the tray only, without opening the window.
+
+The window uses Microsoft's WebView2, which comes with Windows 11 and with Edge on Windows 10. Without it, Qalam opens the same page in an Edge app window or your browser.
 
 > Drag the ق icon from the **^** area onto the taskbar so it's always visible.
 

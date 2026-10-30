@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Qalam Setup</title>
+<title>Qalam Settings</title>
 <style>
   @font-face { font-family: "Qalam Arabic"; src: url("/arabic.ttf?t=TOKEN") format("truetype"); }
   :root {
@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-<div id="offline">Qalam isn't answering. Is it still running? Open this page again from the ق tray icon → Setup &amp; settings…</div>
+<div id="offline">Qalam isn't answering. Is it still running? Open it again from the ق tray icon.</div>
 <header>
   <div class="logo">قَلَم</div>
   <div><h1 id="title">Set up Qalam</h1><div class="sub">Version <span id="ver"></span> · Changes are saved as you make them.</div></div>
@@ -75,7 +75,7 @@
     <h2>Welcome to Qalam</h2>
     <p class="lead">Type Arabic the way you spell it: each letter, then its haraka. Sukūn and shadda appear by themselves. These steps take about two minutes, and you can change everything later from the <b>ق</b> icon in the system tray.</p>
     <div class="samples" id="welcomeSamples"></div>
-    <p>Qalam is already running. Try it here: type <kbd>kataba</kbd> then <kbd>Space</kbd>.</p>
+    <p>Qalam is already running. Try it here: type <kbd>kataba</kbd>, and <kbd>Space</kbd> finishes the word.</p>
     <textarea placeholder="Type here" spellcheck="false"></textarea>
   </section>
 
@@ -83,7 +83,7 @@
     <h2>Switch between Arabic and English</h2>
     <p class="lead">Qalam works in every app. Turn it on when you want Arabic, off for English.</p>
     <div class="row"><div class="grow"><b>Shortcut</b><div class="d">Press it anywhere to switch.</div></div><kbd id="toggleKey"></kbd></div>
-    <div class="row"><div class="grow"><b>Or click the tray icon</b><div class="d">Bottom right of the taskbar (under ^ if hidden). Green ق = Arabic on. Right-click it for every setting.</div></div></div>
+    <div class="row"><div class="grow"><b>The tray icon</b><div class="d">Bottom right of the taskbar (under ^ if hidden). Green ق = Arabic on. Click it to open Qalam, right-click for the menu.</div></div></div>
     <div class="row"><div class="grow"><b>Arabic typing is</b> <span id="enabledText"></span></div><button class="btn" id="enabledBtn"></button></div>
     <div class="note">While you type a word, a small box shows the Arabic. <kbd>Space</kbd> or punctuation puts it in, <kbd>Backspace</kbd> removes the last English key, <kbd>Esc</kbd> gives back the English letters.</div>
   </section>
@@ -119,6 +119,7 @@
   <section class="step" data-title="While typing">
     <h2>While you type</h2>
     <p class="lead">Small helpers you can switch off.</p>
+    <div class="row"><div class="grow"><b>Show the word in the app as you type</b><div class="d">The Arabic appears at the cursor and changes as you type, like on a Mac. Switch this off if an app misbehaves: the word then waits in Qalam's box until <kbd>Space</kbd>.</div></div><input type="checkbox" name="inlineTyping"></div>
     <div class="row"><div class="grow"><b>Show options while typing</b><div class="d">Up to 4 versions of the word (another hamza seat, no harakat, small alif). <kbd>↑</kbd> <kbd>↓</kbd> choose, Space puts it in. Qalam remembers what you pick.</div></div><input type="checkbox" name="showOptions"></div>
     <div class="row"><div class="grow"><b>Smart spelling</b><div class="d">Words written differently from how they sound: <span class="ar" style="font-size:20px" data-preview="allaAh ha^dhaA dha^lika" data-patch='{"spellingWords":true}'></span></div></div><input type="checkbox" name="spellingWords"></div>
     <div class="row"><div class="grow"><b>Arabic digits</b><div class="d">١٢٣ instead of 123</div></div><input type="checkbox" name="arabicDigits"></div>
@@ -126,7 +127,7 @@
 
   <section class="step" data-title="Shortcuts">
     <h2>Shortcuts</h2>
-    <p class="lead">Change any that clash with shortcuts you already use. Click <b>Change</b>, then press the new keys anywhere (hold Ctrl or the left Alt). The buttons in the typing box always work too.</p>
+    <p class="lead">Change any that clash with shortcuts you already use. Click <b>Change</b>, then press the new keys anywhere (hold Ctrl or the left Alt). The buttons in the typing box always work too. The Qur'an shortcut opens the box for inserting āyāt in any app.</p>
     <div id="keys"></div>
     <div class="note" id="recordNote" hidden>Press the new shortcut now… <kbd>Esc</kbd> cancels, <kbd>Backspace</kbd> means no shortcut.</div>
     <p><button class="btn" data-action="resetKeys">Reset to Ctrl+Alt+A / O / Q</button></p>
@@ -151,7 +152,7 @@
     <h2>You're ready</h2>
     <p class="lead">An optional 20-word practice teaches every special key (about 5 minutes). The guide also has the full letter chart.</p>
     <p><button class="btn primary" data-action="guide">Open the practice and letter chart</button></p>
-    <div class="note">Settings are always in the tray menu: right-click <b>ق</b> → <b>Setup &amp; settings…</b></div>
+    <div class="note">Press <kbd>Ctrl+Alt+Q</kbd> in any app to insert āyāt. Click <b>ق</b> in the tray for this window; closing it keeps Qalam running.</div>
   </section>
 </main>
 <footer class="nav"><div class="in">

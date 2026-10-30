@@ -72,7 +72,11 @@ Name: "{userdesktop}\Qalam"; Filename: "{app}\Qalam.exe"; Tasks: desktopicon
 [Registry]
 ; The same value the tray menu's "Start with Windows" switches.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Qalam"; \
-  ValueData: """{app}\Qalam.exe"""; Tasks: startup; Flags: uninsdeletevalue
+  ValueData: """{app}\Qalam.exe"" --tray"; Tasks: startup; Flags: uninsdeletevalue
+
+[UninstallDelete]
+; The app window's browser data (WebView2).
+Type: filesandordirs; Name: "{localappdata}\Qalam"
 
 [Run]
 ; The Arabic fonts (SIL Scheherazade New, and KFGQPC Hafs when included) for every app, for this user.

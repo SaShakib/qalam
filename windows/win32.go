@@ -28,7 +28,11 @@ var (
 	pDestroyWindow                 = user32.NewProc("DestroyWindow")
 	pShowWindow                    = user32.NewProc("ShowWindow")
 	pSetWindowPos                  = user32.NewProc("SetWindowPos")
-	pGetKeyState                   = user32.NewProc("GetKeyState")
+	pGetAsyncKeyState              = user32.NewProc("GetAsyncKeyState")
+	pWindowFromPoint               = user32.NewProc("WindowFromPoint")
+	pAllowSetForegroundWindow      = user32.NewProc("AllowSetForegroundWindow")
+	pIsIconic                      = user32.NewProc("IsIconic")
+	pSendMessageW                  = user32.NewProc("SendMessageW")
 	pSendInput                     = user32.NewProc("SendInput")
 	pGetForegroundWindow           = user32.NewProc("GetForegroundWindow")
 	pGetWindowThreadProcessId      = user32.NewProc("GetWindowThreadProcessId")
@@ -84,6 +88,10 @@ var (
 
 const (
 	whKeyboardLL     = 13
+	whMouseLL        = 14
+	wmRButtonDown    = 0x0204
+	wmMButtonDown    = 0x0207
+	swRestore        = 9
 	wmKeyDown        = 0x0100
 	wmSysKeyDown     = 0x0104
 	wmDestroy        = 0x0002
@@ -162,6 +170,14 @@ type msg struct {
 	LPrivate uint32
 }
 
+type msllHook struct {
+	Pt          point
+	MouseData   uint32
+	Flags       uint32
+	Time        uint32
+	DwExtraInfo uintptr
+}
+
 type kbdllHook struct {
 	VkCode      uint32
 	ScanCode    uint32
@@ -169,6 +185,9 @@ type kbdllHook struct {
 	Time        uint32
 	DwExtraInfo uintptr
 }
+
+// qalamMark tags the keys Qalam sends itself (dwExtraInfo).
+const qalamMark = 0x514C4D
 
 // INPUT with the KEYBDINPUT member (64-bit layout, 40 bytes).
 type input struct {
@@ -251,8 +270,10 @@ func copyUTF16(dst []uint16, s string) {
 	copy(dst, u)
 }
 
+// keyDown is the state of a key right now. Not GetKeyState: that follows the keys this thread has
+// read from its queue, and Qalam's thread reads none (a low-level hook sees them before any app).
 func keyDown(vk uintptr) bool {
-	r, _, _ := pGetKeyState.Call(vk)
+	r, _, _ := pGetAsyncKeyState.Call(vk)
 	return int16(r) < 0
 }
 

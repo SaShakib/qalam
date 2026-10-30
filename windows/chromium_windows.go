@@ -30,7 +30,7 @@ func foregroundIsChromium() bool {
 	if uintptr(pid) == lastFgPID {
 		return lastFgChromium
 	}
-	lastFgPID, lastFgChromium = uintptr(pid), isChromiumExe(processPath(pid))
+	lastFgPID, lastFgChromium = uintptr(pid), isChromiumExe(processPath(pid)) || pid == appWindowPID() // the app window is a WebView2
 	return lastFgChromium
 }
 

@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qalam</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --card: #ffffff; --ink: #1d2320; --muted: #5d6762; --line: #e2ded4; --side: #efece4;
+    --accent: #0f7b5f; --accent-ink: #ffffff; --accent-soft: #e3f2ec; --warn: #9a5b00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151917; --card: #1f2522; --ink: #ecefed; --muted: #a3ada8; --line: #313a36; --side: #1a1f1d;
+            --accent: #3fbf93; --accent-ink: #08130f; --accent-soft: #1d3a30; --warn: #f0b35a; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; display: flex; overflow: hidden; }
+  .ar { font-family: "Qalam Arabic", "Segoe UI", serif; direction: rtl; }
+  .qu { font-family: "Qalam Quran", "Qalam Arabic", serif; direction: rtl; }
+  a { color: var(--accent); }
+  kbd { background: var(--card); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; font: 13px "Segoe UI", system-ui, sans-serif; white-space: nowrap; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  .btn { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 13px; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  select, input[type=search] { border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 10px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  nav { width: 212px; flex: none; background: var(--side); border-right: 1px solid var(--line); padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; }
+  nav .brand { display: flex; align-items: baseline; gap: 10px; padding: 2px 10px 14px; }
+  nav .brand b { font-size: 30px; color: var(--accent); line-height: 1.1; font-weight: 400; }
+  nav .brand span { font-size: 13px; color: var(--muted); }
+  nav button { border: 0; background: none; text-align: left; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+  nav button:hover { background: var(--line); }
+  nav button.on { background: var(--accent); color: var(--accent-ink); }
+  nav .grow { flex: 1; }
+  nav .state { font-size: 13px; color: var(--muted); padding: 8px 12px; }
+  nav .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+  nav .dot.on { background: var(--accent); }
+
+  main { flex: 1; min-width: 0; height: 100%; position: relative; }
+  .page { display: none; position: absolute; inset: 0; overflow: auto; }
+  .page.on { display: block; }
+  .page.flex.on { display: flex; }
+  iframe { border: 0; width: 100%; height: 100%; display: block; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 30px 28px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 14px; }
+  .switch { display: flex; align-items: center; gap: 14px; }
+  .switch .grow { flex: 1; }
+  .big { font-size: 17px; font-weight: 600; }
+  .d { color: var(--muted); font-size: 14px; }
+  table.keys { width: 100%; border-collapse: collapse; }
+  table.keys td { padding: 6px 0; border-top: 1px solid var(--line); }
+  table.keys tr:first-child td { border-top: 0; }
+  table.keys td:last-child { text-align: right; }
+  textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); padding: 12px 14px; resize: vertical; font-family: "Qalam Arabic", "Segoe UI", serif; font-size: 24px; line-height: 1.7; }
+  .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .links button { text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; cursor: pointer; }
+  .links button:hover { border-color: var(--accent); }
+  .links b { display: block; }
+
+  /* Qur'an */
+  #surahs { width: 250px; flex: none; border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  #surahs .top { padding: 12px; border-bottom: 1px solid var(--line); }
+  #surahs input { width: 100%; }
+  #surahList { overflow: auto; flex: 1; padding: 6px; }
+  #surahList button { display: grid; grid-template-columns: 30px 1fr auto; gap: 6px; align-items: center; width: 100%; border: 0; background: none; text-align: left; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+  #surahList button:hover { background: var(--line); }
+  #surahList button.on { background: var(--accent-soft); }
+  #surahList .n { color: var(--muted); font-size: 12px; }
+  #surahList .e { display: block; color: var(--muted); font-size: 12px; }
+  #surahList .a { font-size: 19px; }
+  #reader { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+  #bar { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--card); }
+  #bar .search { flex: 1 1 240px; }
+  #bar input { width: 100%; }
+  #bar2 { padding: 8px 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+  #bar2 .grow { flex: 1; }
+  #text { flex: 1; overflow: auto; padding: 8px 22px 40px; }
+  .ayah { padding: 14px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 8px; }
+  .ayah.hit { background: var(--accent-soft); margin: 0 -12px; padding: 14px 12px; border-radius: 8px; }
+  .ayah .ar { font-family: "Qalam Quran", "Qalam Arabic", serif; font-size: 29px; line-height: 2; text-align: right; }
+  .ayah .tr { color: var(--muted); margin-top: 6px; }
+  .ayah .tr.rtl { direction: rtl; text-align: right; font-size: 19px; }
+  .ayah .meta { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+  .ayah .meta button { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; }
+  .basmala { text-align: center; font-size: 28px; padding: 16px 0 6px; font-family: "Qalam Quran", "Qalam Arabic", serif; direction: rtl; }
+  .result { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 10px 2px; cursor: pointer; }
+  .result:hover { background: var(--accent-soft); }
+  .result .ref { font-size: 13px; color: var(--muted); }
+  .result .ar { font-family: "Qalam Quran", "Qalam Arabic", serif; font-size: 24px; display: block; text-align: right; line-height: 1.9; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 7px 16px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .15s; pointer-events: none; }
+  #toast.on { opacity: 1; }
+  @media (max-width: 880px) { #surahs { width: 200px; } nav { width: 170px; } }
+</style>
+</head>
+<body>
+<nav>
+  <div class="brand"><b class="ar">قَلَم</b><span id="ver"></span></div>
+  <button data-page="home">Home</button>
+  <button data-page="letters">Letters &amp; keys</button>
+  <button data-page="words">Word list</button>
+  <button data-page="practice">Practice</button>
+  <button data-page="write">Write</button>
+  <button data-page="quran">Qur'an</button>
+  <button data-page="settings">Settings</button>
+  <div class="grow"></div>
+  <div class="state"><span class="dot" id="dot"></span><span id="stateText"></span></div>
+</nav>
+<main>
+  <section class="page" id="p-home"><div class="wrap">
+    <h1>Qalam</h1>
+    <p class="lead">Type Arabic the way you spell it, in any app. Each letter, then its haraka.</p>
+    <div class="card switch">
+      <div class="grow"><div class="big" id="onTitle"></div><div class="d">Works in every app. Switch any time with <kbd id="kToggle"></kbd>.</div></div>
+      <button class="btn primary" id="onBtn"></button>
+    </div>
+    <div class="card">
+      <h2>Try it</h2>
+      <p class="d" style="margin:0 0 8px">Type <kbd>kataba</kbd> and it appears as you type. <kbd>Space</kbd> finishes the word. <kbd>↑</kbd> <kbd>↓</kbd> choose another spelling.</p>
+      <textarea id="tryBox" rows="2" dir="auto" spellcheck="false" placeholder="Type here"></textarea>
+    </div>
+    <div class="card">
+      <h2>Shortcuts</h2>
+      <table class="keys" id="keysTable"></table>
+      <p class="d" style="margin:8px 0 0">Change them in <a href="#" data-go="settings">Settings</a>.</p>
+    </div>
+    <div class="links">
+      <button data-go="quran"><b>Read and search the Qur'an</b><span class="d">Every sūrah, nine translations, copy any āyāt.</span></button>
+      <button data-go="practice"><b>Practice</b><span class="d">Learn every key in about five minutes.</span></button>
+      <button data-go="settings"><b>Settings</b><span class="d">Style, harakat, sukūn, fonts, start with Windows.</span></button>
+    </div>
+    <p class="d" style="margin-top:18px">Closing this window keeps Qalam running: the <b>ق</b> in the tray (bottom right). To stop it, right-click ق → Quit.</p>
+  </div></section>
+
+  <section class="page" id="p-frame-letters"><iframe title="Letters and keys"></iframe></section>
+  <section class="page" id="p-frame-words"><iframe title="Word list"></iframe></section>
+  <section class="page" id="p-frame-practice"><iframe title="Practice"></iframe></section>
+
+  <section class="page" id="p-write"><div class="wrap">
+    <h1>Write</h1>
+    <p class="lead">A place to write Arabic, then copy it anywhere.</p>
+    <textarea id="writeBox" rows="14" dir="auto" spellcheck="false"></textarea>
+    <p><button class="btn primary" id="writeCopy">Copy</button> <button class="btn" id="writeClear">Clear</button></p>
+  </div></section>
+
+  <section class="page flex" id="p-quran">
+    <div id="surahs">
+      <div class="top"><input type="search" id="surahFilter" placeholder="Filter sūrahs" aria-label="Filter sūrahs"></div>
+      <div id="surahList"></div>
+    </div>
+    <div id="reader">
+      <div id="bar">
+        <div class="search"><input type="search" id="search" placeholder="Search: 2:255, baqarah 255, rahmaan, الرحمن, or a word of the translation" aria-label="Search the Qur'an"></div>
+        <select id="searchIn" aria-label="Search in"><option value="arabic">In the Arabic</option><option value="translation">In the translation</option></select>
+        <select id="trans" aria-label="Translation"></select>
+      </div>
+      <div id="bar2">
+        <b id="surahTitle"></b>
+        <span class="grow"></span>
+        <label>Āyāt <select id="from" aria-label="From āyah"></select></label>
+        <label>to <select id="to" aria-label="To āyah"></select></label>
+        <select id="mode" aria-label="What to copy"><option value="arabic">Arabic only</option><option value="both">Arabic + translation</option><option value="translation">Translation only</option></select>
+        <button class="btn primary" id="copy">Copy</button>
+      </div>
+      <div id="text"></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-frame-settings"><iframe title="Settings"></iframe></section>
+  <section class="page" id="p-frame-setup"><iframe title="Set up Qalam"></iframe></section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+(() => {
+  const token = new URLSearchParams(location.search).get("t") || "";
+  const t = encodeURIComponent(token);
+  const css = document.createElement("style");
+  css.textContent = `@font-face{font-family:"Qalam Arabic";src:url("/arabic.ttf?t=${t}") format("truetype")}
+@font-face{font-family:"Qalam Quran";src:url("/quran.ttf?t=${t}") format("truetype")}`;
+  document.head.append(css);
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  async function api(path, body) {
+    const opts = { headers: { "X-Qalam-Token": token } };
+    if (body !== undefined) { opts.method = "POST"; opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    const r = await fetch(path, opts);
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  let toastTimer;
+  function toast(s) {
+    $("#toast").textContent = s; $("#toast").classList.add("on");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => $("#toast").classList.remove("on"), 1600);
+  }
+
+  // ---------- Pages ----------
+  const frames = {
+    letters: `/guide?t=${t}#letters`, words: `/guide?t=${t}#words`, practice: `/guide?t=${t}#practice`,
+    settings: `/setup?t=${t}#settings`, setup: `/setup?t=${t}`,
+  };
+  function show(page) {
+    if (!page) page = "home";
+    $$(".page").forEach(p => p.classList.remove("on"));
+    const el = $(`#p-${page}`) || $(`#p-frame-${page}`);
+    if (!el) return show("home");
+    el.classList.add("on");
+    const f = el.querySelector("iframe");
+    if (f && !f.getAttribute("src")) f.src = frames[page];
+    $$("nav button").forEach(b => b.classList.toggle("on", b.dataset.page === page || (page === "setup" && b.dataset.page === "settings")));
+    if (page === "quran") startQuran();
+    if (page === "home" || page === "write") { const box = el.querySelector("textarea"); if (box) box.focus(); }
+    refresh();
+  }
+  $$("nav button").forEach(b => b.onclick = () => show(b.dataset.page));
+  document.addEventListener("click", e => {
+    const g = e.target.closest("[data-go]");
+    if (g) { e.preventDefault(); show(g.dataset.go); }
+  });
+
+  // ---------- Home ----------
+  let state = null;
+  async function refresh() {
+    try { state = await api("/api/state"); } catch { return; }
+    $("#ver").textContent = state.version;
+    $("#dot").classList.toggle("on", state.enabled);
+    $("#stateText").textContent = state.enabled ? "Arabic typing on" : "Arabic typing off";
+    $("#onTitle").textContent = state.enabled ? "Arabic typing is on" : "Arabic typing is off";
+    $("#onBtn").textContent = state.enabled ? "Turn off" : "Turn on";
+    $("#kToggle").textContent = state.keys.toggle;
+    const rows = [["Arabic on / off", "toggle"], ["Insert from the Qur'an, in any app", "quran"], ["Sukūn off / on", "sukun"], ["Harakat off / on", "harakat"]];
+    $("#keysTable").innerHTML = rows.map(([title, key]) => `<tr><td>${esc(title)}</td><td><kbd>${esc(state.keys[key] || "none")}</kbd></td></tr>`).join("");
+    if (booted) { $("#mode").value = state.quranInsert; }
+  }
+  $("#onBtn").onclick = async () => { await api("/api/settings", { enabled: !state.enabled }); refresh(); };
+
+  // ---------- Write ----------
+  $("#writeCopy").onclick = async () => { await navigator.clipboard.writeText($("#writeBox").value); toast("Copied"); };
+  $("#writeClear").onclick = () => { $("#writeBox").value = ""; $("#writeBox").focus(); };
+
+  // ---------- Qur'an ----------
+  let booted = false, surahs = [], current = 1, ayat = [], searchTimer, searchSeq = 0;
+  const rtlTrans = id => /^(ur|ar|fa)\./.test(id);
+
+  async function startQuran() {
+    if (booted) return;
+    booted = true;
+    const index = await api("/api/quran/index");
+    surahs = index.surahs;
+    $("#trans").innerHTML = index.translations.map(x => `<option value="${esc(x.id)}">${esc(x.title)}</option>`).join("");
+    $("#trans").value = state ? state.quranTranslation : "en.sahih";
+    if (state) $("#mode").value = state.quranInsert;
+    listSurahs();
+    await openSurah(1);
+    api("/api/quran/search?q=" + encodeURIComponent("الله") + "&in=arabic&t=en.sahih"); // builds the search index now
+  }
+  function listSurahs() {
+    const f = $("#surahFilter").value.trim().toLowerCase();
+    $("#surahList").innerHTML = surahs
+      .filter(s => !f || String(s.n) === f || (s.name + " " + s.english).toLowerCase().includes(f) || s.arabic.includes(f))
+      .map(s => `<button data-n="${s.n}" class="${s.n === current ? "on" : ""}"><span class="n">${s.n}</span><span>${esc(s.name)}<span class="e">${esc(s.english)} · ${s.ayahs}</span></span><span class="a qu">${esc(s.arabic)}</span></button>`).join("");
+    $$("#surahList button").forEach(b => b.onclick = () => { $("#search").value = ""; openSurah(+b.dataset.n); });
+  }
+  async function openSurah(n, hit) {
+    current = n;
+    const s = surahs[n - 1];
+    ayat = await api(`/api/quran/surah?n=${n}&t=${encodeURIComponent($("#trans").value)}`);
+    $("#surahTitle").textContent = `${s.n}. ${s.name} · ${s.english}`;
+    const opts = ayat.map(a => `<option>${a.a}</option>`).join("");
+    $("#from").innerHTML = opts; $("#to").innerHTML = opts;
+    $("#from").value = 1; $("#to").value = hit ? hit : ayat.length;
+    if (hit) $("#from").value = hit;
+    const rtl = rtlTrans($("#trans").value);
+    $("#text").innerHTML = ayat.map(a => `<div class="ayah" id="a${a.a}">
+      <div class="meta"><span>${a.s}:${a.a}</span><button data-a="${a.a}">Copy</button></div>
+      <div class="ar">${esc(a.ar)}</div>
+      ${a.tr ? `<div class="tr ${rtl ? "rtl" : ""}">${esc(a.tr)}</div>` : ""}</div>`).join("");
+    $$("#text .meta button").forEach(b => b.onclick = () => copyRange(+b.dataset.a, +b.dataset.a));
+    $$("#surahList button").forEach(b => b.classList.toggle("on", +b.dataset.n === n));
+    if (hit) {
+      const el = $(`#a${hit}`);
+      el.classList.add("hit"); el.scrollIntoView({ block: "center" });
+    } else $("#text").scrollTop = 0;
+  }
+  function copyText(from, to) {
+    const mode = $("#mode").value, out = [];
+    for (const a of ayat) {
+      if (a.a < from || a.a > to) continue;
+      const ref = `(${a.s}:${a.a})`;
+      out.push(mode === "arabic" ? `${a.ar} ${ref}` : mode === "translation" ? `${a.tr} ${ref}` : `${a.ar}\n${a.tr} ${ref}`);
+    }
+    return out.join(mode === "both" ? "\n\n" : " ");
+  }
+  async function copyRange(from, to) {
+    await navigator.clipboard.writeText(copyText(from, to));
+    toast(from === to ? "Āyah copied" : `${to - from + 1} āyāt copied`);
+  }
+  $("#copy").onclick = () => { const a = +$("#from").value, b = +$("#to").value; copyRange(Math.min(a, b), Math.max(a, b)); };
+  $("#surahFilter").oninput = listSurahs;
+  $("#trans").onchange = () => { api("/api/settings", { quranTranslation: $("#trans").value }); $("#search").value ? runSearch() : openSurah(current); };
+  $("#mode").onchange = () => api("/api/settings", { quranInsert: $("#mode").value });
+  $("#searchIn").onchange = runSearch;
+  $("#search").oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 180); };
+
+  async function runSearch() {
+    const q = $("#search").value.trim();
+    if (!q) return openSurah(current);
+    const seq = ++searchSeq;
+    $("#surahTitle").textContent = "Searching…";
+    const r = await api(`/api/quran/search?q=${encodeURIComponent(q)}&in=${$("#searchIn").value}&t=${encodeURIComponent($("#trans").value)}`);
+    if (seq !== searchSeq) return;
+    const head = r.total ? `${r.total} āyāt in ${esc(r.searchedIn)}${r.arabic ? ` · <span class="ar">${esc(r.arabic)}</span>` : ""}${r.total > r.rows.length ? ` · the first ${r.rows.filter(x => x.kind === "ayah").length}` : ""}` : "";
+    $("#surahTitle").innerHTML = head || "Search";
+    $("#text").innerHTML = r.rows.length ? r.rows.map(x => x.kind === "problem" ? `<p class="d">${esc(x.text)}</p>` :
+      x.kind === "surah" ? `<button class="result" data-s="${x.s}"><span class="ref">Sūrah ${x.s}: ${esc(x.name)}</span> <span class="ar">${esc(x.ar)}</span></button>` :
+      `<button class="result" data-s="${x.s}" data-a="${x.from}"><span class="ref">${x.s}:${x.from}${x.to > x.from ? "-" + x.to : ""} ${esc(x.name)}</span><span class="ar">${esc(x.ar)}</span>${x.tr ? `<span class="d">${esc(x.tr)}</span>` : ""}</button>`).join("")
+      : `<p class="d">Nothing found for “${esc(q)}”.</p>`;
+    $$("#text .result").forEach(b => b.onclick = () => openSurah(+b.dataset.s, b.dataset.a ? +b.dataset.a : undefined));
+  }
+
+  // ---------- The tray asks for a page ----------
+  setInterval(async () => {
+    try { const g = await api("/api/goto"); if (g.page) show(g.page); } catch {}
+  }, 1000);
+  addEventListener("focus", refresh);
+
+  show(location.hash.slice(1));
+})();
+</script>
+</body>
+</html>

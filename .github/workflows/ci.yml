@@ -74,6 +74,29 @@ jobs:
           $p = Start-Process -FilePath dist\Qalam-Windows-${{ matrix.arch }}.exe -ArgumentList '--selftest', "$PWD\selftest.txt" -Wait -PassThru
           Get-Content selftest.txt
           if ($p.ExitCode -ne 0) { throw "self-test failed ($($p.ExitCode))" }
+      - name: Type into real text boxes
+        run: |
+          $p = Start-Process -FilePath dist\Qalam-Windows-${{ matrix.arch }}.exe -ArgumentList '--typetest', "$PWD\typetest.txt" -PassThru
+          if (-not $p.WaitForExit(180000)) { $p.Kill(); throw "type test hung" }
+          Get-Content typetest.txt
+          if ($p.ExitCode -ne 0) { throw "type test failed ($($p.ExitCode))" }
+      - name: Open the app window
+        run: |
+          New-Item -ItemType Directory -Force "$env:APPDATA\Qalam" | Out-Null
+          '{"enabled":true,"firstRunDone":true,"setupDone":true,"askedInstall":true,"noAutoUpdate":true,"spellingWords":true}' |
+            Set-Content "$env:APPDATA\Qalam\settings.json"
+          $p = Start-Process -FilePath dist\Qalam-Windows-${{ matrix.arch }}.exe -PassThru
+          Start-Sleep -Seconds 15
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("$PWD\app-window-${{ matrix.arch }}.png")
+          Get-Process -Name Qalam | Format-Table Id, MainWindowTitle
+          $titled = Get-Process -Name Qalam | Where-Object { $_.MainWindowTitle -eq 'Qalam' }
+          Stop-Process -Name Qalam -Force
+          Remove-Item "$env:APPDATA\Qalam" -Recurse -Force
+          if (-not $titled) { throw "the Qalam window did not open" }
       - name: Get Inno Setup
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
@@ -95,7 +118,7 @@ jobs:
           Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/TASKS="startup"' -Wait
           if (-not (Test-Path "$dir\Qalam.exe")) { throw "Qalam.exe was not installed" }
           if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Qalam.lnk")) { throw "no Start menu entry" }
-          if ((Get-ItemProperty $run).Qalam -ne "`"$dir\Qalam.exe`"") { throw "not set to start with Windows" }
+          if ((Get-ItemProperty $run).Qalam -ne "`"$dir\Qalam.exe`" --tray") { throw "not set to start with Windows" }
           if ((Get-ItemProperty $apps).DisplayName -notlike 'Qalam*') { throw "not listed in Apps" }
           $font = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\ScheherazadeNew.ttf"
           if (-not (Test-Path $font)) { throw "the Arabic font was not installed" }
@@ -105,7 +128,7 @@ jobs:
           New-Item -ItemType Directory -Force "$env:APPDATA\Qalam" | Out-Null
           '{"enabled":true,"firstRunDone":true,"setupDone":true,"askedInstall":true,"noAutoUpdate":true,"spellingWords":true}' |
             Set-Content "$env:APPDATA\Qalam\settings.json"
-          $app = Start-Process "$dir\Qalam.exe" -PassThru
+          $app = Start-Process "$dir\Qalam.exe" -ArgumentList '--tray' -PassThru
           Start-Sleep -Seconds 5
           if ($app.HasExited) { throw "Qalam quit right after starting (exit code $($app.ExitCode))" }
           if (-not (Test-Path "$env:APPDATA\Qalam\qalam-on.ico")) { throw "Qalam did not set up its tray icon files" }
@@ -120,11 +143,13 @@ jobs:
           if (Get-Process -Name Qalam -ErrorAction SilentlyContinue) { throw "Qalam is still running" }
           "Install, start and uninstall all OK"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: windows-${{ matrix.arch }}
           path: |
             dist/Qalam-Setup-${{ matrix.arch }}.exe
             dist/Qalam-Windows-${{ matrix.arch }}.exe
+            app-window-*.png
           retention-days: 7
 
   mac:

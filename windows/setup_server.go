@@ -7,8 +7,10 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 
 	"qalam/engine"
+	"qalam/quran"
 )
 
 // The setup and settings page (assets/setup.html) is served by Qalam itself on 127.0.0.1 and opened
@@ -30,6 +32,9 @@ type setupState struct {
 	Startup         bool              `json:"startup"`
 	AutoUpdate      bool              `json:"autoUpdate"`
 	SetupDone       bool              `json:"setupDone"`
+	InlineTyping    bool              `json:"inlineTyping"`
+	QuranInsert     string            `json:"quranInsert"`
+	QuranTrans      string            `json:"quranTranslation"`
 	Keys            map[string]string `json:"keys"`      // name → "Ctrl+Alt+A" or "none"
 	Recording       string            `json:"recording"` // shortcut being recorded, or ""
 	Fonts           []fontState       `json:"fonts"`     // Qalam's fonts, and whether each is installed for all apps
@@ -54,6 +59,9 @@ type setupPatch struct {
 	Startup         *bool   `json:"startup"`
 	AutoUpdate      *bool   `json:"autoUpdate"`
 	SetupDone       *bool   `json:"setupDone"`
+	InlineTyping    *bool   `json:"inlineTyping"`
+	QuranInsert     *string `json:"quranInsert"`
+	QuranTrans      *string `json:"quranTranslation"`
 }
 
 // setupHost is the running app, as the page sees it.
@@ -91,6 +99,9 @@ func stateFrom(s Settings) setupState {
 		ShowOptions:     !s.NoOptions,
 		AutoUpdate:      !s.NoAutoUpdate,
 		SetupDone:       s.SetupDone,
+		InlineTyping:    !s.NoInline,
+		QuranInsert:     string(s.quranMode()),
+		QuranTrans:      s.quranTranslation(),
 		Keys:            map[string]string{},
 	}
 	for _, n := range hotkeyNames {
@@ -137,6 +148,15 @@ func applyPatch(s *Settings, p setupPatch) {
 	if p.SetupDone != nil {
 		s.SetupDone = *p.SetupDone
 	}
+	if p.InlineTyping != nil {
+		s.NoInline = !*p.InlineTyping
+	}
+	if p.QuranInsert != nil {
+		s.QuranInsert = *p.QuranInsert
+	}
+	if p.QuranTrans != nil {
+		s.QuranTranslation = *p.QuranTrans
+	}
 }
 
 // previewRequest asks how words come out with the current settings changed by Patch
@@ -152,6 +172,22 @@ type setupServer struct {
 	font  []byte // the Arabic font the page shows its examples in
 	token string
 	addr  string // 127.0.0.1:port once listening
+
+	// The app window (assets/app.html); without it "/" is the setup page.
+	shell     []byte
+	guide     []byte
+	quranFont []byte
+	quran     func() *quran.Library
+
+	gotoMu   sync.Mutex
+	gotoPage string // the page the window should show next (the tray asked for it)
+}
+
+// requestGoto tells the open window to show a page.
+func (s *setupServer) requestGoto(page string) {
+	s.gotoMu.Lock()
+	s.gotoPage = page
+	s.gotoMu.Unlock()
 }
 
 func newSetupServer(host setupHost, page, font []byte) *setupServer {
@@ -188,21 +224,44 @@ func (s *setupServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := r.Header.Get("X-Qalam-Token")
-	if r.URL.Path == "/" || r.URL.Path == "/arabic.ttf" {
+	switch r.URL.Path {
+	case "/", "/setup", "/guide", "/arabic.ttf", "/quran.ttf":
 		token = r.URL.Query().Get("t") // links and the page's font can't send a header
 	}
 	if token != s.token {
-		http.Error(w, "Open this page from the Qalam tray menu: Setup & settings…", http.StatusForbidden)
+		http.Error(w, "Open Qalam from its tray icon.", http.StatusForbidden)
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("X-Frame-Options", "DENY")
+	w.Header().Set("X-Frame-Options", "SAMEORIGIN") // the app window shows Settings and the guide in frames
 	w.Header().Set("Referrer-Policy", "no-referrer")
 
 	switch {
 	case r.URL.Path == "/" && r.Method == http.MethodGet:
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if s.shell != nil {
+			w.Write(s.shell)
+		} else {
+			w.Write(s.page)
+		}
+	case r.URL.Path == "/setup" && r.Method == http.MethodGet:
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(s.page)
+	case r.URL.Path == "/guide" && r.Method == http.MethodGet:
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(s.guide)
+	case r.URL.Path == "/quran.ttf" && r.Method == http.MethodGet:
+		w.Header().Set("Content-Type", "font/ttf")
+		w.Header().Set("Cache-Control", "private, max-age=86400")
+		w.Write(s.quranFont)
+	case r.URL.Path == "/api/goto" && r.Method == http.MethodGet:
+		s.gotoMu.Lock()
+		page := s.gotoPage
+		s.gotoPage = ""
+		s.gotoMu.Unlock()
+		writeJSON(w, map[string]string{"page": page})
+	case strings.HasPrefix(r.URL.Path, "/api/quran/") && r.Method == http.MethodGet:
+		s.quranAPI(w, r)
 	case r.URL.Path == "/arabic.ttf" && r.Method == http.MethodGet:
 		w.Header().Set("Content-Type", "font/ttf")
 		w.Write(s.font)

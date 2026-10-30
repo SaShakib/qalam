@@ -34,7 +34,7 @@ Capitals are the "heavy" letters, and **only Shift** makes a capital, so Caps Lo
 ## While you type a word
 
 - The word shows **underlined** in place (Mac) or in a **small box** near the cursor (Windows).
-- **Space**, **Enter** or punctuation puts the word in.
+- The word shows in the app as you type, and **Space**, **Enter** or punctuation finishes it.
 - **Backspace** removes the last *English* key, and the Arabic updates.
 - **Esc** gives back the English letters, so you can type an English word without switching keyboards.
 
@@ -60,7 +60,7 @@ Don't want the panel? Switch off **Show options while typing** in [Settings](set
 ## Switching between Arabic and English
 
 - **Mac:** **🌐 Globe** or **Control-Space** switches keyboards. The menu bar shows ق when Qalam is on.
-- **Windows:** **Ctrl + Alt + A** or a click on the ق tray icon. The icon is green when Arabic is on.
+- **Windows:** **Ctrl + Alt + A**, or the switch on the Qalam window's **Home** page. The ق tray icon is green when Arabic is on.
 
 ## Qur'an style
 

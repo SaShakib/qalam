@@ -39,7 +39,7 @@ func selfTest(args []string) int {
 	o.BlockAllahLigature = true
 	check(strings.ContainsRune(engine.Text("lillaAhi", o), 0x200D), "engine: Allah-ligature guard in Chrome apps")
 
-	check(len(guideHTML) > 1000 && len(setupHTML) > 1000, "embedded guide and setup pages")
+	check(len(guideHTML) > 1000 && len(setupHTML) > 1000 && len(appHTML) > 1000, "embedded guide and setup pages")
 	check(len(iconOn) > 0 && len(iconOff) > 0 && len(previewFont) > 100000, "embedded icons and font")
 	check(typingFont(fonts) != nil && typingFont(fonts).Name == "Scheherazade New", "the typing box uses Scheherazade New (SIL)")
 	if lib := quranLibrary(); lib == nil {

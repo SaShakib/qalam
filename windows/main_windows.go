@@ -23,23 +23,31 @@ var iconOn []byte
 //go:embed assets/qalam-off.ico
 var iconOff []byte
 
-//go:embed assets/guide.html
-var guideHTML []byte
-
 var (
 	settings  Settings
 	composer  engine.Composer
 	hInstance uintptr
 	trayHwnd  uintptr
 	hookProc  = syscall.NewCallback(keyboardHook)
+	mouseProc = syscall.NewCallback(mouseHook)
 )
 
 func main() {
 	runtime.LockOSThread()
 
-	updated := false
+	if len(os.Args) >= 3 && os.Args[1] == "--window" {
+		runWindow(os.Args[2])
+		return
+	}
+	if len(os.Args) >= 3 && os.Args[1] == "--typetest" {
+		os.Exit(typeTest(os.Args[2]))
+	}
+
+	updated, trayOnly := false, false
 	for _, a := range os.Args[1:] {
 		switch a {
+		case "--tray": // started with Windows: no window
+			trayOnly = true
 		case "--uninstall":
 			uninstall()
 			return
@@ -83,6 +91,12 @@ func main() {
 			break
 		}
 		pCloseHandle.Call(h)
+		if !updated && !trayOnly && showRunningCopy() { // opened from the Start menu again: its window comes forward
+			return
+		}
+		if trayOnly {
+			return
+		}
 		if !updated || attempt >= 20 {
 			messageBox("Qalam is already running. Look for the ق icon in the system tray (bottom right).", "Qalam", mbIconInfo)
 			return
@@ -102,6 +116,10 @@ func main() {
 		messageBox("Qalam could not start its keyboard hook.", "Qalam", mbIconInfo)
 		return
 	}
+	pSetWindowsHookExW.Call(whMouseLL, mouseProc, hInstance, 0)
+	if startupEnabled() {
+		setStartup(true) // older versions registered it without --tray
+	}
 
 	if updated {
 		go cleanupAfterUpdate()
@@ -117,9 +135,12 @@ func main() {
 		updateTray()
 		balloon("Qalam is on", "Type Arabic anywhere. "+settings.hotkeyText("toggle")+" switches between Arabic and English. Right-click the ق icon for settings.")
 	}
-	// The setup steps open until they are finished or skipped (also after an update that added them).
+	// The setup steps open until they are finished or skipped; otherwise the app window, unless
+	// Qalam started by itself (with Windows, or after an update).
 	if !settings.SetupDone {
-		openSetup("")
+		openApp("setup")
+	} else if !trayOnly && !updated {
+		openApp("")
 	}
 
 	var m msg
@@ -131,6 +152,7 @@ func main() {
 		pTranslateMessage.Call(uintptr(unsafe.Pointer(&m)))
 		pDispatchMessageW.Call(uintptr(unsafe.Pointer(&m)))
 	}
+	closeApp()
 	removeTray()
 }
 
@@ -140,16 +162,10 @@ func appDataDir() string {
 	return dir
 }
 
-func openGuide() {
-	path := filepath.Join(appDataDir(), "guide.html")
-	if err := os.WriteFile(path, guideHTML, 0o644); err == nil {
-		shellOpen(path)
-	}
-}
-
 func toggle() {
 	settings.Enabled = !settings.Enabled
 	composer = engine.Composer{}
+	shownInline = ""
 	hidePreview()
 	saveSettings(settings)
 	updateTray()

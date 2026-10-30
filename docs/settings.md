@@ -4,7 +4,7 @@
 
 | | Mac | Windows |
 |---|---|---|
-| All settings | **Qalam app → Settings** | Right-click **ق** in the tray → **Setup & settings…** → page with every setting |
+| All settings | **Qalam app → Settings** | **Qalam window → Settings** (click **ق** in the tray to open it) |
 | Quick switches | Click **ق** in the menu bar (the input menu) | Right-click **ق** in the tray |
 | While typing | **Sukūn** and **Harakat** buttons in the options panel, and their [shortcuts](shortcuts.md) | the same |
 

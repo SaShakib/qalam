@@ -45,8 +45,8 @@ The Qalam app then opens a **short guided setup**: it adds the keyboard to your 
 Download **`Qalam-Setup-x64.exe`** (or `-arm64` for ARM laptops) from [Releases](https://github.com/SaShakib/qalam/releases/latest) and run it. Step-by-step guide: [docs/install-windows.md](docs/install-windows.md).
 
 - It installs for your user (no admin rights): Start menu, start with Windows (optional), and an uninstall entry in Settings → Apps. Silent install: `/VERYSILENT`.
-- Qalam then opens a **setup page** in your browser (served by Qalam on your PC) with the same steps as on the Mac. Open it again from the tray: right-click **ق** → **Setup & settings…**
-- **Ctrl + Alt + A** (or a click on the ق tray icon) switches Arabic on and off.
+- Qalam then opens its **window** with the same sidebar as the Mac app: Home, Letters & keys, Word list, Practice, Write, Qur'an, Settings. Closing it keeps Qalam in the tray; click **ق** to open it again.
+- **Ctrl + Alt + A** switches Arabic on and off. **Ctrl + Alt + Q** inserts āyāt in any app.
 - The single-file `Qalam-Windows-x64.exe` / `-arm64.exe` still works without an installer.
 - The downloads aren't code-signed yet. If SmartScreen warns, click **More info → Run anyway** (once; updates don't ask again).
 
@@ -64,7 +64,7 @@ Qalam checks GitHub for a new version when it starts and once a day.
 - **Shortcuts can be changed** (in case they clash with yours): Mac: Qalam → Settings → Shortcuts. Windows: tray menu → Shortcuts. Harakat on/off can get a shortcut too. The panel buttons show the current ones.
 - **No vowels typed → bare letters:** `ktb` → كتب.
 
-## Qur'an (Mac; the insert box on Windows too)
+## Qur'an
 
 - **⌃⇧Q** works in every app with any keyboard (Qalam stays in the menu bar). Search at the top (English → translation, Arabic with the Qalam keyboard → the Arabic, `2:255` → that passage), pick a result, set From / To āyah, Insert. Windows (**Ctrl+Alt+Q**): Sūrah / From / To dropdowns with a Search tab.
 - **Qalam → Qur'an** shows every sūrah with a translation, searches the whole Qur'an, copies āyāt (rich text in the Qur'an font) and downloads more translations.

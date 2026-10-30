@@ -32,7 +32,8 @@ const (
 func keyboardHook(nCode, wParam, lParam uintptr) uintptr {
 	if int32(nCode) == 0 {
 		kb := (*kbdllHook)(unsafe.Pointer(lParam))
-		if kb.Flags&llkhfInjected == 0 && (wParam == wmKeyDown || wParam == wmSysKeyDown) {
+		real := kb.Flags&llkhfInjected == 0 || (typeTesting && kb.DwExtraInfo != qalamMark)
+		if real && (wParam == wmKeyDown || wParam == wmSysKeyDown) {
 			if onKeyDown(kb) {
 				return 1 // swallow the key
 			}
@@ -40,6 +41,34 @@ func keyboardHook(nCode, wParam, lParam uintptr) uintptr {
 	}
 	r, _, _ := pCallNextHookEx.Call(0, nCode, wParam, lParam)
 	return r
+}
+
+// mouseHook: a click moves the cursor, so the word being typed stays where it is and ends there.
+// (A click on the options panel is the panel's own business.)
+func mouseHook(nCode, wParam, lParam uintptr) uintptr {
+	if int32(nCode) == 0 && composer.Buffer != "" && (wParam == wmLButtonDown || wParam == wmRButtonDown || wParam == wmMButtonDown) {
+		m := (*msllHook)(unsafe.Pointer(lParam))
+		h, _, _ := pWindowFromPoint.Call(uintptr(uint32(m.Pt.X)) | uintptr(uint32(m.Pt.Y))<<32)
+		if h != previewHwnd {
+			endWordInPlace()
+		}
+	}
+	r, _, _ := pCallNextHookEx.Call(0, nCode, wParam, lParam)
+	return r
+}
+
+// endWordInPlace finishes the word where it is: the cursor or the app has changed, so nothing
+// already in the app may be touched again.
+func endWordInPlace() {
+	if composer.Buffer == "" {
+		return
+	}
+	if shownInline != "" {
+		takeSelected()
+		shownInline = ""
+	} else {
+		commitSelected()
+	}
 }
 
 func isModifier(vk uint32) bool {
@@ -51,8 +80,11 @@ func isModifier(vk uint32) bool {
 }
 
 var (
-	cands []engine.Candidate
-	sel   int
+	cands       []engine.Candidate
+	sel         int
+	shownInline string  // the word as it stands in the app right now (see inline.go)
+	composeFg   uintptr // the window the word is being typed in
+	typingFg    uintptr // the last app typed in, outside Qalam (the tray's Qur'an item goes back to it)
 )
 
 const (
@@ -71,6 +103,14 @@ func onKeyDown(kb *kbdllHook) bool {
 	win := keyDown(vkLWin) || keyDown(vkRWin)
 	shift := keyDown(vkShift)
 	busy := composer.Buffer != ""
+	fg, _, _ := pGetForegroundWindow.Call()
+	if !isOwnWindow(fg) {
+		typingFg = fg
+	}
+	if busy && fg != composeFg { // another window came forward: the word stays in the old one
+		endWordInPlace()
+		busy = false
+	}
 
 	if recording != "" {
 		return recordKey(vk, ctrl, alt, leftAlt, shift, win)
@@ -127,6 +167,7 @@ func onKeyDown(kb *kbdllHook) bool {
 			}
 			sel = (sel + step) % len(cands)
 			showPanel(cands, sel, composer.Buffer)
+			showInline()
 		}
 		return true
 	}
@@ -149,20 +190,23 @@ func onKeyDown(kb *kbdllHook) bool {
 		}
 	}
 
-	out := []string{}
+	sent := false
 	// A key that ends the word puts in the highlighted option first.
 	if busy && finishesWord(key) {
-		out = append(out, takeSelected())
+		sent = sendCommit(takeSelected())
 		if key.Kind == engine.KeyEnter {
-			sendText(out)
 			return true
 		}
 	}
+	if !busy {
+		composeFg = fg
+	}
 
+	out := ""
 	consumed, actions := composer.Handle(key, typingOptions())
 	for _, a := range actions {
 		if a.Commit {
-			out = append(out, a.Text)
+			out += a.Text
 		} else {
 			refreshOptions()
 		}
@@ -171,17 +215,55 @@ func onKeyDown(kb *kbdllHook) bool {
 		cands = nil
 		hidePreview()
 	}
+	if out != "" && sendCommit(out) {
+		sent = true
+	}
 	if consumed {
-		sendText(out)
 		return true
 	}
-	if len(out) > 0 {
+	if sent {
 		// The word must arrive before the key that finished it, so swallow the key and send both.
-		sendText(out)
 		reinject(vk, kb.Flags)
 		return true
 	}
 	return false
+}
+
+// showInline puts the highlighted option in the app, replacing what is showing there.
+func showInline() {
+	if settings.NoInline {
+		return
+	}
+	target := ""
+	if composer.Buffer != "" && sel < len(cands) {
+		target = cands[sel].Text
+	}
+	replaceInline(target)
+}
+
+// replaceInline changes the word showing in the app into target; false if nothing had to be sent.
+func replaceInline(target string) bool {
+	back, add := inlineEdit(shownInline, target)
+	shownInline = target
+	if back == 0 && add == "" {
+		return false
+	}
+	inputs := make([]input, 0, 2*back+2*len(add))
+	for i := 0; i < back; i++ {
+		inputs = append(inputs,
+			input{Type: inputKeyboard, WVk: vkBack, DwExtraInfo: qalamMark},
+			input{Type: inputKeyboard, WVk: vkBack, DwFlags: keyUp, DwExtraInfo: qalamMark})
+	}
+	inputs = append(inputs, textInputs(add)...)
+	sendInputs(inputs)
+	return true
+}
+
+// sendCommit makes text final: what is showing becomes text, and the next word starts fresh.
+func sendCommit(text string) bool {
+	sent := replaceInline(text)
+	shownInline = ""
+	return sent
 }
 
 func finishesWord(k engine.Key) bool {
@@ -199,6 +281,7 @@ func refreshOptions() {
 	if composer.Buffer == "" {
 		cands = nil
 		hidePreview()
+		showInline()
 		return
 	}
 	cands = engine.Candidates(composer.Buffer, typingOptions())
@@ -217,6 +300,7 @@ func refreshOptions() {
 		}
 	}
 	showPanel(cands, sel, composer.Buffer)
+	showInline()
 }
 
 func stripZWJ(s string) string {
@@ -265,7 +349,7 @@ func takeSelected() string {
 // commitSelected types the highlighted option now (used before shortcuts).
 func commitSelected() {
 	if t := takeSelected(); t != "" {
-		sendText([]string{t})
+		sendCommit(t)
 	}
 }
 
@@ -370,12 +454,22 @@ func sendActions(actions []engine.Action) {
 func sendText(texts []string) {
 	inputs := []input{}
 	for _, t := range texts {
-		for _, u := range utf16(t) {
-			inputs = append(inputs,
-				input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode},
-				input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode | keyUp})
-		}
+		inputs = append(inputs, textInputs(t)...)
 	}
+	sendInputs(inputs)
+}
+
+func textInputs(t string) []input {
+	inputs := []input{}
+	for _, u := range utf16(t) {
+		inputs = append(inputs,
+			input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode, DwExtraInfo: qalamMark},
+			input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode | keyUp, DwExtraInfo: qalamMark})
+	}
+	return inputs
+}
+
+func sendInputs(inputs []input) {
 	if len(inputs) > 0 {
 		pSendInput.Call(uintptr(len(inputs)), uintptr(unsafe.Pointer(&inputs[0])), unsafe.Sizeof(input{}))
 	}
@@ -387,11 +481,10 @@ func reinject(vk uint32, flags uint32) {
 	if flags&llkhfExtended != 0 {
 		f = keyExtended
 	}
-	inputs := []input{
-		{Type: inputKeyboard, WVk: uint16(vk), DwFlags: f},
-		{Type: inputKeyboard, WVk: uint16(vk), DwFlags: f | keyUp},
-	}
-	pSendInput.Call(2, uintptr(unsafe.Pointer(&inputs[0])), unsafe.Sizeof(input{}))
+	sendInputs([]input{
+		{Type: inputKeyboard, WVk: uint16(vk), DwFlags: f, DwExtraInfo: qalamMark},
+		{Type: inputKeyboard, WVk: uint16(vk), DwFlags: f | keyUp, DwExtraInfo: qalamMark},
+	})
 }
 
 func utf16(s string) []uint16 {

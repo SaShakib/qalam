@@ -19,6 +19,7 @@ type Settings struct {
 	AskedInstall bool              `json:"askedInstall"`
 	NoAutoUpdate bool              `json:"noAutoUpdate"`
 	NoOptions    bool              `json:"noOptions"`    // hide the options panel (show only the word)
+	NoInline     bool              `json:"noInline"`     // the word shows only in the panel until Space, not in the app
 	PrefersPlain bool              `json:"prefersPlain"` // last pick was a version without harakat
 	Learned      map[string]string `json:"learned"`      // typed word → the option picked for it
 	// The Qur'an box (Ctrl+Alt+Q): what to insert ("arabic", "both", "translation") and which

@@ -8,7 +8,7 @@
 # Trusted Mac builds (no "Open Anyway" for users, ever): see docs/developers/signing.md.
 #   make release SIGN_ID="Developer ID Application: …" INSTALLER_ID="Developer ID Installer: …" NOTARY_PROFILE=qalam
 
-VERSION  := 1.3.0
+VERSION  := 1.4.0
 # Builds run at low priority on 2 cores so the Mac stays responsive.
 SWIFT    := nice -n 15 swift build -c release -j 2
 GO       := nice -n 15 go

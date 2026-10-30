@@ -3,7 +3,7 @@
 Qalam carries the whole Qur'an (Uthmani script, full harakat, from the [Tanzil Project](https://tanzil.net)) with
 translations: **English**: Saheeh International, Mufti Taqi Usmani; **Bangla**: Muhiuddin Khan, Bayaan Foundation,
 Sheikh Mujibur Rahman, Taisirul Quran (Tawheed Publication), Dr. Abu Bakr Zakaria, Zohurul Hoque; **Urdu**: Mufti Taqi Usmani.
-On the Mac more can be downloaded in the app. Windows has the insert box with all nine bundled translations.
+On the Mac more can be downloaded in the app. Windows has the insert box and the Qur'an page with all nine bundled translations.
 
 ## Insert āyāt while typing (Mac: Control-Shift-Q · Windows: Ctrl+Alt+Q)
 
@@ -79,7 +79,9 @@ The box shows the Arabic in the Qur'an font (KFGQPC Hafs); what goes into your a
 For the Qur'an font in Pages, Word or Notes on the Mac, use **Copy** on the app's Qur'an page (it copies
 rich text). On Windows, install the fonts (**Setup & settings… → Fonts**) and pick KFGQPC HAFS Uthmanic Script.
 
-## The Qur'an page in the app (Mac)
+## The Qur'an page in the app
+
+**Windows:** open the Qalam window → **Qur'an**: every sūrah, a translation under each āyah, search, and **Copy** for any range. **Mac:**
 
 **Qalam → Qur'an**:
 

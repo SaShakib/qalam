@@ -403,15 +403,15 @@ func sendLines(text string) {
 	for i, line := range strings.Split(text, "\n") {
 		if i > 0 {
 			inputs = append(inputs,
-				input{Type: inputKeyboard, WVk: vkShift},
-				input{Type: inputKeyboard, WVk: vkReturn},
-				input{Type: inputKeyboard, WVk: vkReturn, DwFlags: keyUp},
-				input{Type: inputKeyboard, WVk: vkShift, DwFlags: keyUp})
+				input{Type: inputKeyboard, WVk: vkShift, DwExtraInfo: qalamMark},
+				input{Type: inputKeyboard, WVk: vkReturn, DwExtraInfo: qalamMark},
+				input{Type: inputKeyboard, WVk: vkReturn, DwFlags: keyUp, DwExtraInfo: qalamMark},
+				input{Type: inputKeyboard, WVk: vkShift, DwFlags: keyUp, DwExtraInfo: qalamMark})
 		}
 		for _, u := range utf16(line) {
 			inputs = append(inputs,
-				input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode},
-				input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode | keyUp})
+				input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode, DwExtraInfo: qalamMark},
+				input{Type: inputKeyboard, WScan: u, DwFlags: keyUnicode | keyUp, DwExtraInfo: qalamMark})
 		}
 	}
 	if len(inputs) > 0 {

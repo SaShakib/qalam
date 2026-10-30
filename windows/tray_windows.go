@@ -41,6 +41,8 @@ const (
 	cmdQuit
 	cmdKeysReset
 	cmdSetup
+	cmdOpen
+	cmdQuranBox
 	cmdKeysFirst // + index into hotkeyNames
 )
 
@@ -87,7 +89,7 @@ func switchHint() string {
 	if h := settings.hotkey("toggle"); h != nil {
 		return " (" + h.String() + " to switch)"
 	}
-	return " (click to switch)"
+	return ""
 }
 
 // keyTab puts the shortcut at the right edge of a menu item.
@@ -120,10 +122,13 @@ func trayProc(hwnd, message, wParam, lParam uintptr) uintptr {
 	case message == wmTray:
 		switch lParam & 0xFFFF {
 		case wmLButtonUp:
-			toggle()
+			openApp("")
 		case wmRButtonUp:
 			showMenu()
 		}
+		return 0
+	case message == wmShowApp:
+		openApp("")
 		return 0
 	case message == wmRunOnUI:
 		drainUICalls()
@@ -155,6 +160,9 @@ func showMenu() {
 	sep := func() { pAppendMenuW.Call(menu, mfSeparator, 0, 0) }
 
 	o := settings.Options
+	item(cmdOpen, "Open Qalam", false)
+	item(cmdQuranBox, "Insert from the Qur'an…"+keyTab("quran"), false)
+	sep()
 	item(cmdToggle, "Arabic typing"+keyTab("toggle"), settings.Enabled)
 	sep()
 	item(cmdEveryday, "Everyday style", o.Style == engine.Everyday)
@@ -182,8 +190,8 @@ func showMenu() {
 	item(cmdDigits, "Arabic digits ١٢٣", o.ArabicDigits)
 	item(cmdSpelling, "Smart spelling (اللَّه، هَٰذَا)", o.SpellingWords)
 	sep()
-	item(cmdSetup, "Setup && settings…", false)
-	item(cmdGuide, "Letters, words && practice…", false)
+	item(cmdSetup, "Settings…", false)
+	item(cmdGuide, "Letters, words && practice", false)
 	item(cmdStartup, "Start with Windows", startupEnabled())
 	item(cmdCheckUpdate, "Check for updates… (version "+version+")", false)
 	item(cmdAutoUpdate, "Install updates automatically", !settings.NoAutoUpdate)
@@ -199,6 +207,16 @@ func showMenu() {
 	pPostMessageW.Call(trayHwnd, wmNull, 0, 0)
 
 	switch int(cmd) {
+	case cmdOpen:
+		openApp("")
+		return
+	case cmdQuranBox:
+		// The menu took the focus: give it back to the app the āyāt go into.
+		if typingFg != 0 {
+			pSetForegroundWindow.Call(typingFg)
+		}
+		openQuran()
+		return
 	case cmdToggle:
 		toggle()
 		return
@@ -217,10 +235,10 @@ func showMenu() {
 	case cmdSpelling:
 		settings.SpellingWords = !settings.SpellingWords
 	case cmdGuide:
-		openGuide()
+		openApp("practice")
 		return
 	case cmdSetup:
-		openSetup("settings")
+		openApp("settings")
 		return
 	case cmdStartup:
 		setStartup(!startupEnabled())

@@ -3,7 +3,7 @@
 Right after you install it, Qalam walks you through a short setup, one step at a time. Every choice is saved as you make it, you can go **Back** or jump to any step, and **Skip setup** is always there. Everything in it can be changed later in [Settings](settings.md).
 
 - **Mac:** the setup is in the Qalam app window.
-- **Windows:** the setup opens in your browser. It's a page served by Qalam itself on your PC (nothing goes online). Open it again any time: right-click the **ق** tray icon → **Setup & settings…**
+- **Windows:** the setup is in the Qalam window too. Open it again any time: **Settings** in the sidebar, then **Walk through the steps**.
 
 ## The steps
 

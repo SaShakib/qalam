@@ -135,6 +135,7 @@ func uninstall() {
 	pRegDeleteKeyW.Call(hkeyCurrentUser, uintptr(unsafe.Pointer(utf16Ptr(uninstallKey))))
 	os.Remove(shortcutPath())
 	os.RemoveAll(filepath.Join(os.Getenv("APPDATA"), "Qalam"))
+	os.RemoveAll(filepath.Join(os.Getenv("LOCALAPPDATA"), "Qalam")) // the app window's browser data
 	messageBox("Qalam has been removed.", "Qalam", mbIconInfo)
 	// The running exe can't delete itself: remove the folder a moment after this process exits.
 	cmd := exec.Command("cmd", "/c", "ping 127.0.0.1 -n 3 > nul & rmdir /s /q \""+installDir()+"\"")
@@ -165,7 +166,7 @@ func setStartup(on bool) {
 		if runningFromInstallDir() || fileExists(installedExe()) {
 			exe = installedExe()
 		}
-		regSetString(k, "Qalam", `"`+exe+`"`)
+		regSetString(k, "Qalam", `"`+exe+`" --tray`)
 	} else {
 		pRegDeleteValueW.Call(k, uintptr(unsafe.Pointer(utf16Ptr("Qalam"))))
 	}

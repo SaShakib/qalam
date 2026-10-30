@@ -3,20 +3,15 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"strings"
 	"time"
 )
 
-//go:embed assets/setup.html
-var setupHTML []byte
-
 const wmRunOnUI = wmApp + 2
 
 var (
-	setupSrv *setupServer
-	uiCalls  = make(chan func(), 16)
+	uiCalls = make(chan func(), 16)
 )
 
 // runOnUI runs f on the window thread (where the keyboard hook reads the settings) and waits for it.
@@ -40,19 +35,6 @@ func drainUICalls() {
 			return
 		}
 	}
-}
-
-// openSetup opens the setup and settings page in the browser ("" = the steps, "settings" = all settings).
-func openSetup(page string) {
-	if setupSrv == nil {
-		srv := newSetupServer(appHost{}, setupHTML, previewFont)
-		if err := srv.listen(); err != nil {
-			messageBox("Could not open the settings page: "+err.Error(), "Qalam", mbIconInfo)
-			return
-		}
-		setupSrv = srv
-	}
-	shellOpen(setupSrv.url(page))
 }
 
 // appHost connects the page to the running app.
@@ -121,7 +103,7 @@ func (appHost) Action(name string) error {
 			saveSettings(settings)
 			updateTray()
 		case name == "guide":
-			openGuide()
+			openApp("practice")
 		case name == "installFonts":
 			err = installFonts()
 		default:
