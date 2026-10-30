@@ -75,7 +75,6 @@ jobs:
           Get-Content selftest.txt
           if ($p.ExitCode -ne 0) { throw "self-test failed ($($p.ExitCode))" }
       - name: Type into real text boxes
-        continue-on-error: ${{ matrix.arch == 'arm64' }}
         run: |
           # The ARM image opens a WSL prompt at start, which keeps the focus.
           Stop-Process -Name WindowsTerminal, wsl, OpenConsole -Force -ErrorAction SilentlyContinue
