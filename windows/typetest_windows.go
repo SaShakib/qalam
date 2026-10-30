@@ -35,6 +35,9 @@ var (
 	pLoadLibraryW     = kernel32.NewProc("LoadLibraryW")
 	pBringWindowToTop = user32.NewProc("BringWindowToTop")
 	pSetFocus         = user32.NewProc("SetFocus")
+	pGetWindowRect    = user32.NewProc("GetWindowRect")
+	pSetCursorPos     = user32.NewProc("SetCursorPos")
+	pMouseEvent       = user32.NewProc("mouse_event")
 )
 
 func tkey(vk uint16, up bool) input {
@@ -135,7 +138,7 @@ func typeTest(out string) int {
 	}
 	want := func(s string) string { return engine.Text(s, engine.DefaultOptions()) }
 	onUI := func(h uintptr) {
-		tap(vkLMenu) // a key press lets this process take the foreground
+		tap(0x87) // F24, nothing uses it: a key press lets this process take the foreground
 		runOnUI(func() {
 			ok, _, _ := pSetForegroundWindow.Call(top)
 			pBringWindowToTop.Call(top)

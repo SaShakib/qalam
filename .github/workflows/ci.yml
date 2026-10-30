@@ -77,6 +77,9 @@ jobs:
       - name: Type into real text boxes
         continue-on-error: ${{ matrix.arch == 'arm64' }}
         run: |
+          # The ARM image opens a WSL prompt at start, which keeps the focus.
+          Stop-Process -Name WindowsTerminal, wsl, OpenConsole -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 2
           $p = Start-Process -FilePath dist\Qalam-Windows-${{ matrix.arch }}.exe -ArgumentList '--typetest', "$PWD\typetest.txt" -PassThru
           if (-not $p.WaitForExit(180000)) { $p.Kill(); throw "type test hung" }
           Get-Content typetest.txt
@@ -94,9 +97,9 @@ jobs:
           $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
           [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
           $bmp.Save("$PWD\app-window-${{ matrix.arch }}.png")
-          Get-Process -Name Qalam | Format-Table Id, MainWindowTitle
-          $titled = Get-Process -Name Qalam | Where-Object { $_.MainWindowTitle -eq 'Qalam' }
-          Stop-Process -Name Qalam -Force
+          Get-Process -Name Qalam* | Format-Table Id, MainWindowTitle
+          $titled = Get-Process -Name Qalam* | Where-Object { $_.MainWindowTitle -eq 'Qalam' }
+          Stop-Process -Name Qalam* -Force
           Remove-Item "$env:APPDATA\Qalam" -Recurse -Force
           if (-not $titled) { throw "the Qalam window did not open" }
       - name: Get Inno Setup
