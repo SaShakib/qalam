@@ -249,10 +249,19 @@ func typeTest(out string) int {
 			if eh == 0 {
 				log = append(log, "skip Edge: its window did not come forward")
 			} else {
-				time.Sleep(700 * time.Millisecond)
+				time.Sleep(4 * time.Second) // until the page is ready
+				var rc rect
+				pGetWindowRect.Call(eh, uintptr(unsafe.Pointer(&rc)))
+				pSetCursorPos.Call(uintptr(rc.Left+120), uintptr(rc.Top+110))
+				pMouseEvent.Call(0x0002, 0, 0, 0, 0) // left button down
+				pMouseEvent.Call(0x0004, 0, 0, 0, 0) // and up
+				time.Sleep(500 * time.Millisecond)
 				read := func() string { time.Sleep(160 * time.Millisecond); return strings.TrimPrefix(windowTitle(eh), "v:") }
 				noZWJ := func(s string) string { return strings.ReplaceAll(s, "\u200D", "") }
-				press("kataba")
+				for _, k := range "kataba" { // key by key: every step must arrive
+					press(string(k))
+					log = append(log, fmt.Sprintf("info edge key %c: %q shown %q", k, read(), shownInline))
+				}
 				check(read() == want("kataba"), "edge: live %q, want %q", read(), want("kataba"))
 				tap(vkSpace)
 				press("lillaAhi")
@@ -264,6 +273,14 @@ func typeTest(out string) int {
 				tap(vkBack)
 				got = noZWJ(read())
 				check(got == want("kataba")+" "+want("lillaAhi")+" "+want("k"), "edge: Backspace by one mark %q", got)
+				tap(vkSpace)
+				press("kitaAbuN")
+				tap(vkBack)
+				tap(vkBack)
+				tap(vkBack)
+				got = noZWJ(read())
+				check(strings.HasSuffix(got, " "+want("kitaA")), "edge: Backspace inside a longer word %q, want it to end %q", got, want("kitaA"))
+				tap(vkEscape)
 				tap(vkSpace)
 				press("kitaAbuN")
 				tap(vkBack)
