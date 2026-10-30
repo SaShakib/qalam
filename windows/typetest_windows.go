@@ -135,12 +135,19 @@ func typeTest(out string) int {
 	}
 	want := func(s string) string { return engine.Text(s, engine.DefaultOptions()) }
 	onUI := func(h uintptr) {
+		tap(vkLMenu) // a key press lets this process take the foreground
 		runOnUI(func() {
-			pSetForegroundWindow.Call(top)
+			ok, _, _ := pSetForegroundWindow.Call(top)
 			pBringWindowToTop.Call(top)
-			pSetFocus.Call(h)
+			f, _, _ := pSetFocus.Call(h)
+			log = append(log, fmt.Sprintf("info focus: SetForegroundWindow=%d SetFocus=%d", ok, f))
 		})
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
+		var g guiThreadInfo
+		g.CbSize = uint32(unsafe.Sizeof(g))
+		fg, _, _ := pGetForegroundWindow.Call()
+		pGetGUIThreadInfo.Call(0, uintptr(unsafe.Pointer(&g)))
+		log = append(log, fmt.Sprintf("info foreground=%x top=%x focus=%x editor=%x", fg, top, g.HwndFocus, h))
 	}
 
 	result := make(chan int, 1)
@@ -254,6 +261,14 @@ func typeTest(out string) int {
 				tap(vkBack)
 				got = noZWJ(read())
 				check(got == want("kataba")+" "+want("lillaAhi")+" "+want("k"), "edge: Backspace by one mark %q", got)
+			tap(vkSpace)
+			press("kitaAbuN")
+			tap(vkBack)
+			tap(vkBack)
+			tap(vkBack)
+			got = noZWJ(read())
+			check(strings.HasSuffix(got, " "+want("kitaA")), "edge: Backspace inside a longer word %q, want it to end %q", got, want("kitaA"))
+			tap(vkEscape)
 			}
 			cmd.Process.Kill()
 		}
