@@ -156,18 +156,21 @@ func runWindow(url string) {
 		dpi = 96
 	}
 	px := func(n uint) uint { return n * uint(dpi) / 96 }
+	sw, _, _ := pGetSystemMetrics.Call(smCxScreen)
+	sh, _, _ := pGetSystemMetrics.Call(smCyScreen)
+	width, height := min(px(1120), uint(sw)*9/10), min(px(780), uint(sh)*85/100) // small screens: it must fit
 	w := webview2.NewWithOptions(webview2.WebViewOptions{
 		DataPath:  filepath.Join(os.Getenv("LOCALAPPDATA"), "Qalam", "WebView2"),
 		AutoFocus: true,
 		WindowOptions: webview2.WindowOptions{
-			Title: "Qalam", Width: px(1120), Height: px(780), Center: true,
+			Title: "Qalam", Width: width, Height: height, Center: true,
 		},
 	})
 	if w == nil {
 		os.Exit(exitNoView2)
 	}
 	defer w.Destroy()
-	w.SetSize(int(px(760)), int(px(520)), webview2.HintMin)
+	w.SetSize(int(min(px(760), width)), int(min(px(520), height)), webview2.HintMin)
 	setWindowIcon(uintptr(w.Window()))
 	w.Navigate(url)
 	w.Run()
