@@ -165,7 +165,7 @@ func appDataDir() string {
 func toggle() {
 	settings.Enabled = !settings.Enabled
 	composer = engine.Composer{}
-	shownInline = ""
+	shownInline, lastTarget = "", ""
 	hidePreview()
 	saveSettings(settings)
 	updateTray()

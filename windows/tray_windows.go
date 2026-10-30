@@ -127,6 +127,9 @@ func trayProc(hwnd, message, wParam, lParam uintptr) uintptr {
 			showMenu()
 		}
 		return 0
+	case message == wmAfterHook:
+		drainAfterHook()
+		return 0
 	case message == wmShowApp:
 		openApp("")
 		return 0

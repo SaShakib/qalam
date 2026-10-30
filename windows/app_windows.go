@@ -23,6 +23,7 @@ import (
 
 const (
 	wmShowApp   = wmApp + 3
+	wmAfterHook = wmApp + 4
 	exitNoView2 = 3
 )
 

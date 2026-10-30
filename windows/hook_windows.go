@@ -3,6 +3,7 @@
 package main
 
 import (
+	"time"
 	"unsafe"
 
 	"qalam/engine"
@@ -34,13 +35,42 @@ func keyboardHook(nCode, wParam, lParam uintptr) uintptr {
 		kb := (*kbdllHook)(unsafe.Pointer(lParam))
 		real := kb.Flags&llkhfInjected == 0 || (typeTesting && kb.DwExtraInfo != qalamMark)
 		if real && (wParam == wmKeyDown || wParam == wmSysKeyDown) {
-			if onKeyDown(kb) {
+			began := time.Now()
+			swallow := onKeyDown(kb)
+			if d := time.Since(began); d > hookSlowest {
+				hookSlowest = d
+			}
+			if swallow {
 				return 1 // swallow the key
 			}
 		}
 	}
 	r, _, _ := pCallNextHookEx.Call(0, nCode, wParam, lParam)
 	return r
+}
+
+// A low-level hook must answer at once: if it is late, Windows gives up on it and the key goes to
+// the app as it is (a Latin letter inside the Arabic word). So the hook only keeps the word's state
+// and decides about the key. Everything slow (drawing the panel, typing into the app, saving) waits
+// in this queue and runs right after the hook has returned, in order, on the same thread.
+var (
+	afterQueue  []func()
+	hookSlowest time.Duration
+)
+
+func afterHook(f func()) {
+	afterQueue = append(afterQueue, f)
+	if len(afterQueue) == 1 {
+		pPostMessageW.Call(trayHwnd, wmAfterHook, 0, 0)
+	}
+}
+
+func drainAfterHook() {
+	for len(afterQueue) > 0 {
+		f := afterQueue[0]
+		afterQueue = afterQueue[1:]
+		f()
+	}
 }
 
 // mouseHook: a click moves the cursor, so the word being typed stays where it is and ends there.
@@ -63,9 +93,10 @@ func endWordInPlace() {
 	if composer.Buffer == "" {
 		return
 	}
-	if shownInline != "" {
+	if lastTarget != "" {
 		takeSelected()
-		shownInline = ""
+		lastTarget = ""
+		afterHook(func() { shownInline = "" })
 	} else {
 		commitSelected()
 	}
@@ -83,6 +114,8 @@ var (
 	cands       []engine.Candidate
 	sel         int
 	shownInline string  // the word as it stands in the app right now (see inline.go)
+	lastTarget  string  // what it will be once the queue has run
+	panelGen    int     // only the newest panel in the queue is drawn
 	composeFg   uintptr // the window the word is being typed in
 	typingFg    uintptr // the last app typed in, outside Qalam (the tray's Qur'an item goes back to it)
 )
@@ -107,7 +140,10 @@ func onKeyDown(kb *kbdllHook) bool {
 	if !isOwnWindow(fg) {
 		typingFg = fg
 	}
-	if busy && fg != composeFg { // another window came forward: the word stays in the old one
+	// Another window came forward: the word stays in the old one. (No window at all is a moment
+	// between two windows, and Qalam's own never take the focus from the app.)
+	if busy && fg != composeFg && fg != 0 && !isOwnWindow(fg) {
+		noteFocusLost(fg)
 		endWordInPlace()
 		busy = false
 	}
@@ -154,7 +190,7 @@ func onKeyDown(kb *kbdllHook) bool {
 			return false
 		}
 		commitSelected()
-		reinject(vk, kb.Flags)
+		afterHook(func() { reinject(vk, kb.Flags) })
 		return true
 	}
 
@@ -166,7 +202,7 @@ func onKeyDown(kb *kbdllHook) bool {
 				step = len(cands) - 1
 			}
 			sel = (sel + step) % len(cands)
-			showPanel(cands, sel, composer.Buffer)
+			queuePanel()
 			showInline()
 		}
 		return true
@@ -190,10 +226,11 @@ func onKeyDown(kb *kbdllHook) bool {
 		}
 	}
 
-	sent := false
+	ended := false
 	// A key that ends the word puts in the highlighted option first.
 	if busy && finishesWord(key) {
-		sent = sendCommit(takeSelected())
+		sendCommit(takeSelected())
+		ended = true
 		if key.Kind == engine.KeyEnter {
 			return true
 		}
@@ -213,17 +250,17 @@ func onKeyDown(kb *kbdllHook) bool {
 	}
 	if composer.Buffer == "" {
 		cands = nil
-		hidePreview()
+		queueHide()
 	}
-	if out != "" && sendCommit(out) {
-		sent = true
+	if out != "" {
+		sendCommit(out)
 	}
 	if consumed {
 		return true
 	}
-	if sent {
-		// The word must arrive before the key that finished it, so swallow the key and send both.
-		reinject(vk, kb.Flags)
+	// Text is on its way: the key must arrive after it, so it is swallowed and sent again.
+	if ended || out != "" || len(afterQueue) > 0 {
+		afterHook(func() { reinject(vk, kb.Flags) })
 		return true
 	}
 	return false
@@ -238,15 +275,39 @@ func showInline() {
 	if composer.Buffer != "" && sel < len(cands) {
 		target = cands[sel].Text
 	}
-	replaceInline(target)
+	if target == lastTarget {
+		return
+	}
+	lastTarget = target
+	afterHook(func() { replaceInline(target) })
 }
 
-// replaceInline changes the word showing in the app into target; false if nothing had to be sent.
-func replaceInline(target string) bool {
+func queuePanel() {
+	panelGen++
+	gen, list, chosen, typed := panelGen, cands, sel, composer.Buffer
+	afterHook(func() {
+		if gen == panelGen {
+			showPanel(list, chosen, typed)
+		}
+	})
+}
+
+func queueHide() {
+	panelGen++
+	gen := panelGen
+	afterHook(func() {
+		if gen == panelGen {
+			hidePreview()
+		}
+	})
+}
+
+// replaceInline changes the word showing in the app into target (runs after the hook).
+func replaceInline(target string) {
 	back, add := inlineEdit(shownInline, target)
 	shownInline = target
 	if back == 0 && add == "" {
-		return false
+		return
 	}
 	inputs := make([]input, 0, 2*back+2*len(add))
 	for i := 0; i < back; i++ {
@@ -256,14 +317,15 @@ func replaceInline(target string) bool {
 	}
 	inputs = append(inputs, textInputs(add)...)
 	sendInputs(inputs)
-	return true
 }
 
 // sendCommit makes text final: what is showing becomes text, and the next word starts fresh.
-func sendCommit(text string) bool {
-	sent := replaceInline(text)
-	shownInline = ""
-	return sent
+func sendCommit(text string) {
+	lastTarget = ""
+	afterHook(func() {
+		replaceInline(text)
+		shownInline = ""
+	})
 }
 
 func finishesWord(k engine.Key) bool {
@@ -280,7 +342,7 @@ func finishesWord(k engine.Key) bool {
 func refreshOptions() {
 	if composer.Buffer == "" {
 		cands = nil
-		hidePreview()
+		queueHide()
 		showInline()
 		return
 	}
@@ -299,7 +361,7 @@ func refreshOptions() {
 			}
 		}
 	}
-	showPanel(cands, sel, composer.Buffer)
+	queuePanel()
 	showInline()
 }
 
@@ -339,10 +401,10 @@ func takeSelected() string {
 			}
 		}
 	}
-	saveSettings(settings)
+	afterHook(func() { saveSettings(settings) })
 	composer = engine.Composer{}
 	cands = nil
-	hidePreview()
+	queueHide()
 	return chosen.Text
 }
 

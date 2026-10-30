@@ -19,7 +19,20 @@ import (
 // hook as the running app, and reads back what arrived. Word by word it checks that the Arabic
 // shows as it is typed, that Shift counts, and that the Qur'an and on/off shortcuts fire.
 
-var typeTesting bool
+var (
+	typeTesting bool
+	focusNotes  []string
+	keyGap      = 45 * time.Millisecond
+)
+
+// noteFocusLost: in the test, says which window took the focus in the middle of a word.
+func noteFocusLost(fg uintptr) {
+	if typeTesting {
+		class := make([]uint16, 128)
+		pGetClassNameW.Call(fg, uintptr(unsafe.Pointer(&class[0])), 128)
+		focusNotes = append(focusNotes, fmt.Sprintf("focus lost mid-word to %s %q", syscall.UTF16ToString(class), windowTitle(fg)))
+	}
+}
 
 const (
 	wmGetText       = 0x000D
@@ -68,7 +81,7 @@ func press(s string) {
 			seq = []input{tkey(vkShift, false), tkey(0xBA, false), tkey(0xBA, true), tkey(vkShift, true)}
 		}
 		sendInputs(seq)
-		time.Sleep(45 * time.Millisecond)
+		time.Sleep(keyGap)
 	}
 }
 
@@ -230,6 +243,19 @@ func typeTest(out string) int {
 		onUI(rich)
 		box("richedit", rich, func() string { return windowText(rich) })
 
+		// Top speed: if the hook is ever late, Windows lets a Latin letter through.
+		pSendMessageW.Call(rich, wmSetText, 0, uintptr(unsafe.Pointer(utf16Ptr(""))))
+		keyGap = 8 * time.Millisecond
+		wanted := ""
+		for i := 0; i < 40; i++ {
+			press("kitaAbuN ")
+			wanted += want("kitaAbuN") + " "
+		}
+		keyGap = 45 * time.Millisecond
+		time.Sleep(1500 * time.Millisecond)
+		stress := windowText(rich)
+		latin := strings.IndexFunc(stress, func(r rune) bool { return r < 0x80 && r != ' ' }) >= 0
+		check(stress == wanted && !latin, "40 words at top speed: latin=%v same=%v, got %d runes, want %d", latin, stress == wanted, len([]rune(stress)), len([]rune(wanted)))
 		// Shortcuts: real Ctrl + left Alt.
 		pSendMessageW.Call(rich, wmSetText, 0, uintptr(unsafe.Pointer(utf16Ptr(""))))
 		chord([]uint16{vkLCtrl, vkLMenu}, 'A')
@@ -325,6 +351,10 @@ func typeTest(out string) int {
 			cmd.Process.Kill()
 		}
 
+		log = append(log, fmt.Sprintf("info slowest key in the hook: %v", hookSlowest))
+		for _, n := range focusNotes {
+			log = append(log, "info "+n)
+		}
 		os.WriteFile(out, []byte(strings.Join(log, "\n")+"\n"), 0o644)
 		fmt.Println(strings.Join(log, "\n"))
 		code := 0
