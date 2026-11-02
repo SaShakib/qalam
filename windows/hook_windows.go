@@ -140,6 +140,9 @@ func onKeyDown(kb *kbdllHook) bool {
 	if !isOwnWindow(fg) {
 		typingFg = fg
 	}
+	// Let Qalam own QWERTY keys even if the app was left on Bijoy or another non-English layout.
+	// This posts before the current key reaches the target application's message queue.
+	useQalamLayout(fg)
 	// Another window came forward: the word stays in the old one. (No window at all is a moment
 	// between two windows, and Qalam's own never take the focus from the app.)
 	if busy && fg != composeFg && fg != 0 && !isOwnWindow(fg) {

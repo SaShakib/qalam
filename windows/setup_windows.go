@@ -61,6 +61,12 @@ func (h appHost) Apply(p setupPatch) setupState {
 			commitSelected()
 			composer.Buffer = ""
 			hidePreview()
+			if settings.Enabled {
+				fg, _, _ := pGetForegroundWindow.Call()
+				useQalamLayout(fg)
+			} else {
+				restoreQalamLayout()
+			}
 		}
 		saveSettings(settings)
 		updateTray()

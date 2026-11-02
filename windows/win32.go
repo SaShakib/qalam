@@ -36,6 +36,8 @@ var (
 	pSendInput                     = user32.NewProc("SendInput")
 	pGetForegroundWindow           = user32.NewProc("GetForegroundWindow")
 	pGetWindowThreadProcessId      = user32.NewProc("GetWindowThreadProcessId")
+	pGetKeyboardLayout             = user32.NewProc("GetKeyboardLayout")
+	pLoadKeyboardLayoutW           = user32.NewProc("LoadKeyboardLayoutW")
 	pGetGUIThreadInfo              = user32.NewProc("GetGUIThreadInfo")
 	pClientToScreen                = user32.NewProc("ClientToScreen")
 	pGetCursorPos                  = user32.NewProc("GetCursorPos")
@@ -70,12 +72,16 @@ var (
 	pShellNotifyIconW = shell32.NewProc("Shell_NotifyIconW")
 	pShellExecuteW    = shell32.NewProc("ShellExecuteW")
 
-	pCreateFontW      = gdi32.NewProc("CreateFontW")
-	pSelectObject     = gdi32.NewProc("SelectObject")
-	pDeleteObject     = gdi32.NewProc("DeleteObject")
-	pSetBkMode        = gdi32.NewProc("SetBkMode")
-	pSetTextColor     = gdi32.NewProc("SetTextColor")
-	pCreateSolidBrush = gdi32.NewProc("CreateSolidBrush")
+	pCreateFontW        = gdi32.NewProc("CreateFontW")
+	pSelectObject       = gdi32.NewProc("SelectObject")
+	pDeleteObject       = gdi32.NewProc("DeleteObject")
+	pSetBkMode          = gdi32.NewProc("SetBkMode")
+	pSetTextColor       = gdi32.NewProc("SetTextColor")
+	pCreateSolidBrush   = gdi32.NewProc("CreateSolidBrush")
+	pCreateCompatibleDC = gdi32.NewProc("CreateCompatibleDC")
+	pDeleteDC           = gdi32.NewProc("DeleteDC")
+	pCreateDIBSection   = gdi32.NewProc("CreateDIBSection")
+	pPatBlt             = gdi32.NewProc("PatBlt")
 
 	pRegCreateKeyExW  = advapi32.NewProc("RegCreateKeyExW")
 	pRegOpenKeyExW    = advapi32.NewProc("RegOpenKeyExW")
@@ -87,78 +93,104 @@ var (
 )
 
 const (
-	whKeyboardLL     = 13
-	whMouseLL        = 14
-	wmRButtonDown    = 0x0204
-	wmMButtonDown    = 0x0207
-	swRestore        = 9
-	wmKeyDown        = 0x0100
-	wmSysKeyDown     = 0x0104
-	wmDestroy        = 0x0002
-	wmClose          = 0x0010
-	wmPaint          = 0x000F
-	wmCommand        = 0x0111
-	wmNull           = 0x0000
-	wmApp            = 0x8000
-	wmTray           = wmApp + 1
-	wmLButtonUp      = 0x0202
-	wmRButtonUp      = 0x0205
-	llkhfExtended    = 0x01
-	llkhfInjected    = 0x10
-	inputKeyboard    = 1
-	keyExtended      = 0x0001
-	keyUp            = 0x0002
-	keyUnicode       = 0x0004
-	swHide           = 0
-	swShowNA         = 8
-	swShowNormal     = 1
-	wsPopup          = 0x80000000
-	wsBorder         = 0x00800000
-	wsExTopmost      = 0x00000008
-	wsExToolWindow   = 0x00000080
-	wsExNoActivate   = 0x08000000
-	swpNoActivate    = 0x0010
-	hwndTopmost      = ^uintptr(0) // (HWND)-1
-	nimAdd           = 0
-	nimModify        = 1
-	nimDelete        = 2
-	nifMessage       = 0x01
-	nifIcon          = 0x02
-	nifTip           = 0x04
-	nifInfo          = 0x10
-	niifInfo         = 0x01
-	mfString         = 0x0000
-	mfChecked        = 0x0008
-	mfSeparator      = 0x0800
-	mfPopup          = 0x0010
-	smCxScreen       = 0
-	smCyScreen       = 1
-	tpmReturnCmd     = 0x0100
-	tpmRightButton   = 0x0002
-	imageIcon        = 1
-	lrLoadFromFile   = 0x0010
-	smCxSmIcon       = 49
-	smCySmIcon       = 50
-	dtCenter         = 0x0001
-	dtVCenter        = 0x0004
-	dtSingleLine     = 0x0020
-	dtNoPrefix       = 0x0800
-	dtCalcRect       = 0x0400
-	dtRTLReading     = 0x20000
-	transparent      = 1
-	mbYesNo          = 0x04
-	mbIconQuestion   = 0x20
-	mbIconInfo       = 0x40
-	idYes            = 6
-	hkeyCurrentUser  = 0x80000001
-	keyAllAccess     = 0xF003F
-	regSZ            = 1
-	regDWORD         = 4
-	errAlreadyExists = 183
+	whKeyboardLL             = 13
+	whMouseLL                = 14
+	wmRButtonDown            = 0x0204
+	wmMButtonDown            = 0x0207
+	swRestore                = 9
+	wmKeyDown                = 0x0100
+	wmSysKeyDown             = 0x0104
+	wmInputLangChangeRequest = 0x0050
+	wmDestroy                = 0x0002
+	wmClose                  = 0x0010
+	wmPaint                  = 0x000F
+	wmCommand                = 0x0111
+	wmNull                   = 0x0000
+	wmApp                    = 0x8000
+	wmTray                   = wmApp + 1
+	wmLButtonUp              = 0x0202
+	wmRButtonUp              = 0x0205
+	llkhfExtended            = 0x01
+	llkhfInjected            = 0x10
+	inputKeyboard            = 1
+	keyExtended              = 0x0001
+	keyUp                    = 0x0002
+	keyUnicode               = 0x0004
+	swHide                   = 0
+	swShowNA                 = 8
+	swShowNormal             = 1
+	wsPopup                  = 0x80000000
+	wsBorder                 = 0x00800000
+	wsExTopmost              = 0x00000008
+	wsExToolWindow           = 0x00000080
+	wsExNoActivate           = 0x08000000
+	swpNoActivate            = 0x0010
+	hwndTopmost              = ^uintptr(0) // (HWND)-1
+	nimAdd                   = 0
+	nimModify                = 1
+	nimDelete                = 2
+	nifMessage               = 0x01
+	nifIcon                  = 0x02
+	nifTip                   = 0x04
+	nifInfo                  = 0x10
+	niifInfo                 = 0x01
+	mfString                 = 0x0000
+	mfChecked                = 0x0008
+	mfSeparator              = 0x0800
+	mfPopup                  = 0x0010
+	smCxScreen               = 0
+	smCyScreen               = 1
+	tpmReturnCmd             = 0x0100
+	tpmRightButton           = 0x0002
+	imageIcon                = 1
+	lrLoadFromFile           = 0x0010
+	smCxSmIcon               = 49
+	smCySmIcon               = 50
+	dtCenter                 = 0x0001
+	dtVCenter                = 0x0004
+	dtSingleLine             = 0x0020
+	dtNoPrefix               = 0x0800
+	dtCalcRect               = 0x0400
+	dtRTLReading             = 0x20000
+	transparent              = 1
+	cfBitmap                 = 2
+	dibRGBColors             = 0
+	biRGB                    = 0
+	whiteness                = 0x00FF0062
+	mbYesNo                  = 0x04
+	mbIconQuestion           = 0x20
+	mbIconInfo               = 0x40
+	idYes                    = 6
+	hkeyCurrentUser          = 0x80000001
+	keyAllAccess             = 0xF003F
+	regSZ                    = 1
+	regDWORD                 = 4
+	errAlreadyExists         = 183
 )
 
 type point struct{ X, Y int32 }
 type rect struct{ Left, Top, Right, Bottom int32 }
+
+// bitmapInfoHeader is the part of BITMAPINFO used by CreateDIBSection.
+// A 32-bit top-down DIB keeps the artwork clipboard image in normal reading order.
+type bitmapInfoHeader struct {
+	Size          uint32
+	Width         int32
+	Height        int32
+	Planes        uint16
+	BitCount      uint16
+	Compression   uint32
+	SizeImage     uint32
+	XPelsPerMeter int32
+	YPelsPerMeter int32
+	ClrUsed       uint32
+	ClrImportant  uint32
+}
+
+type bitmapInfo struct {
+	Header bitmapInfoHeader
+	Colors [1]uint32
+}
 
 type msg struct {
 	Hwnd     uintptr

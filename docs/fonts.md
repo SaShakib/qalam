@@ -7,13 +7,13 @@ Qalam types standard Unicode Arabic, so **the app you type in decides the font**
 | Text | Font | Notes |
 |---|---|---|
 | Everyday Arabic | **Scheherazade New** (SIL) | large, very readable harakat; included with Qalam |
-| Qur'an text | **KFGQPC HAFS Uthmanic Script** (King Fahd Complex) | the standard Madinah mushaf font; included with Qalam |
+| Qur'an text / print | **KFGQPC HAFS Uthmanic Script** (King Fahd Complex) | standard Unicode Madinah-mushaf font; included with Qalam |
 
 On the Mac you can pick other fonts in **Qalam → Settings → Fonts in this app** (also Noto Naskh Arabic, Amiri Quran and Noto Sans Arabic, which are included), and change the Arabic text size. On Windows, Qalam's typing box uses Scheherazade New.
 
 ## Fonts in all your apps
 
-Qalam types standard Unicode Arabic, so **the app you type in decides the font**. Qalam installs Scheherazade New and KFGQPC Hafs for every app (Word, Pages, Notes, your browser…), just for your user, with no password:
+Qalam types standard Unicode Arabic, so **the app you type in decides the font**. The King Fahd font is packed with Qalam and installed for every app (Word, Pages, Notes, Illustrator, your browser…), just for your user, with no password:
 
 | Installed with | The fonts |
 |---|---|
@@ -23,6 +23,10 @@ Qalam types standard Unicode Arabic, so **the app you type in decides the font**
 | Windows single `.exe` | click **Install fonts for all apps** in the setup page's Fonts step (right-click ق → Setup & settings…) |
 
 Then choose the font in your app.
+
+For Qur'an printing, select **KFGQPC HAFS Uthmanic Script** in the app before inserting or printing.
+Qalam's normal Unicode insertion keeps the Arabic verse number inside ornamental brackets, so it
+remains readable in any Arabic font.
 
 > **In Microsoft Word,** Arabic uses the **Complex scripts** font: Home → Font dialog (Ctrl + D) → **Complex scripts**.
 

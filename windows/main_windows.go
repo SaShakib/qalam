@@ -164,6 +164,12 @@ func appDataDir() string {
 
 func toggle() {
 	settings.Enabled = !settings.Enabled
+	if settings.Enabled {
+		fg, _, _ := pGetForegroundWindow.Call()
+		useQalamLayout(fg)
+	} else {
+		restoreQalamLayout()
+	}
 	composer = engine.Composer{}
 	shownInline, lastTarget = "", ""
 	hidePreview()

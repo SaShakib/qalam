@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// The Arabic fonts Qalam carries (assets/fonts): SIL Scheherazade New, and KFGQPC Hafs (the Madinah
-// mushaf font) when it's in the repository's fonts/ folder at build time. Qalam's typing box uses
-// them, and Qalam can install them for every app (Word, Notepad, browsers…).
+// The Arabic fonts Qalam carries (assets/fonts): Scheherazade New, Amiri Quran, Noto Naskh Arabic,
+// Noto Sans Arabic, and KFGQPC Hafs (the Madinah mushaf font). Qalam can install them for every
+// app (including Illustrator), while its typing box continues to use Scheherazade New.
 
 type bundledFont struct {
 	File string // e.g. ScheherazadeNew.ttf
@@ -20,6 +20,9 @@ type bundledFont struct {
 // knownFontNames gives the family name of the fonts we expect; others use their file name.
 var knownFontNames = map[string]string{
 	"scheherazadenew": "Scheherazade New",
+	"amiriquran":      "Amiri Quran",
+	"notonaskharabic": "Noto Naskh Arabic",
+	"notosansarabic":  "Noto Sans Arabic",
 	"uthmanichafs":    "KFGQPC HAFS Uthmanic Script",
 	"kfgqpchafs":      "KFGQPC HAFS Uthmanic Script",
 }
@@ -39,6 +42,25 @@ func fontName(file string) string {
 func isQuranFont(f bundledFont) bool {
 	u := strings.ToUpper(f.File + f.Name)
 	return strings.Contains(u, "KFGQPC") || strings.Contains(u, "HAFS")
+}
+
+// quranFontChoices are deliberately bundled choices, rather than arbitrary installed fonts:
+// every choice can be installed from Qalam and produces a predictable Qur'an preview.
+func quranFontChoices(fonts []bundledFont) []string {
+	out := make([]string, 0, len(fonts))
+	for _, f := range fonts {
+		out = append(out, f.Name)
+	}
+	return out
+}
+
+func hasQuranFont(fonts []bundledFont, name string) bool {
+	for _, f := range fonts {
+		if f.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // loadBundledFonts reads the .ttf/.otf files in dir of fsys, Scheherazade New first.

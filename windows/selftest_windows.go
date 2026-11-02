@@ -46,7 +46,7 @@ func selfTest(args []string) int {
 		check(false, "embedded Qur'an data")
 	} else {
 		p, ok := lib.Resolve("baqarah 255")
-		check(ok && p.Reference() == "2:255" && strings.HasSuffix(lib.Text(p, quran.Arabic, ""), "(2:255)"), "Qur'an: baqarah 255")
+		check(ok && p.Reference() == "2:255" && strings.HasSuffix(lib.Text(p, quran.Arabic, ""), quran.AyahMarker(255)), "Qur'an: baqarah 255")
 		_, total := lib.SearchArabic("الرحمن", false, 0)
 		check(total == 48 && len(lib.Available()) == 9, "Qur'an: search and the nine bundled translations")
 		r := lib.Search("qul huwa allaahu AaHaduN", quran.InArabic, "en.sahih", 5)

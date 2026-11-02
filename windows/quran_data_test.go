@@ -22,8 +22,8 @@ func TestEmbeddedQuran(t *testing.T) {
 
 func TestQuranMode(t *testing.T) {
 	var s Settings
-	if s.quranMode() != quran.Both || s.quranTranslation() != "en.sahih" {
-		t.Errorf("defaults: %s %s", s.quranMode(), s.quranTranslation())
+	if s.quranMode() != quran.Both || s.quranTranslation() != "en.sahih" || s.quranFontName() != "KFGQPC HAFS Uthmanic Script" {
+		t.Errorf("defaults: %s %s %s", s.quranMode(), s.quranTranslation(), s.quranFontName())
 	}
 	s.QuranInsert = "translation"
 	if s.quranMode() != quran.TranslationOnly {
@@ -32,5 +32,9 @@ func TestQuranMode(t *testing.T) {
 	s.QuranInsert = "bogus"
 	if s.quranMode() != quran.Both {
 		t.Errorf("bad value: %s", s.quranMode())
+	}
+	s.QuranFont = "Noto Naskh Arabic"
+	if s.quranFontName() != "Noto Naskh Arabic" {
+		t.Errorf("font: %s", s.quranFontName())
 	}
 }

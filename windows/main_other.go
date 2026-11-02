@@ -39,6 +39,16 @@ type devHost struct{}
 
 var devSettings = Settings{Options: engine.DefaultOptions(), Enabled: true}
 
+// Keep the non-Windows test/dev build aware of the same choices as the Windows executable.
+// The Windows build replaces this with the embedded font files in fonts_windows.go.
+var fonts = []bundledFont{
+	{Name: "Scheherazade New"},
+	{Name: "Amiri Quran"},
+	{Name: "Noto Naskh Arabic"},
+	{Name: "Noto Sans Arabic"},
+	{Name: "KFGQPC HAFS Uthmanic Script"},
+}
+
 func (devHost) State() setupState {
 	st := stateFrom(devSettings)
 	st.Fonts = []fontState{{Name: "Scheherazade New", Installed: true}, {Name: "KFGQPC HAFS Uthmanic Script", Quran: true}}

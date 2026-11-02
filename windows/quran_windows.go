@@ -44,22 +44,25 @@ var (
 	quranDPI  uint32 // the fonts were made for this DPI
 
 	// Clickable areas, set by layoutQuran.
-	quranCloseBtn  rect
-	quranField     rect
-	quranSwitch    [2]rect // Arabic | Translation
-	quranCaption   rect
-	quranList      rect
-	quranRowRects  []rect // the rows showing, from quranB.Top
-	quranDrops     [3]rect
-	quranPreview   rect
-	quranShownAyat int // āyāt that fit in the preview
-	quranSepY      int32
-	quranModeBtns  [3]rect
-	quranCancelBtn rect
-	quranInsertBtn rect
-	quranTransBtn  rect
-	quranHint      rect
-	quranW, quranH int32
+	quranCloseBtn   rect
+	quranField      rect
+	quranSwitch     [2]rect // Arabic | Translation
+	quranCaption    rect
+	quranList       rect
+	quranRowRects   []rect // the rows showing, from quranB.Top
+	quranDrops      [3]rect
+	quranPreview    rect
+	quranShownAyat  int // āyāt that fit in the preview
+	quranSepY       int32
+	quranModeBtns   [3]rect
+	quranCancelBtn  rect
+	quranInsertBtn  rect
+	quranTransBtn   rect
+	quranFontBtn    rect
+	quranStyledBtn  rect
+	quranArtworkBtn rect
+	quranHint       rect
+	quranW, quranH  int32
 
 	qFontTitle, qFontUI, qFontSmall, qFontBold, qFontButton uintptr // Segoe UI
 	qFontBangla                                             uintptr // Nirmala UI, for Bangla translations
@@ -68,18 +71,23 @@ var (
 
 	qBrushBg, qBrushCard, qBrushBorder, qBrushAccent, qBrushSelected, qBrushSep, qBrushWhite uintptr
 
-	pSetTimer         = user32.NewProc("SetTimer")
-	pKillTimer        = user32.NewProc("KillTimer")
-	pMessageBeep      = user32.NewProc("MessageBeep")
-	pOpenClipboard    = user32.NewProc("OpenClipboard")
-	pCloseClipboard   = user32.NewProc("CloseClipboard")
-	pGetClipboardData = user32.NewProc("GetClipboardData")
-	pScreenToClient   = user32.NewProc("ScreenToClient")
-	pMonitorFromPoint = user32.NewProc("MonitorFromPoint")
-	pGetMonitorInfoW  = user32.NewProc("GetMonitorInfoW")
-	pGlobalLock       = kernel32.NewProc("GlobalLock")
-	pGlobalUnlock     = kernel32.NewProc("GlobalUnlock")
-	pGetDpiForMonitor = syscall.NewLazyDLL("shcore.dll").NewProc("GetDpiForMonitor")
+	pSetTimer                 = user32.NewProc("SetTimer")
+	pKillTimer                = user32.NewProc("KillTimer")
+	pMessageBeep              = user32.NewProc("MessageBeep")
+	pOpenClipboard            = user32.NewProc("OpenClipboard")
+	pCloseClipboard           = user32.NewProc("CloseClipboard")
+	pGetClipboardData         = user32.NewProc("GetClipboardData")
+	pEmptyClipboard           = user32.NewProc("EmptyClipboard")
+	pSetClipboardData         = user32.NewProc("SetClipboardData")
+	pRegisterClipboardFormatW = user32.NewProc("RegisterClipboardFormatW")
+	pScreenToClient           = user32.NewProc("ScreenToClient")
+	pMonitorFromPoint         = user32.NewProc("MonitorFromPoint")
+	pGetMonitorInfoW          = user32.NewProc("GetMonitorInfoW")
+	pGlobalLock               = kernel32.NewProc("GlobalLock")
+	pGlobalUnlock             = kernel32.NewProc("GlobalUnlock")
+	pGlobalAlloc              = kernel32.NewProc("GlobalAlloc")
+	pGlobalFree               = kernel32.NewProc("GlobalFree")
+	pGetDpiForMonitor         = syscall.NewLazyDLL("shcore.dll").NewProc("GetDpiForMonitor")
 )
 
 const (
@@ -93,6 +101,7 @@ const (
 	wmQuranInsert   = wmApp + 10
 	csDblClks       = 0x0008
 	cfUnicodeText   = 13
+	gmMoveable      = 0x0002
 	tpmLeftAlign    = 0x0000
 	mfMenuBreak     = 0x0040
 	quranWidth      = 640 // logical pixels, like the Mac box
@@ -114,7 +123,7 @@ func quranLibrary() *quran.Library {
 	return quranLib
 }
 
-// createQuranWindow makes the box (hidden) and loads KFGQPC Hafs for the āyāt.
+// createQuranWindow makes the box (hidden) and loads the bundled Qur'an font choices for the āyāt.
 func createQuranWindow() {
 	className := utf16Ptr("QalamQuran")
 	wc := wndClassEx{
@@ -130,16 +139,15 @@ func createQuranWindow() {
 		uintptr(unsafe.Pointer(className)), 0,
 		wsPopup|wsBorder, 0, 0, 10, 10, 0, 0, hInstance, 0)
 
-	quranFamily = previewFamily
+	// Register every choice for this process. The selected choice is saved in Settings and can be
+	// installed from Qalam for use in Illustrator and other applications.
 	for _, f := range fonts {
-		if isQuranFont(f) {
+		if len(f.Data) > 0 {
 			var count uint32
-			if h, _, _ := pAddFontMem.Call(uintptr(unsafe.Pointer(&f.Data[0])), uintptr(len(f.Data)), 0, uintptr(unsafe.Pointer(&count))); h != 0 {
-				quranFamily = f.Name
-			}
-			break
+			pAddFontMem.Call(uintptr(unsafe.Pointer(&f.Data[0])), uintptr(len(f.Data)), 0, uintptr(unsafe.Pointer(&count)))
 		}
 	}
+	quranFamily = settings.quranFontName()
 	brush := func(r, g, b byte) uintptr { h, _, _ := pCreateSolidBrush.Call(rgb(r, g, b)); return h }
 	qBrushBg = brush(255, 255, 255)
 	qBrushCard = brush(246, 247, 249)
@@ -161,7 +169,7 @@ func dpiForSystem() uint32 {
 
 // makeQuranFonts makes the box's fonts for a DPI (again when it opens on a monitor with another one).
 func makeQuranFonts(dpi uint32) {
-	if dpi == quranDPI {
+	if dpi == quranDPI && quranFamily == settings.quranFontName() {
 		return
 	}
 	for _, f := range []uintptr{qFontTitle, qFontUI, qFontSmall, qFontBold, qFontButton, qFontBangla, qFontField, qFontRow, qFontPreview} {
@@ -170,6 +178,7 @@ func makeQuranFonts(dpi uint32) {
 		}
 	}
 	quranDPI = dpi
+	quranFamily = settings.quranFontName()
 	qFontTitle = makeFont(qs(15), "Segoe UI", 600)
 	qFontUI = makeFont(qs(14), "Segoe UI", 400)
 	qFontSmall = makeFont(qs(12), "Segoe UI", 400)
@@ -393,7 +402,197 @@ func insertChosen() {
 	if typingOptions().BlockAllahLigature {
 		text = engine.BlockAllahLigature(text)
 	}
-	sendLines(text)
+	if settings.QuranArtwork {
+		pasteQuranArtwork(text, settings.quranFontName())
+	} else if settings.QuranStyled {
+		pasteStyledQuran(text, settings.quranFontName())
+	} else {
+		sendLines(text)
+	}
+}
+
+// pasteQuranArtwork puts a rendered bitmap and the original Unicode on the clipboard. Rich targets
+// such as Illustrator and contenteditable Chrome fields can choose the picture; plain targets choose text.
+func pasteQuranArtwork(text, font string) {
+	if !setQuranArtworkClipboard(text, font) {
+		sendLines(text)
+		return
+	}
+	sendInputs([]input{
+		{Type: inputKeyboard, WVk: vkControl, DwExtraInfo: qalamMark},
+		{Type: inputKeyboard, WVk: 'V', DwExtraInfo: qalamMark},
+		{Type: inputKeyboard, WVk: 'V', DwFlags: keyUp, DwExtraInfo: qalamMark},
+		{Type: inputKeyboard, WVk: vkControl, DwFlags: keyUp, DwExtraInfo: qalamMark},
+	})
+}
+
+func setQuranArtworkClipboard(text, font string) bool {
+	bitmap := quranArtworkBitmap(text, font)
+	if bitmap == 0 {
+		return false
+	}
+	if ok, _, _ := pOpenClipboard.Call(quranHwnd); ok == 0 {
+		pDeleteObject.Call(bitmap)
+		return false
+	}
+	defer pCloseClipboard.Call()
+	if ok, _, _ := pEmptyClipboard.Call(); ok == 0 {
+		pDeleteObject.Call(bitmap)
+		return false
+	}
+	putUnicode := func() bool {
+		u, _ := syscall.UTF16FromString(text)
+		h, _, _ := pGlobalAlloc.Call(gmMoveable, uintptr(len(u)*2))
+		if h == 0 {
+			return false
+		}
+		p, _, _ := pGlobalLock.Call(h)
+		if p == 0 {
+			pGlobalFree.Call(h)
+			return false
+		}
+		copy(unsafe.Slice((*byte)(unsafe.Pointer(p)), len(u)*2), unsafe.Slice((*byte)(unsafe.Pointer(&u[0])), len(u)*2))
+		pGlobalUnlock.Call(h)
+		if r, _, _ := pSetClipboardData.Call(cfUnicodeText, h); r == 0 {
+			pGlobalFree.Call(h)
+			return false
+		}
+		return true
+	}
+	if !putUnicode() {
+		pDeleteObject.Call(bitmap)
+		return false
+	}
+	if r, _, _ := pSetClipboardData.Call(cfBitmap, bitmap); r == 0 {
+		pDeleteObject.Call(bitmap)
+		return false
+	}
+	return true // Clipboard now owns bitmap.
+}
+
+// quranArtworkBitmap draws the same selected Qur'an font into a self-contained bitmap. It deliberately
+// has a white background: it prints predictably and does not depend on alpha support in the target app.
+func quranArtworkBitmap(text, family string) uintptr {
+	const width int32 = 1800
+	pad := int32(64)
+	hdc, _, _ := pGetDC.Call(quranHwnd)
+	if hdc == 0 {
+		return 0
+	}
+	defer pReleaseDC.Call(quranHwnd, hdc)
+	font := makeFont(qs(42), family, 400)
+	if font == 0 {
+		return 0
+	}
+	defer pDeleteObject.Call(font)
+	old, _, _ := pSelectObject.Call(hdc, font)
+	r := rect{pad, pad, width - pad, 16000}
+	drawText(hdc, text, &r, dtCalcRect|dtRight|dtRTLReading|dtWordBreak|dtNoPrefix)
+	pSelectObject.Call(hdc, old)
+	height := r.Bottom - r.Top + 2*pad
+	if height < 180 {
+		height = 180
+	}
+	if height > 16384 {
+		return 0
+	}
+	info := bitmapInfo{Header: bitmapInfoHeader{
+		Size: uint32(unsafe.Sizeof(bitmapInfoHeader{})), Width: width, Height: -height,
+		Planes: 1, BitCount: 32, Compression: biRGB,
+	}}
+	var bits uintptr
+	bitmap, _, _ := pCreateDIBSection.Call(hdc, uintptr(unsafe.Pointer(&info)), dibRGBColors, uintptr(unsafe.Pointer(&bits)), 0, 0)
+	if bitmap == 0 || bits == 0 {
+		return 0
+	}
+	mem, _, _ := pCreateCompatibleDC.Call(hdc)
+	if mem == 0 {
+		pDeleteObject.Call(bitmap)
+		return 0
+	}
+	defer pDeleteDC.Call(mem)
+	oldBitmap, _, _ := pSelectObject.Call(mem, bitmap)
+	defer pSelectObject.Call(mem, oldBitmap)
+	pPatBlt.Call(mem, 0, 0, uintptr(width), uintptr(height), whiteness)
+	pSetBkMode.Call(mem, transparent)
+	pSetTextColor.Call(mem, colText)
+	pSelectObject.Call(mem, font)
+	draw := rect{pad, pad, width - pad, height - pad}
+	drawText(mem, text, &draw, dtRight|dtRTLReading|dtWordBreak|dtNoPrefix)
+	return bitmap
+}
+
+// pasteStyledQuran gives rich-text apps the font selected for Qalam's preview. The plain Unicode text
+// remains present too, so a plain-text field still receives readable, editable Qur'an text.
+func pasteStyledQuran(text, font string) {
+	if !setQuranClipboard(text, font) {
+		sendLines(text)
+		return
+	}
+	sendInputs([]input{
+		{Type: inputKeyboard, WVk: vkControl, DwExtraInfo: qalamMark},
+		{Type: inputKeyboard, WVk: 'V', DwExtraInfo: qalamMark},
+		{Type: inputKeyboard, WVk: 'V', DwFlags: keyUp, DwExtraInfo: qalamMark},
+		{Type: inputKeyboard, WVk: vkControl, DwFlags: keyUp, DwExtraInfo: qalamMark},
+	})
+}
+
+func setQuranClipboard(text, font string) bool {
+	if ok, _, _ := pOpenClipboard.Call(quranHwnd); ok == 0 {
+		return false
+	}
+	defer pCloseClipboard.Call()
+	if ok, _, _ := pEmptyClipboard.Call(); ok == 0 {
+		return false
+	}
+	put := func(format uintptr, data []byte) bool {
+		h, _, _ := pGlobalAlloc.Call(gmMoveable, uintptr(len(data)))
+		if h == 0 {
+			return false
+		}
+		p, _, _ := pGlobalLock.Call(h)
+		if p == 0 {
+			pGlobalFree.Call(h)
+			return false
+		}
+		copy(unsafe.Slice((*byte)(unsafe.Pointer(p)), len(data)), data)
+		pGlobalUnlock.Call(h)
+		if r, _, _ := pSetClipboardData.Call(format, h); r == 0 {
+			pGlobalFree.Call(h)
+			return false
+		}
+		return true
+	}
+	u, _ := syscall.UTF16FromString(text)
+	plain := unsafe.Slice((*byte)(unsafe.Pointer(&u[0])), len(u)*2)
+	if !put(cfUnicodeText, plain) {
+		return false
+	}
+	rtfFormat, _, _ := pRegisterClipboardFormatW.Call(uintptr(unsafe.Pointer(utf16Ptr("Rich Text Format"))))
+	return rtfFormat != 0 && put(rtfFormat, []byte(quranRTF(text, font)))
+}
+
+func quranRTF(text, font string) string {
+	escape := func(s string) string {
+		var b strings.Builder
+		for _, r := range s {
+			switch r {
+			case '\\', '{', '}':
+				b.WriteByte('\\')
+				b.WriteRune(r)
+			case '\n':
+				b.WriteString("\\line\n")
+			default:
+				if r > 127 {
+					b.WriteString(fmt.Sprintf("\\u%d?", int16(r)))
+				} else {
+					b.WriteRune(r)
+				}
+			}
+		}
+		return b.String()
+	}
+	return "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 " + escape(font) + ";}}\\pard\\rtlpar\\f0\\fs48 " + escape(text) + "}"
 }
 
 // sendLines types text with Shift+Enter between lines: a new line in editors, and in chat apps a
@@ -506,6 +705,31 @@ func onQuranClick(x, y int32, double bool) {
 				searchQuran() // a translation search looks in the chosen translation when it can
 			}
 		}
+	case inRect(x, y, quranFontBtn):
+		choices := quranFontChoices(fonts)
+		current := 0
+		for i, name := range choices {
+			if name == settings.quranFontName() {
+				current = i
+			}
+		}
+		if i := quranPopup(quranFontBtn, choices, current, 0); i >= 0 && i < len(choices) && choices[i] != settings.QuranFont {
+			settings.QuranFont = choices[i]
+			saveSettings(settings)
+			quranDPI = 0 // recreate the GDI fonts with the selected family
+		}
+	case inRect(x, y, quranStyledBtn):
+		settings.QuranStyled = !settings.QuranStyled
+		if settings.QuranStyled {
+			settings.QuranArtwork = false
+		}
+		saveSettings(settings)
+	case inRect(x, y, quranArtworkBtn):
+		settings.QuranArtwork = !settings.QuranArtwork
+		if settings.QuranArtwork {
+			settings.QuranStyled = false
+		}
+		saveSettings(settings)
 	}
 	for i, r := range quranSwitch {
 		if inRect(x, y, r) && b.In != quran.SearchIn(i) {
@@ -612,17 +836,13 @@ func quranPopup(r rect, titles []string, current, column int) int {
 
 // ---------- Text helpers ----------
 
-// arabicNumber: the āyah-end mark with its number. KFGQPC Hafs circles plain Arabic digits by itself;
-// other fonts need ۝ (U+06DD) before them.
+// arabicNumber: the āyah-end marker with its number inside Qur'anic ornamental brackets.
 func arabicNumber(n int) string {
 	d := []rune(fmt.Sprint(n))
 	for i := range d {
 		d[i] = 0x0660 + d[i] - '0'
 	}
-	if isKFGQPC() {
-		return string(d)
-	}
-	return "۝" + string(d)
+	return "﴿" + string(d) + "﴾"
 }
 
 // textHeight is the height of s drawn in font, wrapped to width.
@@ -865,7 +1085,7 @@ func layoutQuran() {
 	quranPreview = rect{pad, y + refH + qs(4), width - pad, y + refH + qs(4) + used + 2*qs(10)}
 	y = quranPreview.Bottom + qs(10)
 
-	// Separator, then [mode] … [Cancel] [Insert], the translation, and the keys.
+	// Separator, then [mode] … [Cancel] [Insert], the translation/font choices, and the keys.
 	quranSepY = y
 	y += qs(1) + qs(10)
 	x := pad
@@ -879,13 +1099,23 @@ func layoutQuran() {
 	quranInsertBtn = rect{width - pad - iw, y, width - pad, y + bh}
 	quranCancelBtn = rect{quranInsertBtn.Left - qs(8) - cw, y, quranInsertBtn.Left - qs(8), y + bh}
 	y += bh
-	quranTransBtn = rect{}
+	quranTransBtn, quranFontBtn, quranStyledBtn, quranArtworkBtn = rect{}, rect{}, rect{}, rect{}
 	if settings.quranMode() != quran.Arabic {
 		y += qs(8)
 		lw := textWidth(qFontSmall, "Translation", 0) + qs(10)
 		quranTransBtn = rect{pad + lw, y, pad + lw + qs(400), y + qs(28)}
 		y += qs(28)
 	}
+	y += qs(8)
+	lw := textWidth(qFontSmall, "Qur'an font", 0) + qs(10)
+	quranFontBtn = rect{pad + lw, y, pad + lw + qs(260), y + qs(28)}
+	y += qs(28)
+	y += qs(8)
+	quranStyledBtn = rect{pad, y, pad + qs(260), y + qs(28)}
+	y += qs(28)
+	y += qs(6)
+	quranArtworkBtn = rect{pad, y, pad + qs(260), y + qs(28)}
+	y += qs(28)
 	y += qs(10)
 	quranHint = rect{pad, y, width - pad, y + lineHeight(qFontSmall)}
 	quranW, quranH = width, quranHint.Bottom+qs(12)
@@ -1049,6 +1279,18 @@ func paintQuran(hwnd uintptr) {
 		}
 		dropdown(hdc, quranTransBtn, label, false)
 	}
+	text(hdc, "Qur'an font", rect{pad, quranFontBtn.Top, quranFontBtn.Left, quranFontBtn.Bottom}, qFontSmall, colSoft, dtLeft|dtVCenter|dtSingleLine)
+	dropdown(hdc, quranFontBtn, settings.quranFontName(), false)
+	styled := "Styled paste: Off"
+	if settings.QuranStyled {
+		styled = "Styled paste: On"
+	}
+	button(hdc, quranStyledBtn, styled, settings.QuranStyled)
+	artwork := "Paste as artwork: Off"
+	if settings.QuranArtwork {
+		artwork = "Paste as artwork: On"
+	}
+	button(hdc, quranArtworkBtn, artwork, settings.QuranArtwork)
 	text(hdc, quranHintText(), quranHint, qFontSmall, colFaint, dtLeft|dtVCenter|dtSingleLine|dtEndEllipsis)
 }
 

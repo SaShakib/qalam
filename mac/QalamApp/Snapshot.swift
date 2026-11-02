@@ -42,7 +42,7 @@ enum Snapshot {
                 model.query = typed
             }
             if args.count > i + 3, let n = Int(args[i + 3]) { model.move(n); model.to = model.from + 2 }
-            let host = NSHostingView(rootView: QuranBoxView(model: model, insert: {}, cancel: {})
+            let host = NSHostingView(rootView: QuranBoxView(model: model, insert: { _, _, _ in }, cancel: {})
                 .background(Color(nsColor: .windowBackgroundColor)))
             let size = host.fittingSize
             host.appearance = NSAppearance(named: .aqua)

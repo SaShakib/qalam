@@ -52,6 +52,18 @@ func TestLoad(t *testing.T) {
 	}
 }
 
+func TestInsertedAyahUsesArabicMarker(t *testing.T) {
+	l := library(t)
+	p := Passage{Surah: 1, From: 3, To: 3}
+	got := l.Text(p, Arabic, "")
+	if !strings.HasSuffix(got, "﴿٣﴾") || strings.Contains(got, "(1:3)") {
+		t.Errorf("inserted text = %q, want an Arabic number inside the verse marker", got)
+	}
+	if got := AyahMarker(255); got != "﴿٢٥٥﴾" {
+		t.Errorf("AyahMarker(255) = %q", got)
+	}
+}
+
 func TestResolve(t *testing.T) {
 	l := library(t)
 	cases := map[string]string{
@@ -283,24 +295,24 @@ func TestText(t *testing.T) {
 	if !strings.HasPrefix(a1, "قُلْ هُوَ") {
 		t.Errorf("112:1 = %s", a1)
 	}
-	want := a1 + "\nSay, \"He is Allah, [who is] One, (112:1)\n\n" + a2 + "\nAllah, the Eternal Refuge. (112:2)"
+	want := a1 + " ﴿١﴾\nSay, \"He is Allah, [who is] One,\n\n" + a2 + " ﴿٢﴾\nAllah, the Eternal Refuge."
 	if got := l.Text(p, Both, "en.sahih"); got != want {
 		t.Errorf("both:\n%s", got)
 	}
-	if got := l.Text(p, Arabic, "en.sahih"); got != a1+" (112:1) "+a2+" (112:2)" {
+	if got := l.Text(p, Arabic, "en.sahih"); got != a1+" ﴿١﴾ "+a2+" ﴿٢﴾" {
 		t.Errorf("arabic: %s", got)
 	}
-	if got := l.Text(p, TranslationOnly, "en.sahih"); got != "Say, \"He is Allah, [who is] One, (112:1) Allah, the Eternal Refuge. (112:2)" {
+	if got := l.Text(p, TranslationOnly, "en.sahih"); got != "Say, \"He is Allah, [who is] One, ﴿١﴾ Allah, the Eternal Refuge. ﴿٢﴾" {
 		t.Errorf("translation: %s", got)
 	}
 	p, _ = l.Resolve("2:1")
-	if got := l.Text(p, Both, "en.sahih"); got != "الٓمٓ\nAlif, Lam, Meem. (2:1)" {
+	if got := l.Text(p, Both, "en.sahih"); got != "الٓمٓ ﴿١﴾\nAlif, Lam, Meem." {
 		t.Errorf("2:1: %s", got)
 	}
-	if got := l.Text(p, Both, "xx.none"); got != "الٓمٓ (2:1)" { // unknown translation: Arabic only
+	if got := l.Text(p, Both, "xx.none"); got != "الٓمٓ ﴿١﴾" { // unknown translation: Arabic only
 		t.Errorf("unknown translation: %s", got)
 	}
-	if !strings.HasPrefix(l.Text(p, Both, "bn.hoque"), "الٓمٓ\n") {
+	if !strings.HasPrefix(l.Text(p, Both, "bn.hoque"), "الٓمٓ ﴿١﴾\n") {
 		t.Error("bn.hoque missing")
 	}
 }

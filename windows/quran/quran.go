@@ -813,8 +813,9 @@ func ForKFGQPC(s string) string {
 	return strings.NewReplacer("۟", "۠", "ۣ", "ۜ", "۫", "۬").Replace(s)
 }
 
-// Text is what gets inserted: "ٱللَّهُ لَآ إِلَٰهَ … (2:255)", then the translation on the next line;
-// each āyah has its reference.
+// Text is what gets inserted: an Arabic āyah ends with Arabic-Indic digits inside Qur'anic
+// ornamental brackets (﴿٣﴾), rather than a Western-style (sūrah:āyah) reference. The reference is
+// useful in the picker, but not part of a Qur'an quotation.
 func (l *Library) Text(p Passage, mode Insert, translation string) string {
 	trans := ""
 	if mode != Arabic && l.Translation(translation) != nil {
@@ -822,7 +823,7 @@ func (l *Library) Text(p Passage, mode Insert, translation string) string {
 	}
 	var out []string
 	for a := p.From; a <= p.To; a++ {
-		ref := fmt.Sprintf("(%d:%d)", p.Surah, a)
+		marker := AyahMarker(a)
 		ar := l.Arabic(p.Surah, a)
 		tr := ""
 		if trans != "" {
@@ -830,15 +831,15 @@ func (l *Library) Text(p Passage, mode Insert, translation string) string {
 		}
 		switch {
 		case mode == Arabic:
-			out = append(out, ar+" "+ref)
+			out = append(out, ar+" "+marker)
 		case mode == TranslationOnly && tr != "":
-			out = append(out, tr+" "+ref)
+			out = append(out, tr+" "+marker)
 		case mode == TranslationOnly:
-			out = append(out, ar+" "+ref)
+			out = append(out, ar+" "+marker)
 		case tr != "":
-			out = append(out, ar+"\n"+tr+" "+ref)
+			out = append(out, ar+" "+marker+"\n"+tr)
 		default:
-			out = append(out, ar+" "+ref)
+			out = append(out, ar+" "+marker)
 		}
 	}
 	sep := " "
@@ -846,6 +847,18 @@ func (l *Library) Text(p Passage, mode Insert, translation string) string {
 		sep = "\n\n"
 	}
 	return strings.Join(out, sep)
+}
+
+// AyahMarker puts Arabic-Indic digits inside Qur'anic ornamental brackets.
+func AyahMarker(n int) string {
+	digits := strconv.Itoa(n)
+	var out strings.Builder
+	out.WriteRune('﴿')
+	for _, r := range digits {
+		out.WriteRune(0x0660 + r - '0')
+	}
+	out.WriteRune('﴾')
+	return out.String()
 }
 
 func bengaliConsonant(r rune) bool {

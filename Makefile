@@ -8,7 +8,7 @@
 # Trusted Mac builds (no "Open Anyway" for users, ever): see docs/developers/signing.md.
 #   make release SIGN_ID="Developer ID Application: …" INSTALLER_ID="Developer ID Installer: …" NOTARY_PROFILE=qalam
 
-VERSION  := 1.4.0
+VERSION  := 1.4.1
 # Builds run at low priority on 2 cores so the Mac stays responsive.
 SWIFT    := nice -n 15 swift build -c release -j 2
 GO       := nice -n 15 go
@@ -106,10 +106,9 @@ guide: icons
 	mkdir -p windows/assets
 	$(RELEASE)/qalam --guide windows/assets/guide.html windows
 	cp $(BUILD)/icons/qalam-on.ico $(BUILD)/icons/qalam-off.ico windows/assets/
-	# The fonts the Windows app carries and installs: SIL Scheherazade New, and KFGQPC Hafs when it's in fonts/.
+	# The fonts the Windows app carries and installs: the Qur'an choices available on macOS too.
 	mkdir -p windows/assets/fonts
-	cp fonts/ScheherazadeNew.ttf fonts/OFL-ScheherazadeNew.txt windows/assets/fonts/
-	for f in fonts/*KFGQPC* fonts/*Hafs* fonts/*HAFS*; do [ -f "$$f" ] && cp "$$f" windows/assets/fonts/ || true; done
+	cp fonts/*.ttf fonts/*.txt windows/assets/fonts/
 	# The Qur'an data for the Ctrl+Alt+Q box, texts gzipped (windows/quran/quran_test.go checks they match quran/).
 	cd windows && $(GO) run ./tools/packquran ../quran assets/quran
 

@@ -34,6 +34,16 @@ Look for the **ق** icon in the tray, bottom right; click **^** to see hidden ic
 
 Arabic typing is off. Press **Ctrl + Alt + A** or click the ق icon: it turns green.
 
+### Qalam does not type while Bijoy or another keyboard is selected
+
+Leave Bijoy installed. When Qalam is on, it now automatically uses the English keyboard layout for
+the app you are typing in, then restores your previous layout when you turn Qalam off. This lets
+Qalam receive its QWERTY keys without asking you to switch layouts by hand.
+
+If a legacy Bijoy utility still captures every key even after its Windows layout has changed, turn
+off that utility's own **Bangla typing mode** while using Qalam. Two keyboard converters cannot
+translate the same key press at the same time.
+
 ### Ctrl + Alt + A does something else in my app
 
 Change the shortcut: right-click **ق** → **Shortcuts**. See [Shortcuts](shortcuts.md).

@@ -26,7 +26,10 @@ type Settings struct {
 	// translation (Tanzil id). Empty = "both" and "en.sahih", as on the Mac.
 	QuranInsert      string `json:"quranInsert,omitempty"`
 	QuranTranslation string `json:"quranTranslation,omitempty"`
-	QuranLast        string `json:"quranLast,omitempty"` // the passage picked last time ("2:255-257"); the box opens there
+	QuranFont        string `json:"quranFont,omitempty"`    // bundled font used in the Qur'an picker and preview
+	QuranStyled      bool   `json:"quranStyled,omitempty"`  // paste rich text in the selected Qur'an font
+	QuranArtwork     bool   `json:"quranArtwork,omitempty"` // paste a rendered picture, with Unicode as a fallback
+	QuranLast        string `json:"quranLast,omitempty"`    // the passage picked last time ("2:255-257"); the box opens there
 	// Shortcuts the user changed: "toggle", "sukun", "harakat", "quran". A missing name uses the default;
 	// null means the user removed it.
 	Keys map[string]*Hotkey `json:"keys,omitempty"`
@@ -71,6 +74,23 @@ func (s Settings) quranTranslation() string {
 		return "en.sahih"
 	}
 	return s.QuranTranslation
+}
+
+// quranFontName is safe for existing settings files and for a font removed in a later build.
+// KFGQPC Hafs remains the default Madinah-mushaf display font.
+func (s Settings) quranFontName() string {
+	if s.QuranFont != "" && hasQuranFont(fonts, s.QuranFont) {
+		return s.QuranFont
+	}
+	for _, f := range fonts {
+		if isQuranFont(f) {
+			return f.Name
+		}
+	}
+	if f := typingFont(fonts); f != nil {
+		return f.Name
+	}
+	return "Segoe UI"
 }
 
 // hotkey is the shortcut in use for name, or nil if there is none.

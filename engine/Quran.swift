@@ -460,21 +460,32 @@ public final class QuranLibrary {
 
     // MARK: Text to insert
 
-    /// "ٱللَّهُ لَآ إِلَٰهَ … (2:255)", then the translation; each āyah has its reference.
+    /// The Arabic āyah followed by its Qur'anic ornamental marker and number (for example ﴿٢٥٥﴾).
+    /// The marker is part of the inserted Unicode text, so it remains correct in ordinary Arabic
+    /// fonts. A sūrah:āyah reference belongs in the picker, not in the quotation.
     public func text(_ p: Passage, _ mode: QuranInsert, translation id: String?) -> String {
         let trans = mode == .arabic ? nil : id.flatMap { translation($0) != nil ? $0 : nil }
         var out: [String] = []
         for a in p.ayahs {
-            let ref = "(\(p.surah):\(a))"
+            let marker = Self.ayahMarker(a)
             let ar = arabic(p.surah, a) ?? ""
             let tr = trans.flatMap { translation($0, p.surah, a) }
             switch mode {
-            case .arabic: out.append("\(ar) \(ref)")
-            case .translation: out.append("\(tr ?? ar) \(ref)")
-            case .both: out.append(tr.map { "\(ar)\n\($0) \(ref)" } ?? "\(ar) \(ref)")
+            case .arabic: out.append("\(ar) \(marker)")
+            case .translation: out.append("\(tr ?? ar) \(marker)")
+            case .both: out.append(tr.map { "\(ar) \(marker)\n\($0)" } ?? "\(ar) \(marker)")
             }
         }
         return out.joined(separator: mode == .both ? "\n\n" : " ")
+    }
+
+    /// Arabic ornamental brackets around Arabic-Indic digits. Do not use a Western-style
+    /// parenthesised sūrah:āyah reference in inserted Qur'an text.
+    public static func ayahMarker(_ number: Int) -> String {
+        let digits = String(String(number).compactMap { $0.wholeNumberValue }.compactMap {
+            UnicodeScalar(0x0660 + $0).map(Character.init)
+        })
+        return "﴿\(digits)﴾"
     }
 }
 

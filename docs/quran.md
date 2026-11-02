@@ -19,7 +19,8 @@ login for this; switch it off in **Settings → Qur'an box**). A box opens:
 2. Choose a result with **↑ / ↓** or a **click** (double-click inserts). It fills **Sūrah**, **From āyah** and
    **To āyah**.
 3. Set the range with the **From āyah** / **To āyah** dropdowns. The preview shows exactly what goes in.
-4. Choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation.
+4. Choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation. Pick the
+   Qur'an font and, if you are pasting into a rich editor, turn on **Styled paste** or **Paste as artwork**.
 5. **Insert** (Return). **Esc** clears the search, then closes the box.
 
 The text goes back into the app you were in. With the Qalam keyboard on there, it is typed in directly.
@@ -42,6 +43,7 @@ opens in the middle of the screen, on the last āyāt you inserted:
 3. Set the range with the dropdowns (a click opens a menu; or **Tab** to them, see below). The preview
    shows the āyāt in the Qur'an font, with the translation under each when it goes in too.
 4. At the bottom choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation.
+   Choose a **Qur'an font** and optionally set **Styled paste: On** or **Paste as artwork: On**.
 5. **Insert** (Enter). **Esc** clears the search, then closes the box.
 
    | Key | Does |
@@ -56,8 +58,9 @@ opens in the middle of the screen, on the last āyāt you inserted:
 The box is short at first and grows downward only when results or more āyāt need room. A long passage shows
 its first āyāt and "… and N more" (all of them are inserted).
 
-Each āyah ends with its reference, like `(2:255)`. With a translation, the Arabic line comes first and the
-translation under it.
+Each Arabic āyah ends with an Arabic-Indic number inside Qur'anic ornamental brackets, such as `﴿٢٥٥﴾`;
+Qalam never appends a `(sūrah:āyah)` reference to the inserted Arabic. With a translation, the Arabic line
+comes first and the translation under it.
 
 The shortcut can be changed in **Qalam → Settings → Shortcuts** on the Mac (the ق menu has
 **Insert from the Qur'an…** too), and on Windows in the tray menu → **Shortcuts** → **Insert from the Qur'an**
@@ -75,9 +78,18 @@ The shortcut can be changed in **Qalam → Settings → Shortcuts** on the Mac (
 - In Chrome-based apps the same invisible fix as for typing keeps اللَّه from turning into the font's ligature.
 - The box is sized for the screen it opens on (its DPI), and Bangla translations show in Nirmala UI.
 
-The box shows the Arabic in the Qur'an font (KFGQPC Hafs); what goes into your app takes that app's font.
-For the Qur'an font in Pages, Word or Notes on the Mac, use **Copy** on the app's Qur'an page (it copies
-rich text). On Windows, install the fonts (**Setup & settings… → Fonts**) and pick KFGQPC HAFS Uthmanic Script.
+The box defaults to **KFGQPC HAFS Uthmanic Script** and also offers Amiri Quran and Noto Naskh Arabic.
+Normal insertion is plain editable Unicode, so its final appearance follows the receiving app's font. With
+**Styled paste** on, Qalam also places an RTF version using the chosen font on the clipboard; Illustrator,
+Word, OneNote, Notes, and rich browser editors can preserve it while leaving the text editable. A plain
+text field (for example Notepad, the Chrome address bar, or a normal web text box) cannot retain any font
+by design and receives the same editable Unicode. Install the chosen font from **Setup & settings… → Fonts**
+on Windows before using it independently in Illustrator.
+
+**Paste as artwork** is a separate saved option. It places a rendered image and the Unicode text on the
+clipboard. Illustrator and rich Chrome editors can paste the image, making its appearance independent of
+the receiving app's fonts; it is not editable as text. If a target cannot paste images, it can use the
+Unicode fallback instead. Plain-text fields cannot paste graphics at all.
 
 ## The Qur'an page in the app
 
