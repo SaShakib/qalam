@@ -780,13 +780,33 @@ struct BoxSearchField: NSViewRepresentable {
             f.stringValue = text
         }
         context.coordinator.style(f)
+        context.coordinator.restoreFocusAfterResultsUpdate(in: f)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     final class Coordinator: NSObject, NSSearchFieldDelegate {
         var parent: BoxSearchField
+        /// Adding the first result resizes this non-activating panel. On some
+        /// macOS versions that layout pass drops the field editor, so later
+        /// keys reach the app underneath instead of the Qur'an search.
+        private var restoreFocus = false
         init(_ p: BoxSearchField) { parent = p }
+
+        /// Reclaim first responder *after* SwiftUI has added/removed result
+        /// rows. Restricting this to edits made in this field avoids stealing
+        /// focus from the popup's pickers or buttons.
+        func restoreFocusAfterResultsUpdate(in field: NSSearchField) {
+            guard restoreFocus else { return }
+            DispatchQueue.main.async { [weak self, weak field] in
+                guard let self, let field, self.restoreFocus, let window = field.window,
+                      window.isVisible else { return }
+                self.restoreFocus = false
+                if window.firstResponder !== field.currentEditor() {
+                    window.makeFirstResponder(field)
+                }
+            }
+        }
 
         /// Arabic right to left in the Qur'an font; Latin and the placeholder as usual.
         func style(_ f: NSSearchField) {
@@ -803,6 +823,9 @@ struct BoxSearchField: NSViewRepresentable {
 
         func controlTextDidChange(_ n: Notification) {
             guard let f = n.object as? NSSearchField else { return }
+            // Updating `query` below may reveal the results list. Request a
+            // first-responder restore once that particular view update ends.
+            restoreFocus = true
             let s = f.stringValue
             let editor = f.currentEditor() as? NSTextView
             guard parent.transliterate, editor?.hasMarkedText() != true else {
