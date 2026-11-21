@@ -830,6 +830,14 @@ struct BoxSearchField: NSViewRepresentable {
                 f.alignment = alignment
                 f.baseWritingDirection = arabic ? .rightToLeft : .natural
             }
+            // NSSearchField uses a separate NSTextView while it is being
+            // edited. Styling only the field leaves that live editor LTR, so
+            // text typed from an Arabic keyboard appears at the wrong edge and
+            // the caret jumps back there after an edit.
+            if let editor = f.currentEditor() as? NSTextView {
+                editor.alignment = alignment
+                editor.baseWritingDirection = arabic ? .rightToLeft : .natural
+            }
         }
 
         /// Apply an ASCII Qalam-key buffer without letting AppKit's current
