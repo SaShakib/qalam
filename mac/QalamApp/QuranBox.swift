@@ -849,6 +849,13 @@ struct BoxSearchField: NSViewRepresentable {
                 latin += added                           // typed at the end
             } else if !latin.isEmpty, shown.hasPrefix(s), s.count < shown.count {
                 latin.removeLast()                       // Backspace: the last Latin key goes
+            } else if !latin.isEmpty, s.count == 1, s.unicodeScalars.allSatisfy({ $0.isASCII }) {
+                // AppKit can leave the whole converted value selected just after
+                // SwiftUI redraws the growing result list. In that case the next
+                // key replaces (rather than follows) the visible Arabic, but it
+                // is still the next phonetic key the user typed. Keep the Latin
+                // buffer and extend it instead of falling back to raw English.
+                latin += s
             } else {
                 parent.latin = ""                        // pasted, Arabic letters, or an edit in the middle
                 parent.text = s
