@@ -778,14 +778,6 @@ struct BoxSearchField: NSViewRepresentable {
         f.placeholderString = placeholder
         if f.stringValue != text && (f.currentEditor() as? NSTextView)?.hasMarkedText() != true {
             f.stringValue = text
-            // AppKit selects all text when SwiftUI writes the converted Arabic
-            // back into the field. Put the cursor at its end after this update;
-            // otherwise the next Latin key replaces the first letter and the
-            // box appears to fall back to English.
-            let end = (text as NSString).length
-            DispatchQueue.main.async { [weak f] in
-                (f?.currentEditor() as? NSTextView)?.setSelectedRange(NSRange(location: end, length: 0))
-            }
         }
         context.coordinator.style(f)
         context.coordinator.restoreFocusAfterResultsUpdate(in: f)
@@ -799,6 +791,12 @@ struct BoxSearchField: NSViewRepresentable {
         /// macOS versions that layout pass drops the field editor, so later
         /// keys reach the app underneath instead of the Qur'an search.
         private var restoreFocus = false
+        /// Changing the editor's string can deliver a nested text-change
+        /// notification. The outer edit has already updated the bindings.
+        private var applyingConversion = false
+        /// Some AppKit releases deliver that notification on the next run-loop
+        /// instead. Its value must not be treated as fresh user input.
+        private var pendingProgrammaticValue: String?
         init(_ p: BoxSearchField) { parent = p }
 
         /// Reclaim first responder *after* SwiftUI has added/removed result
@@ -810,9 +808,12 @@ struct BoxSearchField: NSViewRepresentable {
                 guard let self, let field, self.restoreFocus, let window = field.window,
                       window.isVisible else { return }
                 self.restoreFocus = false
-                if window.firstResponder !== field.currentEditor() {
-                    window.makeFirstResponder(field)
-                }
+                // A results-list resize may leave this field as first responder
+                // yet still select its whole value. Reassert both responder and
+                // insertion point after the layout pass.
+                window.makeFirstResponder(field)
+                let end = (field.stringValue as NSString).length
+                (field.currentEditor() as? NSTextView)?.setSelectedRange(NSRange(location: end, length: 0))
             }
         }
 
@@ -831,6 +832,11 @@ struct BoxSearchField: NSViewRepresentable {
 
         func controlTextDidChange(_ n: Notification) {
             guard let f = n.object as? NSSearchField else { return }
+            guard !applyingConversion else { return }
+            if let pending = pendingProgrammaticValue {
+                pendingProgrammaticValue = nil
+                if f.stringValue == pending { return }
+            }
             // Updating `query` below may reveal the results list. Request a
             // first-responder restore once that particular view update ends.
             restoreFocus = true
@@ -865,9 +871,20 @@ struct BoxSearchField: NSViewRepresentable {
             let arabic = latin.isEmpty ? "" : QuranBoxModel.arabic(latin)
             parent.latin = latin
             parent.text = arabic
-            f.stringValue = arabic
+            // Update the active field editor, rather than assigning
+            // `NSSearchField.stringValue`. The latter causes AppKit to select
+            // the entire converted word after the SwiftUI redraw; then each
+            // next key replaces the one before it.
+            applyingConversion = true
+            if let editor {
+                pendingProgrammaticValue = arabic
+                editor.string = arabic
+                editor.setSelectedRange(NSRange(location: (arabic as NSString).length, length: 0))
+            } else {
+                f.stringValue = arabic
+            }
+            applyingConversion = false
             style(f)
-            editor?.setSelectedRange(NSRange(location: (arabic as NSString).length, length: 0))
         }
 
         func control(_ control: NSControl, textView: NSTextView, doCommandBy sel: Selector) -> Bool {
