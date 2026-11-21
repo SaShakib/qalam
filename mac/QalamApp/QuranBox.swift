@@ -797,6 +797,8 @@ struct BoxSearchField: NSViewRepresentable {
         /// Some AppKit releases deliver that notification on the next run-loop
         /// instead. Its value must not be treated as fresh user input.
         private var pendingProgrammaticValue: String?
+        /// Cursor offset in the ASCII phonetic buffer behind the rendered Arabic.
+        private var latinCursor = 0
         init(_ p: BoxSearchField) { parent = p }
 
         /// Reclaim first responder *after* SwiftUI has added/removed result
@@ -832,15 +834,28 @@ struct BoxSearchField: NSViewRepresentable {
 
         /// Apply an ASCII Qalam-key buffer without letting AppKit's current
         /// selection decide which visible Arabic characters survive.
-        private func applyLatin(_ latin: String, field: NSSearchField, editor: NSTextView) {
+        private func rawOffset(for displayOffset: Int, in latin: String) -> Int {
+            let chars = Array(latin)
+            var best = 0, bestDistance = Int.max
+            for i in 0...chars.count {
+                let rendered = QuranBoxModel.arabic(String(chars.prefix(i)))
+                let distance = abs((rendered as NSString).length - displayOffset)
+                if distance < bestDistance { best = i; bestDistance = distance }
+            }
+            return best
+        }
+
+        private func applyLatin(_ latin: String, cursor: Int, field: NSSearchField, editor: NSTextView) {
             let arabic = latin.isEmpty ? "" : QuranBoxModel.arabic(latin)
             parent.latin = latin
             parent.text = arabic
+            latinCursor = max(0, min(cursor, latin.count))
             restoreFocus = true
             applyingConversion = true
             pendingProgrammaticValue = arabic
             editor.string = arabic
-            editor.setSelectedRange(NSRange(location: (arabic as NSString).length, length: 0))
+            let prefix = String(latin.prefix(latinCursor))
+            editor.setSelectedRange(NSRange(location: (QuranBoxModel.arabic(prefix) as NSString).length, length: 0))
             applyingConversion = false
             style(field)
         }
@@ -853,8 +868,18 @@ struct BoxSearchField: NSViewRepresentable {
             guard parent.transliterate, textView.hasMarkedText() == false,
                   let string, !string.isEmpty, string.unicodeScalars.allSatisfy({ $0.isASCII }),
                   let field = control as? NSSearchField else { return true }
-            applyLatin(parent.latin + string, field: field, editor: textView)
+            let latin = Array(parent.latin)
+            let start = rawOffset(for: range.location, in: parent.latin)
+            let end = rawOffset(for: range.location + range.length, in: parent.latin)
+            let updated = String(latin.prefix(start)) + string + String(latin.dropFirst(end))
+            applyLatin(updated, cursor: start + string.count, field: field, editor: textView)
             return false
+        }
+
+        func textViewDidChangeSelection(_ notification: Notification) {
+            guard parent.transliterate, !applyingConversion,
+                  let editor = notification.object as? NSTextView else { return }
+            latinCursor = rawOffset(for: editor.selectedRange().location, in: parent.latin)
         }
 
         func controlTextDidChange(_ n: Notification) {
@@ -917,9 +942,21 @@ struct BoxSearchField: NSViewRepresentable {
         func control(_ control: NSControl, textView: NSTextView, doCommandBy sel: Selector) -> Bool {
             if textView.hasMarkedText() { return false }   // the keyboard is still composing a word
             switch sel {
+            case #selector(NSResponder.moveLeft(_:)):
+                guard parent.transliterate, let field = control as? NSSearchField else { return false }
+                applyLatin(parent.latin, cursor: max(0, latinCursor - 1), field: field, editor: textView)
+                return true
+            case #selector(NSResponder.moveRight(_:)):
+                guard parent.transliterate, let field = control as? NSSearchField else { return false }
+                applyLatin(parent.latin, cursor: min(parent.latin.count, latinCursor + 1), field: field, editor: textView)
+                return true
             case #selector(NSResponder.deleteBackward(_:)):
                 guard parent.transliterate, !parent.latin.isEmpty, let field = control as? NSSearchField else { return false }
-                applyLatin(String(parent.latin.dropLast()), field: field, editor: textView)
+                let latin = Array(parent.latin)
+                let end = rawOffset(for: textView.selectedRange().location + textView.selectedRange().length, in: parent.latin)
+                let start = textView.selectedRange().length > 0 ? rawOffset(for: textView.selectedRange().location, in: parent.latin) : max(0, end - 1)
+                let updated = String(latin.prefix(start)) + String(latin.dropFirst(end))
+                applyLatin(updated, cursor: start, field: field, editor: textView)
                 return true
             case #selector(NSResponder.moveUp(_:)): parent.onMove(-1); return true
             case #selector(NSResponder.moveDown(_:)): parent.onMove(1); return true
