@@ -778,6 +778,14 @@ struct BoxSearchField: NSViewRepresentable {
         f.placeholderString = placeholder
         if f.stringValue != text && (f.currentEditor() as? NSTextView)?.hasMarkedText() != true {
             f.stringValue = text
+            // AppKit selects all text when SwiftUI writes the converted Arabic
+            // back into the field. Put the cursor at its end after this update;
+            // otherwise the next Latin key replaces the first letter and the
+            // box appears to fall back to English.
+            let end = (text as NSString).length
+            DispatchQueue.main.async { [weak f] in
+                (f?.currentEditor() as? NSTextView)?.setSelectedRange(NSRange(location: end, length: 0))
+            }
         }
         context.coordinator.style(f)
         context.coordinator.restoreFocusAfterResultsUpdate(in: f)
