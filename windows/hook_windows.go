@@ -164,7 +164,11 @@ func onKeyDown(kb *kbdllHook) bool {
 	if (ctrl || leftAlt) && !win && !isModifier(vk) {
 		hit := func(name string) bool {
 			h := settings.hotkey(name)
-			return h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == leftAlt && h.Alt == alt && h.Shift == shift
+			// Shortcuts deliberately use Left Alt so AltGr keeps working as a
+			// normal typing key.  VK_MENU's generic state is not dependable on
+			// every Windows layout, so requiring it too made Ctrl+Alt shortcuts
+			// randomly fail even when Left Alt was physically held.
+			return h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == leftAlt && h.Shift == shift
 		}
 		switch {
 		case hit("toggle"):

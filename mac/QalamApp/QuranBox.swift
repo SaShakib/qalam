@@ -812,10 +812,13 @@ struct BoxSearchField: NSViewRepresentable {
                 self.restoreFocus = false
                 // A results-list resize may leave this field as first responder
                 // yet still select its whole value. Reassert both responder and
-                // insertion point after the layout pass.
+                // the caller's insertion point after the layout pass.
                 window.makeFirstResponder(field)
-                let end = (field.stringValue as NSString).length
-                (field.currentEditor() as? NSTextView)?.setSelectedRange(NSRange(location: end, length: 0))
+                let prefix = String(self.parent.latin.prefix(self.latinCursor))
+                let position = self.parent.latin.isEmpty
+                    ? (field.stringValue as NSString).length
+                    : (QuranBoxModel.arabic(prefix) as NSString).length
+                (field.currentEditor() as? NSTextView)?.setSelectedRange(NSRange(location: position, length: 0))
             }
         }
 

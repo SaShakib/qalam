@@ -274,7 +274,7 @@ func quranKey(vk uint32, ctrl, leftAlt, alt, shift, win bool) bool {
 	if quranMenu || isModifier(vk) { // an open menu gets its keys
 		return false
 	}
-	if h := settings.hotkey("quran"); h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == leftAlt && h.Alt == alt && h.Shift == shift {
+	if h := settings.hotkey("quran"); h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == leftAlt && h.Shift == shift {
 		closeQuran() // the shortcut again closes it
 		return true
 	}
