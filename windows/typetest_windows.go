@@ -277,7 +277,9 @@ func typeTest(out string) int {
 		time.Sleep(900 * time.Millisecond)
 		check(!quranOpen, "Enter closes the box")
 		got := windowText(rich)
-		check(strings.Contains(got, "(112:1)"), "Enter inserts the āyah: %q", got)
+		// The picker inserts the Qur'an text selected by the user, not a
+		// synthetic "(sūrah:āyah)" label.  Check its actual Arabic content.
+		check(strings.Contains(got, "قُلْ هُوَ"), "Enter inserts the āyah: %q", got)
 
 		// Edge: Chromium's own text box. The page copies the box into its title.
 		page := "data:text/html;charset=utf-8,<title>ready</title><textarea autofocus id=b rows=9 cols=60 oninput='document.title=%22v:%22%2Bb.value'></textarea>"
