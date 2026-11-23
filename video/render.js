@@ -3,6 +3,7 @@
 //   make wasm                     (once: the page uses the real engine)
 //   node video/elevenlabs.js      (the voice: video/voice/01.mp3 … one per scene in script.json)
 //   node video/render.js          → video/out/
+//   node video/render.js --lang bn → video/bn/out/
 //   node video/render.js --site   … and copy the video to website/media/ for the website
 //
 // Each scene lasts as long as its voice clip, so the voice and pictures always match. Without clips the
@@ -19,7 +20,13 @@ const { execFileSync } = require("child_process");
 const { chromium } = require("playwright");
 
 const ROOT = path.resolve(__dirname, "..");
-const OUT = path.join(__dirname, "out");
+const args = process.argv.slice(2);
+const langAt = args.indexOf("--lang");
+const LANG = langAt >= 0 ? args[langAt + 1] : null;
+if (LANG && !/^[a-z0-9_-]+$/i.test(LANG)) throw new Error("Language must contain only letters, digits, _ or -.");
+const LANG_DIR = LANG ? path.join(__dirname, LANG) : __dirname;
+const OUT = path.join(LANG_DIR, "out");
+const SINGLE_VOICE = args.includes("--single-voice");
 const FPS = Number(process.env.FPS || 30);
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".wasm": "application/wasm", ".ttf": "font/ttf" };
 
@@ -42,11 +49,18 @@ const ffmpeg = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...
 
 (async () => {
   if (!fs.existsSync(path.join(ROOT, "website/demo/qalam.wasm"))) throw new Error("Run `make wasm` first.");
-  const script = JSON.parse(fs.readFileSync(path.join(__dirname, "script.json"), "utf8"));
-  const clipDir = path.join(__dirname, "voice");
+  const script = JSON.parse(fs.readFileSync(path.join(LANG_DIR, "script.json"), "utf8"));
+  const clipDir = path.join(LANG_DIR, "voice");
   const clips = fs.existsSync(clipDir) ? fs.readdirSync(clipDir).filter((f) => /^\d+\.(mp3|wav|m4a)$/.test(f)).sort() : [];
+  const singleVoice = path.join(OUT, "qalam-demo-bn-narration.mp3");
   let durations = null;
-  if (clips.length) {
+  if (SINGLE_VOICE) {
+    if (!fs.existsSync(singleVoice)) throw new Error(`Missing single narration: ${singleVoice}`);
+    const total = seconds(singleVoice);
+    const weights = script.scenes.map((s) => s.say.length);
+    const sum = weights.reduce((a, b) => a + b, 0);
+    durations = weights.map((w) => total * w / sum);
+  } else if (clips.length) {
     if (clips.length !== script.scenes.length) throw new Error(`video/voice/ has ${clips.length} clips but script.json has ${script.scenes.length} scenes: run node video/elevenlabs.js`);
     durations = clips.map((f) => seconds(path.join(clipDir, f)));
   } else {
@@ -58,10 +72,13 @@ const ffmpeg = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...
   for (const d of [frames, clean]) { fs.rmSync(d, { recursive: true, force: true }); fs.mkdirSync(d, { recursive: true }); }
 
   const server = await serve();
-  const browser = await chromium.launch();
+  // Set PLAYWRIGHT_CHANNEL=chrome to render with an already-installed Chrome instead
+  // of Playwright's bundled Chromium (useful for the lightweight localized-video workflow).
+  const browser = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {});
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   page.on("pageerror", (e) => console.error("page error:", e.message));
-  await page.goto(`http://127.0.0.1:${server.address().port}/video/qalam-demo.html?capture`);
+  const scriptQuery = (LANG ? `&script=${encodeURIComponent(`${LANG}/script.json`)}` : "") + (SINGLE_VOICE ? "&continuous=1" : "");
+  await page.goto(`http://127.0.0.1:${server.address().port}/video/qalam-demo.html?capture${scriptQuery}`);
   await page.waitForFunction(() => window.videoReady, null, { timeout: 30000 });
   await page.evaluate(() => window.videoReady);
   const timeline = await page.evaluate((d) => d ? window.setVoiceDurations(d) : window.setVoiceDurations(Array(0)), durations);
@@ -91,7 +108,12 @@ const ffmpeg = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...
 
   // The voice track: each clip where its scene's narration starts.
   let voice = null;
-  if (durations) {
+  if (SINGLE_VOICE) {
+    voice = path.join(OUT, "voice.wav");
+    const first = Math.round(scenes[0].voiceStart * 1000);
+    ffmpeg(["-i", singleVoice, "-filter:a", `aresample=48000,adelay=${first}:all=1,apad`, "-t", duration.toFixed(3), voice]);
+    console.log("voice: placed one continuous narration");
+  } else if (durations) {
     voice = path.join(OUT, "voice.wav");
     const inputs = clips.flatMap((f) => ["-i", path.join(clipDir, f)]);
     const graph = clips.map((_, i) => `[${i}:a]aresample=48000,adelay=${Math.round(scenes[i].voiceStart * 1000)}:all=1[a${i}]`).join(";") +
@@ -108,7 +130,8 @@ const ffmpeg = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...
   for (const d of [frames, clean]) fs.rmSync(d, { recursive: true, force: true });
   for (const old of ["qalam-demo-voice.mp4", "voice-synced.wav"]) fs.rmSync(path.join(OUT, old), { force: true });
 
-  if (process.argv.includes("--site")) {
+  if (args.includes("--site")) {
+    if (LANG) throw new Error("--site is for the default website video; copy a localized video deliberately after review.");
     // The site shows its own captions, so it gets the clean video.
     const media = path.join(ROOT, "website", "media");
     fs.mkdirSync(media, { recursive: true });

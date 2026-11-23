@@ -44,6 +44,17 @@ node video/render.js --site                 # the video, and a copy on the websi
 
 To watch the animation live (with estimated timing and no voice): run `python3 -m http.server` in the repository folder and open http://localhost:8000/video/qalam-demo.html.
 
+## Bangla version
+
+The Bangla narration and subtitle script is in `video/bn/script.json`; its generated clips and renders stay in `video/bn/`, separate from the English home-page assets. Supply an ElevenLabs **Bangla-capable male** voice ID from the account:
+
+```bash
+ELEVENLABS_API_KEY=… node video/elevenlabs.js <bangla-male-voice-id> --lang bn
+node video/render.js --lang bn
+```
+
+This writes `video/bn/out/qalam-demo.mp4` (burned-in Bangla subtitles) and `qalam-demo-clean.mp4` plus Bangla `.srt`/`.vtt` captions. Review the pronunciation before publishing; `--site` deliberately refuses a localized render so it cannot accidentally replace the English home-page video.
+
 ## Change it
 
 - **Words:** edit `script.json`. `say` is what the voice reads (spelled for good pronunciation, such as "sukoon"); `show` is the subtitle. Then remake that line's voice (`--only N`) and render again.

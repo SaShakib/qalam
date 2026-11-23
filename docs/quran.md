@@ -20,7 +20,7 @@ login for this; switch it off in **Settings → Qur'an box**). A box opens:
    **To āyah**.
 3. Set the range with the **From āyah** / **To āyah** dropdowns. The preview shows exactly what goes in.
 4. Choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation. Pick the
-   Qur'an font and, if you are pasting into a rich editor, turn on **Styled paste** or **Paste as artwork**.
+   Qur'an font and, if needed, **Paste as artwork**.
 5. **Insert** (Return). **Esc** clears the search, then closes the box.
 
 The text goes back into the app you were in. With the Qalam keyboard on there, it is typed in directly.
@@ -43,7 +43,7 @@ opens in the middle of the screen, on the last āyāt you inserted:
 3. Set the range with the dropdowns (a click opens a menu; or **Tab** to them, see below). The preview
    shows the āyāt in the Qur'an font, with the translation under each when it goes in too.
 4. At the bottom choose **Arabic only**, **Arabic + translation** or **Translation only**, and the translation.
-   Choose a **Qur'an font** and optionally set **Styled paste: On** or **Paste as artwork: On**.
+   Choose a **Qur'an font** and optionally set **Paste as artwork: On**.
 5. **Insert** (Enter). **Esc** clears the search, then closes the box.
 
    | Key | Does |
@@ -79,12 +79,10 @@ The shortcut can be changed in **Qalam → Settings → Shortcuts** on the Mac (
 - The box is sized for the screen it opens on (its DPI), and Bangla translations show in Nirmala UI.
 
 The box defaults to **KFGQPC HAFS Uthmanic Script** and also offers Amiri Quran and Noto Naskh Arabic.
-Normal insertion is plain editable Unicode, so its final appearance follows the receiving app's font. With
-**Styled paste** on, Qalam also places an RTF version using the chosen font on the clipboard; Illustrator,
-Word, OneNote, Notes, and rich browser editors can preserve it while leaving the text editable. A plain
-text field (for example Notepad, the Chrome address bar, or a normal web text box) cannot retain any font
-by design and receives the same editable Unicode. Install the chosen font from **Setup & settings… → Fonts**
-on Windows before using it independently in Illustrator.
+Normal insertion is plain editable Unicode, so its final appearance follows the receiving app's font. When
+KFGQPC is selected, Qalam automatically uses that font's compatible forms for the three Tanzil marks it
+otherwise draws as dotted circles; all other Uthmani and waqf signs remain unchanged. Install the chosen
+font from **Setup & settings… → Fonts** on Windows before using it independently in Illustrator.
 
 **Paste as artwork** is a separate saved option. It places a rendered image and the Unicode text on the
 clipboard. Illustrator and rich Chrome editors can paste the image, making its appearance independent of

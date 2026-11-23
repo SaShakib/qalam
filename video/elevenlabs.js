@@ -1,7 +1,7 @@
 // Makes the voice-over with ElevenLabs: one clip per scene in video/script.json, into video/voice/01.mp3, 02.mp3 …
 // Then `node video/render.js --site` builds the video around them: each scene lasts as long as its narration.
 //
-//   ELEVENLABS_API_KEY=… node video/elevenlabs.js [voice-id] [--only 3,7]
+//   ELEVENLABS_API_KEY=… node video/elevenlabs.js [voice-id] [--only 3,7] [--lang bn]
 //
 // Without a voice id it picks an American male voice from your account (free-plan voices work), and
 // says which. The key is in ElevenLabs → your profile → API Keys. Free plan: credit ElevenLabs where
@@ -12,10 +12,14 @@ const path = require("path");
 const KEY = process.env.ELEVENLABS_API_KEY;
 if (!KEY) { console.error("Set ELEVENLABS_API_KEY first."); process.exit(1); }
 const args = process.argv.slice(2);
+const langAt = args.indexOf("--lang");
+const LANG = langAt >= 0 ? args.splice(langAt, 2)[1] : null;
 const onlyAt = args.indexOf("--only");
 const ONLY = onlyAt >= 0 ? args.splice(onlyAt, 2)[1].split(",").map(Number) : null;
-const script = JSON.parse(fs.readFileSync(path.join(__dirname, "script.json"), "utf8"));
-const OUT = path.join(__dirname, "voice");
+if (LANG && !/^[a-z0-9_-]+$/i.test(LANG)) throw new Error("Language must contain only letters, digits, _ or -.");
+const scriptPath = LANG ? path.join(__dirname, LANG, "script.json") : path.join(__dirname, "script.json");
+const script = JSON.parse(fs.readFileSync(scriptPath, "utf8"));
+const OUT = LANG ? path.join(__dirname, LANG, "voice") : path.join(__dirname, "voice");
 const api = (p, init = {}) => fetch("https://api.elevenlabs.io" + p, { ...init, headers: { "xi-api-key": KEY, ...(init.headers || {}) } });
 
 // Narrators we prefer, best first: clear American male voices from ElevenLabs' default set.
@@ -61,5 +65,5 @@ async function pickVoice() {
     fs.writeFileSync(file, Buffer.from(await r.arrayBuffer()));
     console.log(file, "←", scene.say);
   }
-  console.log("Now run: node video/render.js --site");
+  console.log(`Now run: node video/render.js${LANG ? ` --lang ${LANG}` : " --site"}`);
 })().catch((e) => { console.error(e.message); process.exit(1); });

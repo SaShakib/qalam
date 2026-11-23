@@ -87,8 +87,8 @@ final class QuranBox: NSObject, NSWindowDelegate {
         if front?.bundleIdentifier != Bundle.main.bundleIdentifier { previous = front }
         let model = QuranBoxModel(lib: lib)
         self.model = model
-        let view = QuranBoxView(model: model, insert: { [weak self] font, styled, artwork in
-            self?.insert(font: font, styled: styled, artwork: artwork)
+        let view = QuranBoxView(model: model, insert: { [weak self] font, artwork in
+            self?.insert(font: font, artwork: artwork)
         },
                                 cancel: { [weak self] in self?.close(restore: true) })
         // The window takes the content's size: short at first, taller when results or more āyāt show.
@@ -139,7 +139,7 @@ final class QuranBox: NSObject, NSWindowDelegate {
         }
     }
 
-    private func insert(font: String, styled: Bool, artwork: Bool) {
+    private func insert(font: String, artwork: Bool) {
         guard let model, let lib = QuranData.library else { return }
         let passage = model.passage
         let text = lib.text(passage, model.mode, translation: model.translation)
@@ -147,7 +147,7 @@ final class QuranBox: NSObject, NSWindowDelegate {
         let target = previous
         close(restore: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            QuranInserter.insert(text, into: target, styled: styled, artwork: artwork, font: font)
+            QuranInserter.insert(text, into: target, artwork: artwork, font: font)
         }
     }
 }
@@ -156,11 +156,13 @@ final class QuranBox: NSObject, NSWindowDelegate {
 
 enum QuranInserter {
     /// The Qalam keyboard types it when it's on in that app; otherwise ⌘V (Accessibility), or the clipboard.
-    static func insert(_ text: String, into app: NSRunningApplication?, styled: Bool = false,
-                       artwork: Bool = false, font: String = ArabicFonts.defaultQuran()) {
-        // Rich text must be pasted; direct keyboard insertion can only send Unicode characters.
-        if artwork || styled {
-            paste(text, font: font, styled: styled, artwork: artwork)
+    static func insert(_ text: String, into app: NSRunningApplication?, artwork: Bool = false,
+                       font: String = ArabicFonts.defaultQuran()) {
+        // KFGQPC draws three Tanzil source marks as dotted circles. Insert the font-compatible
+        // equivalents even for ordinary editable Unicode, so external apps match Qalam's preview.
+        let inserted = displayText(text, font: font)
+        if artwork {
+            paste(inserted, font: font, artwork: true)
             return
         }
         let token = UUID().uuidString
@@ -168,12 +170,12 @@ enum QuranInserter {
         var done = false
         let observer = center.addObserver(forName: .init("com.qalam.quran.inserted"), object: token, queue: .main) { _ in done = true }
         center.postNotificationName(.init("com.qalam.quran.insert"), object: nil,
-                                    userInfo: ["text": text, "token": token, "bundle": app?.bundleIdentifier ?? ""],
+                                    userInfo: ["text": inserted, "token": token, "bundle": app?.bundleIdentifier ?? ""],
                                     deliverImmediately: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             center.removeObserver(observer)
             QalamLog.note("Qur'an insert into \(app?.bundleIdentifier ?? "?"): keyboard typed it \(done), can paste \(canPaste)")
-            if !done { paste(text) }
+            if !done { paste(inserted) }
         }
     }
 
@@ -195,7 +197,11 @@ enum QuranInserter {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
 
-    private static func paste(_ text: String, font: String? = nil, styled: Bool = false, artwork: Bool = false) {
+    private static func displayText(_ text: String, font: String) -> String {
+        font.uppercased().contains("KFGQPC") ? QuranLibrary.forKFGQPC(text) : text
+    }
+
+    private static func paste(_ text: String, font: String? = nil, artwork: Bool = false) {
         let pb = NSPasteboard.general
         let saved = pb.pasteboardItems?.map { item -> [(NSPasteboard.PasteboardType, Data)] in
             item.types.compactMap { t in item.data(forType: t).map { (t, $0) } }
@@ -209,18 +215,6 @@ enum QuranInserter {
                    let png = bitmap.representation(using: .png, properties: [:]) {
                     pb.setData(png, forType: .png)
                 }
-            }
-        } else if styled, let font, let quranFont = NSFont(name: font, size: 24) {
-            let paragraph = NSMutableParagraphStyle()
-            paragraph.baseWritingDirection = .rightToLeft
-            paragraph.lineSpacing = 5
-            let attributed = NSAttributedString(string: text, attributes: [
-                .font: quranFont,
-                .paragraphStyle: paragraph,
-            ])
-            if let rtf = try? attributed.data(from: NSRange(location: 0, length: attributed.length),
-                                               documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]) {
-                pb.setData(rtf, forType: .rtf)
             }
         }
         guard canPaste else {
@@ -450,10 +444,9 @@ final class QuranBoxModel: ObservableObject {
 
 struct QuranBoxView: View {
     @ObservedObject var model: QuranBoxModel
-    let insert: (String, Bool, Bool) -> Void
+    let insert: (String, Bool) -> Void
     let cancel: () -> Void
     @AppStorage("quranFont2") private var quranFontName = ArabicFonts.defaultQuran()
-    @AppStorage("quranStyledPaste") private var styledPaste = false
     @AppStorage("quranArtworkPaste") private var artworkPaste = false
     @State private var canPaste = QuranInserter.canPaste
     /// With the Qalam keyboard on, the āyāt are typed in by it: no permission needed, so no note.
@@ -467,7 +460,7 @@ struct QuranBoxView: View {
                                placeholder: model.searchIn == .arabic
                                    ? "Part of an āyah, typed the Qalam way (qul huwa allaahu), a sūrah, or 2:255"
                                    : "A word in the translation, a sūrah name, or 2:255",
-                               onMove: { model.move($0) }, onReturn: { insert(quranFontName, styledPaste, artworkPaste) }, onEscape: {
+                               onMove: { model.move($0) }, onReturn: { insert(quranFontName, artworkPaste) }, onEscape: {
                                    if model.query.isEmpty { cancel() } else { model.latin = ""; model.query = "" }
                                })
                     .frame(height: 32)
@@ -510,7 +503,7 @@ struct QuranBoxView: View {
                                     .id(i)
                                     .contentShape(Rectangle())
                                     .onTapGesture { model.selected = i }
-                                    .onTapGesture(count: 2) { model.selected = i; insert(quranFontName, styledPaste, artworkPaste) }
+                                    .onTapGesture(count: 2) { model.selected = i; insert(quranFontName, artworkPaste) }
                             }
                         }
                     }
@@ -657,7 +650,7 @@ struct QuranBoxView: View {
                 .pickerStyle(.segmented).labelsHidden().frame(width: 360)
                 Spacer()
                 Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
-                Button("Insert") { insert(quranFontName, styledPaste, artworkPaste) }
+                Button("Insert") { insert(quranFontName, artworkPaste) }
                     .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
             }
             if model.mode != .arabic {
@@ -676,12 +669,8 @@ struct QuranBoxView: View {
             }
             .frame(width: 360)
             .help("Changes Qalam's Qur'an preview. Install the same font from Settings before choosing it in another app.")
-            Toggle("Styled paste (editable in rich apps)", isOn: $styledPaste)
-                .help("Pastes Unicode plus the selected Qur'an font. Plain-text fields still receive editable Unicode.")
-                .onChange(of: styledPaste) { if $0 { artworkPaste = false } }
             Toggle("Paste as artwork (not editable)", isOn: $artworkPaste)
                 .help("Pastes a rendered image plus Unicode fallback. Illustrator and rich browser editors can use the image.")
-                .onChange(of: artworkPaste) { if $0 { styledPaste = false } }
             if !canPaste && !qalamKeyboard {
                 HStack(spacing: 6) {
                     Text("Other keyboards: allow Qalam in Accessibility to paste for you (until then, press ⌘V).")

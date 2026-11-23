@@ -186,6 +186,7 @@ const LEAD = 0.5, TAIL = 0.8;
 const MIN = { intro: 5, end: 6 };
 const HOLD_END = 1.5;      // the end card stays a moment after the last word
 let SCRIPT = null, DUR = [], TL = [], SUBS = [], DURATION = 0;
+const CONTINUOUS = new URLSearchParams(location.search).get("continuous") === "1";
 
 function buildTimeline() {
   TL = []; SUBS = [];
@@ -194,9 +195,9 @@ function buildTimeline() {
     const words = s.say.split(/\s+/).length;
     const voice = DUR[i] != null ? DUR[i] : words / 2.3;
     const extra = i === 0 ? 0.5 : 0;
-    const lead = LEAD + extra;
-    let len = Math.max(lead + voice + TAIL, MIN[s.id] || 3);
-    if (i === SCRIPT.scenes.length - 1) len += HOLD_END;
+    const lead = CONTINUOUS ? (i === 0 ? LEAD + extra : 0) : LEAD + extra;
+    let len = CONTINUOUS ? lead + voice : Math.max(lead + voice + TAIL, MIN[s.id] || 3);
+    if (i === SCRIPT.scenes.length - 1 && !CONTINUOUS) len += HOLD_END;
     TL.push({ id: s.id, start: t, len, voiceStart: t + lead, voiceLen: voice });
     // Subtitles: the line in sentences, each shown for its share of the narration (by length).
     const parts = splitSentences(s.show);
@@ -215,11 +216,11 @@ function buildTimeline() {
 // Sentences, and long ones split at a comma, so a subtitle stays on one or two lines.
 function splitSentences(text) {
   const out = [];
-  for (const s of text.match(/[^.?!]+[.?!]+(\s|$)|[^.?!]+$/g).map((x) => x.trim()).filter(Boolean)) {
+  for (const s of text.match(/[^.?!।]+[.?!।]+(\s|$)|[^.?!।]+$/g).map((x) => x.trim()).filter(Boolean)) {
     if (s.length <= 95) { out.push(s); continue; }
     const mid = s.length / 2;
     let best = -1;
-    for (let k = s.indexOf(","); k >= 0; k = s.indexOf(",", k + 1)) if (best < 0 || Math.abs(k - mid) < Math.abs(best - mid)) best = k;
+    for (let k = s.search(/[,،]/); k >= 0; k = s.slice(k + 1).search(/[,،]/) < 0 ? -1 : k + 1 + s.slice(k + 1).search(/[,،]/)) if (best < 0 || Math.abs(k - mid) < Math.abs(best - mid)) best = k;
     if (best < 0) { out.push(s); continue; }
     out.push(s.slice(0, best + 1).trim(), s.slice(best + 1).trim());
   }
@@ -267,7 +268,7 @@ function chips(el, style, sukun, harakat, flash = "") {
 }
 function latin(el, buffer) { el.querySelector(".latin").innerHTML = buffer ? `typed: <b>${esc(buffer)}</b>` : ""; }
 
-const SIDEBAR = (on) => `<div class="side">${["Welcome", "Letters & keys", "Word list", "Practice", "Write", "Settings"].map((p) => `<div class="${p === on ? "on" : ""}">${p}</div>`).join("")}</div>`;
+const SIDEBAR = (on) => `<div class="side">${["Welcome", "Letters & keys", "Word list", "Practice", "Write", "Qur'an", "Settings"].map((p) => `<div class="${p === on ? "on" : ""}">${p}</div>`).join("")}</div>`;
 const APP = (inner, on = "Settings") => `<div class="app"><div class="bar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="title">Qalam</span></div>${SIDEBAR(on)}<div class="main">${inner}</div><div class="banner"></div><div class="cursor"></div></div>`;
 
 function cursor(el, x, y, show = true) {
@@ -514,6 +515,31 @@ const SCENES = {
     },
   },
 
+  quran: {
+    build(el) {
+      el.innerHTML = `<div class="heading">Insert Qur'an āyāt</div>` + APP(`<h4>Qur'an</h4><div class="group">
+        <div class="row"><span class="grow">Search</span><span class="field" data-q="search">2:255</span><span class="button" data-q="translation">Translation</span></div>
+        <div class="row" data-q="result"><span class="status good">2:255 · Al-Baqarah</span><span class="ar grow" style="font-size:34px">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ</span></div>
+        <div class="row"><span class="select"><span>Al-Baqarah</span><span>▾</span></span><span class="field">From 255</span><span class="field">To 257</span></div>
+        <div class="row"><span class="button" data-q="mode">Arabic + translation</span><span class="select"><span>KFGQPC Qur'an font</span><span>▾</span></span></div>
+        <div class="row"><span class="button" data-q="art">Paste as artwork</span><span class="button" style="margin-left:auto">Insert</span></div>
+      </div><p class="status" data-q="note" style="margin-top:20px">Search an āyah, sūrah or translation.</p>`, "Qur'an");
+    },
+    draw(el, u, len, i) {
+      const ps = parts(i);
+      const at = (n) => (ps[Math.min(n, ps.length - 1)] || { a: 0 }).a;
+      const rangeAt = at(1), modeAt = at(2), pasteAt = at(3);
+      $('[data-q="search"]', el).textContent = u < rangeAt ? "2:255" : "baqarah 255-257";
+      $('[data-q="result"]', el).classList.toggle("hi", u >= rangeAt - 0.2 && u < modeAt);
+      $('[data-q="mode"]', el).textContent = u < modeAt ? "Arabic only" : "Arabic + translation";
+      $('[data-q="styled"]', el).classList.toggle("press", u >= pasteAt && u < pasteAt + 0.8);
+      $('[data-q="art"]', el).classList.toggle("press", u >= pasteAt + 0.8);
+      $('[data-q="note"]', el).textContent = u < modeAt ? "Choose a result, then set From and To āyah." : u < pasteAt ? "Arabic only · Arabic + translation · Translation only" : "Insert keeps editable Unicode · artwork sends an image";
+      cursor(el, u < rangeAt ? 970 : u < modeAt ? 1180 : u < pasteAt ? 550 : 940, u < rangeAt ? 360 : u < modeAt ? 510 : u < pasteAt ? 595 : 660, u > 0.5 && u < len - 0.3);
+      keys([]);
+    },
+  },
+
   fonts: {
     build(el) {
       el.innerHTML = `<div class="heading">Fonts</div>` + APP(`<h4>Fonts in this app</h4><div class="group">
@@ -615,7 +641,9 @@ window.renderAt = renderAt;
 
 window.videoReady = new Promise((resolve) => {
   window.addEventListener("qalam-ready", async () => {
-    SCRIPT = await (await fetch("script.json")).json();
+    // A localized renderer can provide a sibling script, e.g. ?script=bn/script.json.
+    const script = new URLSearchParams(location.search).get("script") || "script.json";
+    SCRIPT = await (await fetch(script)).json();
     buildTimeline();
     build();
     await document.fonts.ready;
