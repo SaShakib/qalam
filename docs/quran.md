@@ -58,7 +58,8 @@ opens in the middle of the screen, on the last āyāt you inserted:
 The box is short at first and grows downward only when results or more āyāt need room. A long passage shows
 its first āyāt and "… and N more" (all of them are inserted).
 
-Each Arabic āyah ends with an Arabic-Indic number inside Qur'anic ornamental brackets, such as `﴿٢٥٥﴾`;
+Each Arabic āyah ends with its Arabic-Indic number inside one pair of Qur'anic ornamental brackets,
+such as `﴿٢٥٥﴾`;
 Qalam never appends a `(sūrah:āyah)` reference to the inserted Arabic. With a translation, the Arabic line
 comes first and the translation under it.
 

@@ -57,7 +57,7 @@ func TestInsertedAyahUsesArabicMarker(t *testing.T) {
 	p := Passage{Surah: 1, From: 3, To: 3}
 	got := l.Text(p, Arabic, "")
 	if !strings.HasSuffix(got, "﴿٣﴾") || strings.Contains(got, "(1:3)") {
-		t.Errorf("inserted text = %q, want an Arabic number inside the verse marker", got)
+		t.Errorf("inserted text = %q, want an Arabic number inside one verse marker", got)
 	}
 	if got := AyahMarker(255); got != "﴿٢٥٥﴾" {
 		t.Errorf("AyahMarker(255) = %q", got)

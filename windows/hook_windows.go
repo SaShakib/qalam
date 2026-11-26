@@ -133,6 +133,10 @@ func onKeyDown(kb *kbdllHook) bool {
 	ctrl := keyDown(vkControl)
 	leftAlt := keyDown(vkLMenu)
 	alt := keyDown(vkMenu)
+	rightAlt := keyDown(vkRMenu)
+	// Some Windows ARM keyboard drivers expose a held left Alt only through VK_MENU.
+	// Accept that fallback, but never treat AltGr (right Alt) as a Qalam shortcut.
+	hotkeyAlt := leftAlt || (alt && !rightAlt)
 	win := keyDown(vkLWin) || keyDown(vkRWin)
 	shift := keyDown(vkShift)
 	busy := composer.Buffer != ""
@@ -161,14 +165,12 @@ func onKeyDown(kb *kbdllHook) bool {
 
 	// The user's shortcuts (tray menu → Shortcuts). Defaults: Ctrl+Alt+A Arabic on/off,
 	// Ctrl+Alt+O sukūn Off ↔ Smart, Ctrl+Alt+Q insert from the Qur'an. Alt means Left Alt only, so AltGr letters on other layouts still work.
-	if (ctrl || leftAlt) && !win && !isModifier(vk) {
+	if (ctrl || hotkeyAlt) && !win && !isModifier(vk) {
 		hit := func(name string) bool {
 			h := settings.hotkey(name)
-			// Shortcuts deliberately use Left Alt so AltGr keeps working as a
-			// normal typing key.  VK_MENU's generic state is not dependable on
-			// every Windows layout, so requiring it too made Ctrl+Alt shortcuts
-			// randomly fail even when Left Alt was physically held.
-			return h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == leftAlt && h.Shift == shift
+			// Keep AltGr free for typing. The generic-Alt fallback above covers Windows ARM
+			// drivers which fail to report VK_LMENU for a physical left Alt.
+			return h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == hotkeyAlt && h.Shift == shift
 		}
 		switch {
 		case hit("toggle"):

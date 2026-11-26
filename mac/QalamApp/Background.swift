@@ -9,6 +9,7 @@ import QalamEngine
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var status: NSStatusItem?
     static let agentPlist = "com.qalam.background.plist"
+    private static let registeredAgentVersionKey = "backgroundAgentVersion"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let background = CommandLine.arguments.contains("--background")
@@ -112,10 +113,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Starts Qalam hidden at login (a launch agent inside Qalam.app). macOS may ask once in Login Items.
+    ///
+    /// SMAppService retains the bundle that first registered an agent. An in-place update can
+    /// therefore leave a stopped service pointing at an older Qalam.app, which removes the menu-bar
+    /// item and makes the global Qur'an shortcut disappear. Re-register once per app version.
     static func setLoginAgent(_ on: Bool) {
         let service = SMAppService.agent(plistName: agentPlist)
         do {
-            if on, service.status != .enabled { try service.register() }
+            if on {
+                let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+                let replaceOldRegistration = service.status == .enabled &&
+                    UserDefaults.standard.string(forKey: registeredAgentVersionKey) != version
+                if replaceOldRegistration {
+                    try service.unregister()
+                }
+                if service.status != .enabled || replaceOldRegistration { try service.register() }
+                UserDefaults.standard.set(version, forKey: registeredAgentVersionKey)
+            }
             if !on, service.status == .enabled { try service.unregister() }
         } catch {
             NSLog("Qalam login agent: \(error.localizedDescription)")

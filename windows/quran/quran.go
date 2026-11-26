@@ -813,9 +813,9 @@ func ForKFGQPC(s string) string {
 	return strings.NewReplacer("۟", "۠", "ۣ", "ۜ", "۫", "۬").Replace(s)
 }
 
-// Text is what gets inserted: an Arabic āyah ends with Arabic-Indic digits inside Qur'anic
-// ornamental brackets (﴿٣﴾), rather than a Western-style (sūrah:āyah) reference. The reference is
-// useful in the picker, but not part of a Qur'an quotation.
+// Text is what gets inserted: an Arabic āyah ends with Arabic-Indic digits inside one pair of
+// Qur'anic ornamental brackets (﴿٣﴾), rather than a Western-style
+// (sūrah:āyah) reference. The reference is useful in the picker, but not part of a Qur'an quotation.
 func (l *Library) Text(p Passage, mode Insert, translation string) string {
 	trans := ""
 	if mode != Arabic && l.Translation(translation) != nil {
@@ -849,7 +849,7 @@ func (l *Library) Text(p Passage, mode Insert, translation string) string {
 	return strings.Join(out, sep)
 }
 
-// AyahMarker puts Arabic-Indic digits inside Qur'anic ornamental brackets.
+// AyahMarker puts Arabic-Indic digits in a single pair of Qur'anic ornamental brackets.
 func AyahMarker(n int) string {
 	digits := strconv.Itoa(n)
 	var out strings.Builder

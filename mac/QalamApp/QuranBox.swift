@@ -49,20 +49,14 @@ final class QuranHotKey {
 
 final class QuranBoxPanel: NSPanel {
     override var canBecomeKey: Bool { true }
-    /// When the content gets taller or shorter, keep the top edge where it is.
-    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
-        var r = frameRect
-        if isVisible && r.height != frame.height {
-            r.origin.y = frame.maxY - r.height
-            if let v = screen?.visibleFrame, r.minY < v.minY { r.origin.y = v.minY }
-        }
-        super.setFrame(r, display: flag)
-    }
     override func cancelOperation(_ sender: Any?) { QuranBox.shared.close(restore: true) }
 }
 
 final class QuranBox: NSObject, NSWindowDelegate {
     static let shared = QuranBox()
+    /// Keep this panel fixed on macOS 26. SwiftUI's preferred-content-size updates can otherwise
+    /// cause AppKit to re-enter window constraint layout and abort while the results/preview change.
+    private let panelContentSize = NSSize(width: 672, height: 680)
 
     private var panel: QuranBoxPanel?
     private var model: QuranBoxModel?
@@ -91,11 +85,11 @@ final class QuranBox: NSObject, NSWindowDelegate {
             self?.insert(font: font, artwork: artwork)
         },
                                 cancel: { [weak self] in self?.close(restore: true) })
-        // The window takes the content's size: short at first, taller when results or more āyāt show.
+        // Do not let SwiftUI resize this panel while it is visible. macOS 26 can crash in AppKit's
+        // display-cycle constraint pass when a preferred-content-size update resizes an NSPanel.
         let host = NSHostingController(rootView: view)
-        host.sizingOptions = [.preferredContentSize]
-        let size = host.view.fittingSize
-        let p = panel ?? QuranBoxPanel(contentRect: NSRect(origin: .zero, size: size),
+        host.sizingOptions = []
+        let p = panel ?? QuranBoxPanel(contentRect: NSRect(origin: .zero, size: panelContentSize),
                                        styleMask: [.titled, .closable, .fullSizeContentView, .nonactivatingPanel],
                                        backing: .buffered, defer: false)
         p.title = "Insert from the Qur'an"
@@ -108,8 +102,10 @@ final class QuranBox: NSObject, NSWindowDelegate {
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         p.delegate = self
         p.contentViewController = host
-        p.setContentSize(size)
-        // On the screen with the mouse, its top a third of the way down (it grows downward).
+        p.contentMinSize = panelContentSize
+        p.contentMaxSize = panelContentSize
+        p.setContentSize(panelContentSize)
+        // On the screen with the mouse, its top a third of the way down.
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         if let f = screen?.visibleFrame {
             p.setFrameTopLeftPoint(NSPoint(x: f.midX - p.frame.width / 2, y: f.maxY - f.height / 4))
@@ -481,8 +477,7 @@ struct QuranBoxView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 14)
         .padding(.top, 30)
-        .frame(width: 640)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: 640, height: 630, alignment: .topLeading)
         .onAppear { ArabicFonts.registerBundled() }
     }
 
@@ -725,10 +720,9 @@ struct QuranBoxView: View {
         return t
     }
 
-    /// The āyah-end marker with its number inside Qur'anic ornamental brackets.
+    /// The round end-of-āyah sign and the number inside Qur'anic ornamental brackets.
     private func number(_ n: Int) -> String {
-        let digits = String(String(n).map { Character(Unicode.Scalar(0x0660 + Int(String($0))!)!) })
-        return "﴿" + digits + "﴾"
+        QuranLibrary.ayahMarker(n)
     }
 }
 

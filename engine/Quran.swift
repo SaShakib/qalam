@@ -460,7 +460,8 @@ public final class QuranLibrary {
 
     // MARK: Text to insert
 
-    /// The Arabic āyah followed by its Qur'anic ornamental marker and number (for example ﴿٢٥٥﴾).
+    /// The Arabic āyah followed by its number in Qur'anic ornamental brackets
+    /// (for example ﴿٢٥٥﴾).
     /// The marker is part of the inserted Unicode text, so it remains correct in ordinary Arabic
     /// fonts. A sūrah:āyah reference belongs in the picker, not in the quotation.
     public func text(_ p: Passage, _ mode: QuranInsert, translation id: String?) -> String {
@@ -479,8 +480,8 @@ public final class QuranLibrary {
         return out.joined(separator: mode == .both ? "\n\n" : " ")
     }
 
-    /// Arabic ornamental brackets around Arabic-Indic digits. Do not use a Western-style
-    /// parenthesised sūrah:āyah reference in inserted Qur'an text.
+    /// Arabic-Indic digits in a single pair of Qur'anic ornamental brackets.  In the bundled
+    /// Qur'an font the number itself is drawn as the familiar round āyah medallion.
     public static func ayahMarker(_ number: Int) -> String {
         let digits = String(String(number).compactMap { $0.wholeNumberValue }.compactMap {
             UnicodeScalar(0x0660 + $0).map(Character.init)

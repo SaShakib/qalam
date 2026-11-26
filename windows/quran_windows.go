@@ -272,7 +272,9 @@ func quranKey(vk uint32, ctrl, leftAlt, alt, shift, win bool) bool {
 	if quranMenu || isModifier(vk) { // an open menu gets its keys
 		return false
 	}
-	if h := settings.hotkey("quran"); h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == leftAlt && h.Shift == shift {
+	rightAlt := keyDown(vkRMenu)
+	hotkeyAlt := leftAlt || (alt && !rightAlt)
+	if h := settings.hotkey("quran"); h != nil && h.VK == vk && h.Ctrl == ctrl && h.Alt == hotkeyAlt && h.Shift == shift {
 		closeQuran() // the shortcut again closes it
 		return true
 	}
@@ -755,13 +757,9 @@ func quranPopup(r rect, titles []string, current, column int) int {
 
 // ---------- Text helpers ----------
 
-// arabicNumber: the āyah-end marker with its number inside Qur'anic ornamental brackets.
+// arabicNumber: Arabic-Indic digits inside one pair of Qur'anic ornamental brackets.
 func arabicNumber(n int) string {
-	d := []rune(fmt.Sprint(n))
-	for i := range d {
-		d[i] = 0x0660 + d[i] - '0'
-	}
-	return "﴿" + string(d) + "﴾"
+	return quran.AyahMarker(n)
 }
 
 // textHeight is the height of s drawn in font, wrapped to width.
